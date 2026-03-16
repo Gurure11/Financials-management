@@ -575,6 +575,14 @@
         .connection-info i {
             margin-right: 5px;
         }
+        
+        .config-details {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            border-top: 1px dashed #dee2e6;
+            padding-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -1021,20 +1029,21 @@
     
     <script>
         // ============================================
-        // GOOGLE APPS SCRIPT CONFIGURATION
+        // GOOGLE APPS SCRIPT WEB APP URL
         // ============================================
-        // Apps Script Web App URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTBlsFXhQclgS4nvAWRsxN0d7MYsMBLVNeXV_N63B0JQcOZl-rqHSIMJ4mJPPjE4bF/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDrkm9TftSjBRd-aSW6vATA13690jRidvQocWDTSF2UP0JXCy6DGjmjUHszOXaL7CeHQ/exec';
         
-        // Google Sheets Configuration
+        // ============================================
+        // CONFIGURATION - Matches Apps Script backend
+        // ============================================
         const CONFIG = {
             spreadsheetId: '1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ',
             sheetName: 'Financials Managers',
             driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
         };
         
-        // Log configuration for debugging
-        console.log('Connecting to:', SCRIPT_URL);
+        console.log('On Point Group System Initializing...');
+        console.log('Script URL:', SCRIPT_URL);
         console.log('Spreadsheet ID:', CONFIG.spreadsheetId);
         console.log('Sheet Name:', CONFIG.sheetName);
         console.log('Drive Folder ID:', CONFIG.driveFolderId);
@@ -1078,7 +1087,11 @@
                 loadProjectsFromSheet();
             }, 100);
             
-            showTab('dashboard', document.querySelector('.nav-link'));
+            // Set default active tab
+            const firstNavLink = document.querySelector('.nav-link');
+            if (firstNavLink) {
+                showTab('dashboard', firstNavLink);
+            }
             
             // Add event listeners for month inputs
             document.querySelectorAll('.month-input').forEach(input => {
@@ -1124,6 +1137,7 @@
                         updateConnectionStatus('connected', 'Connected to Google Sheets');
                         console.log('Connected to:', result.spreadsheetUrl);
                         console.log('Sheet Name:', result.sheetName);
+                        console.log('Spreadsheet ID:', result.spreadsheetId);
                     } else {
                         updateConnectionStatus('disconnected', 'Using offline mode');
                         console.error('Connection failed:', result ? result.error : 'Unknown error');
