@@ -575,6 +575,18 @@
             border-top: 1px dashed #dee2e6;
             padding-top: 5px;
         }
+        .boom{
+            color: blue;
+            font-size: 25px;
+            text-align: center;
+        }
+        .boom:hover{
+            color: green;
+            background-color: red;
+            opacity: 0.8;
+            transition: 0.7s;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -633,7 +645,11 @@
                 <button class="nav-link" onclick="showTab('financial', this)">
                     <i class="fas fa-file-invoice-dollar"></i> Financial Report
                 </button>
+                
             </div>
+        </div><br><br>
+        <div>
+            <a class="boom" href="kpi.html"><strong>KPI's</strong></a>
         </div>
         
         <!-- Dashboard Tab -->
