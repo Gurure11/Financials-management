@@ -3,99 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onpoint Group - Project Management System</title>
+    <title>Onpoint Group - Project Financial Dashboard</title>
     
     <!-- CSS Dependencies -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     
     <style>
         :root {
             --primary: #1e3c72;
             --secondary: #2a5298;
+            --accent: #ff6b6b;
             --success: #28a745;
-            --danger: #dc3545;
             --warning: #ffc107;
+            --danger: #dc3545;
             --info: #17a2b8;
+            --dark: #343a40;
+            --light: #f8f9fa;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
             padding: 20px;
         }
         
-        .main-container {
-            max-width: 1400px;
+        .dashboard-container {
+            max-width: 1600px;
             margin: 0 auto;
         }
         
         /* Header Styles */
-        .app-header {
+        .header-card {
             background: white;
             border-radius: 20px;
-            padding: 25px;
+            padding: 30px;
             margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-bottom: 4px solid var(--primary);
         }
         
         .company-title {
             color: var(--primary);
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             margin-bottom: 5px;
         }
         
         .company-subtitle {
-            color: #666;
-            font-size: 14px;
+            color: #6c757d;
+            font-size: 16px;
+            font-weight: 400;
         }
         
-        .config-badge {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 12px;
-            color: #666;
-            border-left: 4px solid var(--primary);
+        .date-badge {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-size: 16px;
+            box-shadow: 0 10px 20px rgba(30, 60, 114, 0.3);
         }
         
-        .config-badge i {
-            color: var(--primary);
-            margin-right: 8px;
-        }
-        
-        /* Navigation Tabs */
-        .nav-tabs-custom {
+        /* Navigation */
+        .nav-custom {
             background: white;
             border-radius: 15px;
-            padding: 10px;
+            padding: 15px;
             margin-bottom: 25px;
-            border: none;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
-        .nav-tabs-custom .nav-link {
-            border: none;
+        .nav-custom .nav-link {
+            color: #6c757d;
             padding: 12px 25px;
             border-radius: 12px;
-            color: #666;
             font-weight: 600;
             transition: all 0.3s;
+            margin: 0 5px;
         }
         
-        .nav-tabs-custom .nav-link:hover {
-            background: #f0f0f0;
+        .nav-custom .nav-link:hover {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            transform: translateY(-2px);
         }
         
-        .nav-tabs-custom .nav-link.active {
+        .nav-custom .nav-link.active {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
         }
         
-        .nav-tabs-custom .nav-link i {
+        .nav-custom .nav-link i {
             margin-right: 8px;
         }
         
@@ -103,16 +113,23 @@
         .card {
             border: none;
             border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
             margin-bottom: 25px;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
         
         .card-header {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             border-radius: 15px 15px 0 0 !important;
-            padding: 15px 20px;
+            padding: 20px 25px;
             font-weight: 600;
+            font-size: 18px;
             border: none;
         }
         
@@ -123,40 +140,123 @@
         /* KPI Cards */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
         
         .kpi-card {
             background: white;
-            padding: 25px;
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s;
         }
         
         .kpi-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
         
         .kpi-icon {
-            font-size: 40px;
-            color: var(--primary);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 15px;
         }
         
+        .kpi-icon i {
+            font-size: 30px;
+            color: white;
+        }
+        
         .kpi-title {
-            color: #666;
+            color: #6c757d;
             font-size: 14px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 5px;
         }
         
         .kpi-value {
-            color: var(--primary);
-            font-size: 32px;
+            color: var(--dark);
+            font-size: 28px;
             font-weight: 700;
+        }
+        
+        .kpi-trend {
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+        
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        .table {
+            margin-bottom: 0;
+            min-width: 1000px;
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .badge-confirmed {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-forecast {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        /* Progress Bars */
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 4px;
         }
         
         /* Forms */
@@ -164,16 +264,12 @@
             background: white;
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
         .form-label {
             font-weight: 600;
-            color: var(--primary);
+            color: var(--dark);
             margin-bottom: 8px;
         }
         
@@ -189,67 +285,42 @@
             box-shadow: 0 0 0 0.2rem rgba(30, 60, 114, 0.25);
         }
         
-        /* Buttons */
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            padding: 12px 30px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
+        /* Monthly Distribution */
+        .monthly-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px;
+            margin: 20px 0;
         }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(30, 60, 114, 0.3);
+        .month-cell {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
         }
         
-        .btn-outline-primary {
-            border: 2px solid var(--primary);
+        .month-cell strong {
+            display: block;
             color: var(--primary);
-            padding: 10px 25px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
+            font-size: 14px;
         }
         
-        .btn-outline-primary:hover {
-            background: var(--primary);
-            color: white;
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
         }
         
-        /* Tables */
-        .table-container {
+        /* Filter Section */
+        .filter-section {
             background: white;
             border-radius: 15px;
             padding: 20px;
-            overflow-x: auto;
-        }
-        
-        .table {
-            margin-bottom: 0;
-        }
-        
-        .table thead th {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            padding: 12px;
-        }
-        
-        .badge-budget { background: #667eea; color: white; }
-        .badge-expense { background: #f093fb; color: white; }
-        .badge-revenue { background: #4facfe; color: white; }
-        
-        /* Progress Bars */
-        .progress {
-            height: 8px;
-            border-radius: 4px;
-            margin: 10px 0;
-        }
-        
-        .progress-bar {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
         }
         
         /* Status Messages */
@@ -266,15 +337,14 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         }
         
-        .status-success { background: var(--success); }
-        .status-error { background: var(--danger); }
-        .status-info { background: var(--info); }
-        .status-warning { background: var(--warning); color: #333; }
-        
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
+        .status-success { background: var(--success); }
+        .status-error { background: var(--danger); }
+        .status-info { background: var(--info); }
         
         /* Loading Overlay */
         .loading-overlay {
@@ -283,16 +353,17 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.95);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 10000;
+            backdrop-filter: blur(5px);
         }
         
         .spinner-custom {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 5px solid #f3f3f3;
             border-top: 5px solid var(--primary);
             border-radius: 50%;
@@ -304,6 +375,22 @@
             100% { transform: rotate(360deg); }
         }
         
+        /* Sector Cards */
+        .sector-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid;
+            margin-bottom: 15px;
+        }
+        
+        .sector-card.electrical { border-left-color: #ff6b6b; }
+        .sector-card.telecoms { border-left-color: #4facfe; }
+        .sector-card.civil { border-left-color: #43e97b; }
+        .sector-card.buildings { border-left-color: #fa709a; }
+        .sector-card.roads { border-left-color: #fcb045; }
+        .sector-card.mechanical { border-left-color: #5f0a87; }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .kpi-grid {
@@ -311,7 +398,7 @@
             }
             
             .company-title {
-                font-size: 24px;
+                font-size: 28px;
             }
         }
     </style>
@@ -323,145 +410,381 @@
     </div>
     
     <!-- Main Container -->
-    <div class="main-container">
+    <div class="dashboard-container">
         <!-- Header -->
-        <div class="app-header">
+        <div class="header-card">
             <div class="row align-items-center">
-                <div class="col-md-8">
+                <div class="col-lg-8">
                     <div class="company-title">
-                        <i class="fas fa-building"></i> Onpoint Group
+                        <i class="fas fa-building"></i> ONPOINT GROUP
                     </div>
                     <div class="company-subtitle">
-                        Project Financial Management System
+                        Integrated Project Financial Management System
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge bg-primary p-2 me-2"><i class="fas fa-chart-line"></i> On Point On Time</span>
+                        <span class="badge bg-info p-2 me-2"><i class="fas fa-wifi"></i> Aqua Telecoms</span>
+                        <span class="badge bg-success p-2 me-2"><i class="fas fa-bolt"></i> Nkanyezi</span>
                     </div>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="config-badge">
-                        <div><i class="fas fa-link"></i> <strong>Web App URL:</strong> Connected</div>
-                        <div><i class="fas fa-database"></i> <strong>Sheet ID:</strong> 1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ</div>
-                        <div><i class="fas fa-cloud"></i> <strong>Drive Folder:</strong> 1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM</div>
+                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                    <div class="date-badge">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        <span id="currentDate"></span>
+                    </div>
+                    <div class="mt-2 text-muted">
+                        <i class="fas fa-database me-1"></i> Real-time Data
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Navigation -->
-        <ul class="nav nav-tabs-custom nav-fill" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button">
-                    <i class="fas fa-chart-pie"></i> Dashboard
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="dataentry-tab" data-bs-toggle="tab" data-bs-target="#dataentry" type="button">
-                    <i class="fas fa-edit"></i> Data Entry
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button">
-                    <i class="fas fa-tasks"></i> Projects
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button">
-                    <i class="fas fa-file-alt"></i> Reports
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="gantt-tab" data-bs-toggle="tab" data-bs-target="#gantt" type="button">
-                    <i class="fas fa-chart-gantt"></i> Timeline
-                </button>
-            </li>
-        </ul>
+        <div class="nav-custom">
+            <ul class="nav nav-pills justify-content-center" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button">
+                        <i class="fas fa-chart-pie"></i> Executive Dashboard
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button">
+                        <i class="fas fa-tasks"></i> Order Book
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="dataentry-tab" data-bs-toggle="tab" data-bs-target="#dataentry" type="button">
+                        <i class="fas fa-edit"></i> Data Entry
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="revenue-tab" data-bs-toggle="tab" data-bs-target="#revenue" type="button">
+                        <i class="fas fa-dollar-sign"></i> Revenue Analysis
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button">
+                        <i class="fas fa-file-alt"></i> Financial Reports
+                    </button>
+                </li>
+            </ul>
+        </div>
         
         <!-- Tab Content -->
         <div class="tab-content" id="mainTabsContent">
             <!-- DASHBOARD TAB -->
             <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
-                <!-- Filters -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-filter"></i> Dashboard Filters
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <div class="kpi-title">Total Order Book</div>
+                        <div class="kpi-value" id="totalOrderBook">R 925.8M</div>
+                        <div class="kpi-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> +12.5% vs last month
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label class="form-label">Cost Center</label>
-                                <select class="form-select" id="dashboardCostCenter">
-                                    <option value="All">All Cost Centers</option>
-                                </select>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="kpi-title">Confirmed Projects</div>
+                        <div class="kpi-value" id="confirmedTotal">R 670.7M</div>
+                        <div class="kpi-trend">
+                            <span class="badge-confirmed">72% of total</span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="kpi-title">Forecast Pipeline</div>
+                        <div class="kpi-value" id="forecastTotal">R 255.1M</div>
+                        <div class="kpi-trend">
+                            <span class="badge-forecast">28% of total</span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="kpi-title">Gross Profit Margin</div>
+                        <div class="kpi-value" id="grossMargin">36%</div>
+                        <div class="kpi-trend trend-up">
+                            <i class="fas fa-arrow-up"></i> +2.1% vs target
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sector Distribution -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-chart-pie"></i> Revenue by Sector
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Date Range</label>
-                                <div class="d-flex gap-2">
-                                    <input type="date" class="form-control" id="startDate">
-                                    <span class="align-self-center">to</span>
-                                    <input type="date" class="form-control" id="endDate">
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="sectorRevenueChart"></canvas>
                                 </div>
                             </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button class="btn btn-primary w-100" onclick="refreshDashboard()">
-                                    <i class="fas fa-sync-alt"></i> Update Dashboard
-                                </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar"></i> Gross Profit by Sector
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="sectorProfitChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- KPI Cards -->
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-piggy-bank"></i></div>
-                        <div class="kpi-title">Total Budget</div>
-                        <div class="kpi-value" id="totalBudget">$0</div>
+                <!-- Monthly Distribution -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-calendar-alt"></i> Monthly Revenue Distribution (Mar 2026 - Feb 2027)
                     </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-shopping-cart"></i></div>
-                        <div class="kpi-title">Total Expenses</div>
-                        <div class="kpi-value" id="totalExpenses">$0</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-dollar-sign"></i></div>
-                        <div class="kpi-title">Total Revenue</div>
-                        <div class="kpi-value" id="totalRevenue">$0</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-chart-line"></i></div>
-                        <div class="kpi-title">Net Profit</div>
-                        <div class="kpi-value" id="netProfit">$0</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fas fa-percent"></i></div>
-                        <div class="kpi-title">Avg Progress</div>
-                        <div class="kpi-value" id="avgProgress">0%</div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="monthlyRevenueChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Project Progress Table -->
+                <!-- Project Manager Performance -->
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-list"></i> Project Progress Overview
+                        <i class="fas fa-users"></i> Project Manager Performance
                     </div>
                     <div class="card-body">
                         <div class="table-container">
-                            <table class="table table-hover" id="projectTable">
+                            <table class="table table-hover" id="managerTable">
                                 <thead>
                                     <tr>
-                                        <th>Project</th>
-                                        <th>Manager</th>
-                                        <th>Budget</th>
-                                        <th>Spent</th>
-                                        <th>Remaining</th>
-                                        <th>Progress</th>
-                                        <th>Status</th>
+                                        <th>Project Manager</th>
+                                        <th>Category</th>
+                                        <th>Confirmed Value</th>
+                                        <th>Forecast Value</th>
+                                        <th>Total Pipeline</th>
+                                        <th>Projects</th>
+                                        <th>Avg Margin</th>
                                     </tr>
                                 </thead>
-                                <tbody id="projectTableBody">
+                                <tbody id="managerTableBody">
                                     <tr>
-                                        <td colspan="7" class="text-center">Loading data...</td>
+                                        <td><strong>Moses</strong></td>
+                                        <td>Electrical</td>
+                                        <td>R 45.1M</td>
+                                        <td>R 18.1M</td>
+                                        <td>R 63.2M</td>
+                                        <td>8</td>
+                                        <td>45%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Brian</strong></td>
+                                        <td>Electrical/General</td>
+                                        <td>R 26.0M</td>
+                                        <td>R 25.0M</td>
+                                        <td>R 51.0M</td>
+                                        <td>7</td>
+                                        <td>42%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Stanley</strong></td>
+                                        <td>Electrical</td>
+                                        <td>R 65.6M</td>
+                                        <td>R 40.0M</td>
+                                        <td>R 105.6M</td>
+                                        <td>5</td>
+                                        <td>43%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Johan</strong></td>
+                                        <td>Civil</td>
+                                        <td>R 21.0M</td>
+                                        <td>-</td>
+                                        <td>R 21.0M</td>
+                                        <td>2</td>
+                                        <td>20%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Rayman</strong></td>
+                                        <td>General Buildings</td>
+                                        <td>R 74.4M</td>
+                                        <td>R 25.6M</td>
+                                        <td>R 100.0M</td>
+                                        <td>2</td>
+                                        <td>30%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Timothy</strong></td>
+                                        <td>General/Roads</td>
+                                        <td>R 15.0M</td>
+                                        <td>R 20.0M</td>
+                                        <td>R 35.0M</td>
+                                        <td>3</td>
+                                        <td>25%</td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ORDER BOOK TAB -->
+            <div class="tab-pane fade" id="projects" role="tabpanel">
+                <!-- Filters -->
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="categoryFilter">
+                                <option value="All">All Categories</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Civil">Civil</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="General Buildings">General Buildings</option>
+                                <option value="Roads">Roads</option>
+                                <option value="Telecoms">Telecoms</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Project Manager</label>
+                            <select class="form-select" id="managerFilter">
+                                <option value="All">All Managers</option>
+                                <option value="Moses">Moses</option>
+                                <option value="Johan">Johan</option>
+                                <option value="Siyanda">Siyanda</option>
+                                <option value="Dave">Dave</option>
+                                <option value="James">James</option>
+                                <option value="Rayman">Rayman</option>
+                                <option value="Timothy">Timothy</option>
+                                <option value="Stanley">Stanley</option>
+                                <option value="Brian">Brian</option>
+                                <option value="Tony">Tony</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="All">All Status</option>
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Forecast">Forecast</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Book Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-book"></i> Complete Order Book
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table table-hover" id="orderBookTable">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Project Manager</th>
+                                        <th>Project</th>
+                                        <th>Status</th>
+                                        <th>Total Amount</th>
+                                        <th>Mar-26</th>
+                                        <th>Apr-26</th>
+                                        <th>May-26</th>
+                                        <th>Jun-26</th>
+                                        <th>Jul-26</th>
+                                        <th>Aug-26</th>
+                                        <th>Sep-26</th>
+                                        <th>Oct-26</th>
+                                        <th>Nov-26</th>
+                                        <th>Dec-26</th>
+                                        <th>Jan-27</th>
+                                        <th>Feb-27</th>
+                                        <th>Scheduled</th>
+                                        <th>Variance</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderBookBody">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="sector-card electrical">
+                            <h5>Electrical</h5>
+                            <div class="d-flex justify-content-between">
+                                <span>Confirmed:</span>
+                                <strong>R 77.2M</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Forecast:</span>
+                                <strong>R 54.3M</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Margin:</span>
+                                <strong class="text-success">45%</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="sector-card telecoms">
+                            <h5>Telecoms</h5>
+                            <div class="d-flex justify-content-between">
+                                <span>Confirmed:</span>
+                                <strong>R 103.1M</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Forecast:</span>
+                                <strong>R 70.0M</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Margin:</span>
+                                <strong class="text-success">45%</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="sector-card civil">
+                            <h5>Civil</h5>
+                            <div class="d-flex justify-content-between">
+                                <span>Confirmed:</span>
+                                <strong>R 86.4M</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Forecast:</span>
+                                <strong>R 20.0M</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Margin:</span>
+                                <strong class="text-warning">20%</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -472,93 +795,168 @@
                 <div class="row">
                     <div class="col-lg-8 mx-auto">
                         <div class="form-container">
-                            <h3 class="mb-4"><i class="fas fa-pen"></i> New Transaction Entry</h3>
+                            <h3 class="mb-4"><i class="fas fa-pen"></i> Project Data Entry</h3>
                             
-                            <form id="dataEntryForm">
+                            <form id="projectForm">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form-label">Date *</label>
-                                            <input type="date" class="form-control" id="entryDate" required>
+                                        <div class="mb-3">
+                                            <label class="form-label">Category *</label>
+                                            <select class="form-select" id="projectCategory" required>
+                                                <option value="">Select Category</option>
+                                                <option value="Electrical">Electrical</option>
+                                                <option value="Civil">Civil</option>
+                                                <option value="Mechanical">Mechanical</option>
+                                                <option value="General Buildings">General Buildings</option>
+                                                <option value="Roads">Roads</option>
+                                                <option value="Telecoms">Telecoms</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form-label">Project ID *</label>
-                                            <input type="text" class="form-control" id="projectId" placeholder="e.g., P001" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label">Project Name *</label>
-                                    <select class="form-select" id="projectName" required>
-                                        <option value="">Select Project</option>
-                                    </select>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
+                                        <div class="mb-3">
                                             <label class="form-label">Project Manager *</label>
-                                            <select class="form-select" id="projectManager" required>
-                                                <option value="">Select Manager</option>
-                                            </select>
+                                            <input type="text" class="form-control" id="projectManager" list="managersList" required>
+                                            <datalist id="managersList">
+                                                <option value="Moses">
+                                                <option value="Johan">
+                                                <option value="Siyanda">
+                                                <option value="Dave">
+                                                <option value="James">
+                                                <option value="Rayman">
+                                                <option value="Timothy">
+                                                <option value="Stanley">
+                                                <option value="Brian">
+                                                <option value="Tony">
+                                                <option value="Govern">
+                                                <option value="Graham">
+                                                <option value="Phillip">
+                                                <option value="Moeti">
+                                            </datalist>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form-label">Cost Center *</label>
-                                            <select class="form-select" id="costCenter" required>
-                                                <option value="">Select Cost Center</option>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label class="form-label">Project Name *</label>
+                                            <input type="text" class="form-control" id="projectName" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Status *</label>
+                                            <select class="form-select" id="projectStatus" required>
+                                                <option value="Confirmed">Confirmed</option>
+                                                <option value="Forecast">Forecast</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form-label">Transaction Type *</label>
-                                            <select class="form-select" id="transactionType" required>
-                                                <option value="">Select Type</option>
-                                                <option value="Budget">Budget</option>
-                                                <option value="Expense">Expense</option>
-                                                <option value="Revenue">Revenue</option>
-                                            </select>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Total Amount (R) *</label>
+                                            <input type="number" class="form-control" id="totalAmount" step="1000" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label class="form-label">Amount ($) *</label>
-                                            <input type="number" class="form-control" id="amount" step="0.01" min="0" required>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Margin %</label>
+                                            <input type="number" class="form-control" id="margin" step="0.1" min="0" max="100" value="30">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">Retention %</label>
+                                            <input type="number" class="form-control" id="retention" step="0.1" min="0" max="20" value="10">
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Description *</label>
-                                    <textarea class="form-control" id="description" rows="2" required></textarea>
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light text-dark">
+                                        <i class="fas fa-calendar"></i> Monthly Distribution (Mar 2026 - Feb 2027)
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Mar-26</label>
+                                                <input type="number" class="form-control month-input" id="mar26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Apr-26</label>
+                                                <input type="number" class="form-control month-input" id="apr26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">May-26</label>
+                                                <input type="number" class="form-control month-input" id="may26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Jun-26</label>
+                                                <input type="number" class="form-control month-input" id="jun26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Jul-26</label>
+                                                <input type="number" class="form-control month-input" id="jul26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Aug-26</label>
+                                                <input type="number" class="form-control month-input" id="aug26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Sep-26</label>
+                                                <input type="number" class="form-control month-input" id="sep26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Oct-26</label>
+                                                <input type="number" class="form-control month-input" id="oct26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Nov-26</label>
+                                                <input type="number" class="form-control month-input" id="nov26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Dec-26</label>
+                                                <input type="number" class="form-control month-input" id="dec26" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Jan-27</label>
+                                                <input type="number" class="form-control month-input" id="jan27" value="0">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <label class="form-label">Feb-27</label>
+                                                <input type="number" class="form-control month-input" id="feb27" value="0">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <button type="button" class="btn btn-outline-primary" onclick="distributeEvenly()">
+                                                    <i class="fas fa-calculator"></i> Distribute Evenly Over 12 Months
+                                                </button>
+                                            </div>
+                                            <div class="col-md-6 text-end">
+                                                <strong>Total Scheduled: R <span id="scheduledTotal">0</span></strong>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Progress (%)</label>
-                                    <input type="range" class="form-range" id="progress" min="0" max="100" value="0" oninput="updateProgress(this.value)">
-                                    <div class="text-center mt-2" id="progressDisplay">0%</div>
+                                <div class="mb-3">
+                                    <label class="form-label">Notes / Comments</label>
+                                    <textarea class="form-control" id="projectNotes" rows="2"></textarea>
                                 </div>
                                 
-                                <div class="form-check mb-4">
-                                    <input class="form-check-input" type="checkbox" id="isProjectUpdate">
-                                    <label class="form-check-label">
-                                        Update project progress only (no financial impact)
-                                    </label>
-                                </div>
+                                <hr>
                                 
                                 <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-primary" onclick="submitForm()">
-                                        <i class="fas fa-save"></i> Submit Entry
+                                    <button type="button" class="btn btn-primary btn-lg" onclick="submitProject()">
+                                        <i class="fas fa-save"></i> Save Project
                                     </button>
-                                    <button type="button" class="btn btn-outline-primary" onclick="resetForm()">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
                                         <i class="fas fa-undo"></i> Reset Form
                                     </button>
                                 </div>
@@ -568,90 +966,149 @@
                 </div>
             </div>
             
-            <!-- PROJECTS TAB -->
-            <div class="tab-pane fade" id="projects" role="tabpanel">
-                <div class="card">
+            <!-- REVENUE ANALYSIS TAB -->
+            <div class="tab-pane fade" id="revenue" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-chart-pie"></i> Revenue by Sector
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="revenuePieChart"></canvas>
+                                </div>
+                                <table class="table table-sm mt-3">
+                                    <thead>
+                                        <tr>
+                                            <th>Sector</th>
+                                            <th>Revenue</th>
+                                            <th>Margin</th>
+                                            <th>Gross Profit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Electrical</td>
+                                            <td>R 131.5M</td>
+                                            <td>45%</td>
+                                            <td>R 59.2M</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Telecoms</td>
+                                            <td>R 103.1M</td>
+                                            <td>45%</td>
+                                            <td>R 46.4M</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Civil</td>
+                                            <td>R 86.4M</td>
+                                            <td>20%</td>
+                                            <td>R 17.3M</td>
+                                        </tr>
+                                        <tr>
+                                            <td>General Buildings</td>
+                                            <td>R 91.2M</td>
+                                            <td>30%</td>
+                                            <td>R 27.4M</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Mechanical</td>
+                                            <td>R 53.4M</td>
+                                            <td>30%</td>
+                                            <td>R 16.0M</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar"></i> Profitability Analysis
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="profitabilityChart"></canvas>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="alert alert-info">
+                                        <h6>Key Insights:</h6>
+                                        <ul class="mb-0">
+                                            <li>Electrical & Telecoms have highest margins (45%)</li>
+                                            <li>Civil sector margins lower at 20% - review pricing</li>
+                                            <li>Overall GP Margin: 36%</li>
+                                            <li>Total Gross Profit: R 166.2M</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
                     <div class="card-header">
-                        <i class="fas fa-tasks"></i> All Projects
+                        <i class="fas fa-chart-line"></i> Monthly Revenue Trend by Sector
                     </div>
                     <div class="card-body">
-                        <div class="table-container">
-                            <table class="table table-hover" id="projectsTable">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Project Name</th>
-                                        <th>Manager</th>
-                                        <th>Cost Center</th>
-                                        <th>Budget</th>
-                                        <th>Spent</th>
-                                        <th>Remaining</th>
-                                        <th>Progress</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="projectsTableBody">
-                                    <tr>
-                                        <td colspan="9" class="text-center">Loading data...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="chart-container">
+                            <canvas id="monthlyTrendChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- REPORTS TAB -->
+            <!-- FINANCIAL REPORTS TAB -->
             <div class="tab-pane fade" id="reports" role="tabpanel">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-file-alt"></i> Generate Reports
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="form-label">Report Type</label>
-                                    <select class="form-select" id="reportType">
-                                        <option value="daily">Daily Report</option>
-                                        <option value="weekly">Weekly Report</option>
-                                        <option value="monthly">Monthly Report</option>
-                                        <option value="yearly">Yearly Report</option>
-                                        <option value="manager">Manager Performance</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group">
-                                    <label class="form-label">Period</label>
-                                    <input type="date" class="form-control" id="reportDate">
-                                </div>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-end">
-                                <button class="btn btn-primary w-100" onclick="generateReport()">
-                                    <i class="fas fa-file-pdf"></i> Generate Report
-                                </button>
-                            </div>
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">Report Type</label>
+                            <select class="form-select" id="reportType">
+                                <option value="orderbook">Order Book Summary</option>
+                                <option value="revenue">Revenue Analysis</option>
+                                <option value="profit">Gross Profit Report</option>
+                                <option value="manager">Project Manager Report</option>
+                                <option value="monthly">Monthly Phasing Report</option>
+                            </select>
                         </div>
-                        
-                        <hr>
-                        
-                        <div id="reportPreview" class="mt-4">
-                            <p class="text-muted text-center">Select report type and click Generate</p>
+                        <div class="col-md-3">
+                            <label class="form-label">Period</label>
+                            <select class="form-select" id="reportPeriod">
+                                <option value="mar26-feb27">Mar 2026 - Feb 2027</option>
+                                <option value="q1">Q1 2026</option>
+                                <option value="q2">Q2 2026</option>
+                                <option value="q3">Q3 2026</option>
+                                <option value="q4">Q4 2026</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Format</label>
+                            <select class="form-select" id="reportFormat">
+                                <option value="html">HTML Preview</option>
+                                <option value="pdf">PDF Export</option>
+                                <option value="excel">Excel Export</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="generateFinancialReport()">
+                                <i class="fas fa-file-pdf"></i> Generate Report
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- GANTT TAB -->
-            <div class="tab-pane fade" id="gantt" role="tabpanel">
+                
                 <div class="card">
                     <div class="card-header">
-                        <i class="fas fa-chart-gantt"></i> Project Timeline (Gantt View)
+                        <i class="fas fa-file-alt"></i> Report Preview
                     </div>
-                    <div class="card-body">
-                        <div id="ganttChart">
-                            <p class="text-muted text-center">Loading timeline...</p>
+                    <div class="card-body" id="reportPreview">
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                            <h5>Select report options and click Generate</h5>
                         </div>
                     </div>
                 </div>
@@ -663,421 +1120,605 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     
     <script>
         // ============================================
-        // CONFIGURATION - YOUR SPECIFIC URL
+        // GLOBAL VARIABLES - Based on your spreadsheet
         // ============================================
-        const CONFIG = {
-            webAppUrl: 'https://script.google.com/macros/s/AKfycbzxanp-DmAlFNVoJA9Iphcbw7Zl1PGbaysUcGMMzH6QxRi64uLTMgaQqSRDqQQtfBJR/exec',
-            spreadsheetId: '1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ',
-            driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
-        };
+        const projects = [
+            // On Point On Time Projects
+            {category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, 
+             mar26: 7666667, apr26: 7666667, may26: 7666667, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: 'Confirm the retention and the clause'},
+            {category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000,
+             mar26: 4100000, apr26: 4100000, may26: 4100000, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: 'Confirm the retention clause'},
+            {category: 'Civil', manager: 'Siyanda', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000,
+             mar26: 4100000, apr26: 4100000, may26: 4100000, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Civil', manager: 'Dave', project: 'Joe Gqabi', status: 'Confirmed', amount: 68479374,
+             mar26: 3800000, apr26: 3800000, may26: 3800000, jun26: 5000000, jul26: 5000000, aug26: 5000000, sep26: 5000000, oct26: 5000000, nov26: 5000000, dec26: 5000000, jan27: 5000000, feb27: 5000000, notes: 'To close by Feb less retention'},
+            {category: 'Mechanical', manager: 'James', project: 'Temba', status: 'Confirmed', amount: 58800000,
+             mar26: 4410000, apr26: 4410000, may26: 4410000, jun26: 4410000, jul26: 4410000, aug26: 4410000, sep26: 4410000, oct26: 4410000, nov26: 4410000, dec26: 4410000, jan27: 4410000, feb27: 4410000, notes: ''},
+            {category: 'Civil', manager: 'Johan', project: 'Temba', status: 'Confirmed', amount: 6000000,
+             mar26: 675000, apr26: 675000, may26: 675000, jun26: 675000, jul26: 675000, aug26: 675000, sep26: 675000, oct26: 675000, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Electrical', manager: 'Moses', project: 'Midvaal', status: 'Confirmed', amount: 16700000,
+             mar26: 2037911, apr26: 2037911, may26: 2037911, jun26: 2037911, jul26: 1375671, aug26: 1375671, sep26: 1375671, oct26: 1375671, nov26: 1375671, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Confirmed', amount: 74434783,
+             mar26: 8373913, apr26: 8373913, may26: 8373913, jun26: 8373913, jul26: 8373913, aug26: 8373913, sep26: 8373913, oct26: 8373913, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Forecast', amount: 25565217,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'General Buildings', manager: 'Timothy', project: 'KZN General Buildings', status: 'Confirmed', amount: 15000000,
+             mar26: 1350000, apr26: 1350000, may26: 1350000, jun26: 1350000, jul26: 1350000, aug26: 1350000, sep26: 1350000, oct26: 1350000, nov26: 1350000, dec26: 1350000, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Roads', manager: 'Roads Site Agent', project: 'COT Tshwane', status: 'Forecast', amount: 30000000,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Roads', manager: 'Timothy', project: 'Public Works Limpopo', status: 'Forecast', amount: 10000000,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Electrical', manager: 'Stanley', project: 'Limpopo Eskom Substation Ephraim Mogale', status: 'Forecast', amount: 40000000,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Civil', manager: 'Civil Site Agent', project: 'Naizna', status: 'Forecast', amount: 20000000,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Roads', manager: 'Roads Site Agent', project: 'Cape Town', status: 'Forecast', amount: 120000000,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            
+            // Aqua Telecoms Projects
+            {category: 'Electrical', manager: 'Stanley', project: 'Stellenbosh', status: 'Confirmed', amount: 10034021,
+             mar26: 0, apr26: 903062, may26: 903062, jun26: 903062, jul26: 903062, aug26: 903062, sep26: 903062, oct26: 903062, nov26: 903062, dec26: 903062, jan27: 903062, feb27: 0, notes: ''},
+            {category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Confirmed', amount: 22000000,
+             mar26: 5500000, apr26: 5500000, may26: 5500000, jun26: 5500000, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECPG', status: 'Confirmed', amount: 12000000,
+             mar26: 3000000, apr26: 3000000, may26: 3000000, jun26: 3000000, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Telecoms', manager: 'Mesh', project: 'Liquid Gauteng SOD', status: 'Confirmed', amount: 12000000,
+             mar26: 1000000, apr26: 1000000, may26: 1000000, jun26: 1000000, jul26: 1000000, aug26: 1000000, sep26: 1000000, oct26: 1000000, nov26: 1000000, dec26: 1000000, jan27: 1000000, feb27: 1000000, notes: ''},
+            {category: 'Telecoms', manager: 'Vusi', project: 'Liquid Gauteng SOD', status: 'Forecast', amount: 12000000,
+             mar26: 0, apr26: 0, may26: 1333333, jun26: 1333333, jul26: 1333333, aug26: 1333333, sep26: 1333333, oct26: 1333333, nov26: 1333333, dec26: 1333333, jan27: 1333333, feb27: 0, notes: ''},
+            {category: 'Telecoms', manager: 'Tinotenda', project: 'Telkom', status: 'Confirmed', amount: 18000000,
+             mar26: 1500000, apr26: 1500000, may26: 1500000, jun26: 1500000, jul26: 1500000, aug26: 1500000, sep26: 1500000, oct26: 1500000, nov26: 1500000, dec26: 1500000, jan27: 1500000, feb27: 1500000, notes: ''},
+            {category: 'Telecoms', manager: 'Sydney', project: 'Telkom', status: 'Confirmed', amount: 30000000,
+             mar26: 2500000, apr26: 2500000, may26: 2500000, jun26: 2500000, jul26: 2500000, aug26: 2500000, sep26: 2500000, oct26: 2500000, nov26: 2500000, dec26: 2500000, jan27: 2500000, feb27: 2500000, notes: ''},
+            {category: 'Telecoms', manager: 'Graham', project: 'MTN', status: 'Forecast', amount: 6000000,
+             mar26: 500000, apr26: 500000, may26: 500000, jun26: 500000, jul26: 500000, aug26: 500000, sep26: 500000, oct26: 500000, nov26: 500000, dec26: 500000, jan27: 500000, feb27: 500000, notes: ''},
+            {category: 'Electrical', manager: 'Stanley', project: 'Centlec', status: 'Confirmed', amount: 36000000,
+             mar26: 3000000, apr26: 3000000, may26: 3000000, jun26: 3000000, jul26: 3000000, aug26: 3000000, sep26: 3000000, oct26: 3000000, nov26: 3000000, dec26: 3000000, jan27: 3000000, feb27: 3000000, notes: ''},
+            {category: 'Telecoms', manager: 'Graham', project: 'Eskom Harvard', status: 'Confirmed', amount: 10000000,
+             mar26: 2733333, apr26: 2733333, may26: 2733333, jun26: 900000, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            
+            // Nkanyezi Projects
+            {category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000,
+             mar26: 300000, apr26: 300000, may26: 300000, jun26: 300000, jul26: 300000, aug26: 300000, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 3600000,
+             mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 600000, aug26: 600000, sep26: 600000, oct26: 600000, nov26: 600000, dec26: 600000, jan27: 0, feb27: 0, notes: ''},
+            {category: 'Electrical', manager: 'Phillip', project: 'Eskom WC', status: 'Confirmed', amount: 1200000,
+             mar26: 100000, apr26: 100000, may26: 100000, jun26: 100000, jul26: 100000, aug26: 100000, sep26: 100000, oct26: 100000, nov26: 100000, dec26: 100000, jan27: 100000, feb27: 100000, notes: ''},
+            {category: 'General Buildings', manager: 'Moeti', project: 'COE Buildings', status: 'Confirmed', amount: 3000000,
+             mar26: 0, apr26: 0, may26: 566667, jun26: 566667, jul26: 566667, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0, notes: ''}
+        ];
         
-        // ============================================
-        // GLOBAL VARIABLES
-        // ============================================
-        let projects = [];
-        let transactions = [];
-        let costCenters = ['Executive', 'Marketing', 'Facilities', 'IT', 'Sales', 'HR'];
-        let managers = ['John Smith', 'Jane Doe', 'Mike Ross', 'Sarah Johnson', 'David Brown'];
+        // Margins by sector
+        const margins = {
+            'Electrical': 0.45,
+            'Telecoms': 0.45,
+            'Civil': 0.20,
+            'General Buildings': 0.30,
+            'Roads': 0.20,
+            'Mechanical': 0.30
+        };
         
         // ============================================
         // INITIALIZATION
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Onpoint Group System Initializing...');
-            console.log('Web App URL:', CONFIG.webAppUrl);
-            console.log('Spreadsheet ID:', CONFIG.spreadsheetId);
-            console.log('Drive Folder ID:', CONFIG.driveFolderId);
-            
-            setDefaultDates();
-            loadInitialData();
-            initializeDropdowns();
+            updateCurrentDate();
+            loadOrderBook();
+            initializeCharts();
         });
         
-        function setDefaultDates() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('entryDate').value = today;
-            
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            document.getElementById('startDate').value = thirtyDaysAgo.toISOString().split('T')[0];
-            document.getElementById('endDate').value = today;
-            document.getElementById('reportDate').value = today;
+        function updateCurrentDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').innerHTML = new Date().toLocaleDateString('en-US', options);
         }
         
-        function initializeDropdowns() {
-            // Cost Centers
-            const costCenterSelects = ['dashboardCostCenter', 'costCenter'];
-            costCenterSelects.forEach(id => {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.innerHTML = '<option value="All">All Cost Centers</option>';
-                    costCenters.forEach(center => {
-                        select.innerHTML += `<option value="${center}">${center}</option>`;
-                    });
-                }
+        // ============================================
+        // ORDER BOOK FUNCTIONS
+        // ============================================
+        
+        function loadOrderBook() {
+            const tbody = document.getElementById('orderBookBody');
+            let html = '';
+            
+            projects.forEach(p => {
+                const scheduled = (p.mar26 + p.apr26 + p.may26 + p.jun26 + p.jul26 + p.aug26 + p.sep26 + p.oct26 + p.nov26 + p.dec26 + p.jan27 + p.feb27);
+                const variance = p.amount - scheduled;
+                
+                html += `<tr>
+                    <td>${p.category}</td>
+                    <td><strong>${p.manager}</strong></td>
+                    <td>${p.project}</td>
+                    <td><span class="badge-${p.status.toLowerCase()}">${p.status}</span></td>
+                    <td><strong>R ${formatNumber(p.amount)}</strong></td>
+                    <td>${p.mar26 > 0 ? 'R ' + formatNumber(p.mar26) : '-'}</td>
+                    <td>${p.apr26 > 0 ? 'R ' + formatNumber(p.apr26) : '-'}</td>
+                    <td>${p.may26 > 0 ? 'R ' + formatNumber(p.may26) : '-'}</td>
+                    <td>${p.jun26 > 0 ? 'R ' + formatNumber(p.jun26) : '-'}</td>
+                    <td>${p.jul26 > 0 ? 'R ' + formatNumber(p.jul26) : '-'}</td>
+                    <td>${p.aug26 > 0 ? 'R ' + formatNumber(p.aug26) : '-'}</td>
+                    <td>${p.sep26 > 0 ? 'R ' + formatNumber(p.sep26) : '-'}</td>
+                    <td>${p.oct26 > 0 ? 'R ' + formatNumber(p.oct26) : '-'}</td>
+                    <td>${p.nov26 > 0 ? 'R ' + formatNumber(p.nov26) : '-'}</td>
+                    <td>${p.dec26 > 0 ? 'R ' + formatNumber(p.dec26) : '-'}</td>
+                    <td>${p.jan27 > 0 ? 'R ' + formatNumber(p.jan27) : '-'}</td>
+                    <td>${p.feb27 > 0 ? 'R ' + formatNumber(p.feb27) : '-'}</td>
+                    <td>R ${formatNumber(scheduled)}</td>
+                    <td class="${variance < 0 ? 'text-danger' : 'text-success'}">R ${formatNumber(variance)}</td>
+                    <td><small>${p.notes || ''}</small></td>
+                </tr>`;
             });
             
-            // Managers
-            const managerSelect = document.getElementById('projectManager');
-            if (managerSelect) {
-                managerSelect.innerHTML = '<option value="">Select Manager</option>';
-                managers.forEach(manager => {
-                    managerSelect.innerHTML += `<option value="${manager}">${manager}</option>`;
-                });
-            }
-            
-            // Projects (will be populated from data)
-            updateProjectDropdown();
+            tbody.innerHTML = html;
         }
         
-        // ============================================
-        // API CALLS TO WEB APP
-        // ============================================
-        
-        async function callWebApp(action, data = {}) {
-            showLoading();
+        function applyFilters() {
+            const category = document.getElementById('categoryFilter').value;
+            const manager = document.getElementById('managerFilter').value;
+            const status = document.getElementById('statusFilter').value;
             
-            try {
-                const payload = {
-                    action: action,
-                    ...data,
-                    spreadsheetId: CONFIG.spreadsheetId,
-                    driveFolderId: CONFIG.driveFolderId
-                };
+            const tbody = document.getElementById('orderBookBody');
+            let html = '';
+            
+            projects.forEach(p => {
+                if (category !== 'All' && p.category !== category) return;
+                if (manager !== 'All' && p.manager !== manager) return;
+                if (status !== 'All' && p.status !== status) return;
                 
-                console.log(`Calling web app - Action: ${action}`, payload);
+                const scheduled = (p.mar26 + p.apr26 + p.may26 + p.jun26 + p.jul26 + p.aug26 + p.sep26 + p.oct26 + p.nov26 + p.dec26 + p.jan27 + p.feb27);
+                const variance = p.amount - scheduled;
                 
-                const response = await fetch(CONFIG.webAppUrl, {
-                    method: 'POST',
-                    mode: 'no-cors', // Important for Google Apps Script
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-                
-                // With no-cors, we can't read response, so we assume success
-                console.log('Request sent successfully');
-                hideLoading();
-                showStatus('Request sent successfully', 'success');
-                
-                // Refresh data after a delay
-                setTimeout(() => {
-                    loadInitialData();
-                }, 1000);
-                
-                return { success: true };
-                
-            } catch (error) {
-                console.error('Error calling web app:', error);
-                hideLoading();
-                showStatus('Error connecting to server: ' + error.message, 'error');
-                return { success: false, error: error.message };
-            }
-        }
-        
-        async function loadInitialData() {
-            showLoading();
-            
-            // Simulate loading data (in production, this would fetch from your web app)
-            setTimeout(() => {
-                // Sample project data
-                projects = [
-                    { id: 'P001', name: 'Website Redesign', manager: 'John Smith', costCenter: 'Marketing', budget: 5000, spent: 1050, revenue: 2500, progress: 60 },
-                    { id: 'P002', name: 'Office Renovation', manager: 'Jane Doe', costCenter: 'Facilities', budget: 15000, spent: 3500, revenue: 0, progress: 35 },
-                    { id: 'P003', name: 'Q4 Campaign', manager: 'Mike Ross', costCenter: 'Marketing', budget: 8000, spent: 1200, revenue: 0, progress: 80 }
-                ];
-                
-                // Update UI
-                updateDashboard();
-                updateProjectsTable();
-                updateProjectDropdown();
-                updateGanttView();
-                
-                hideLoading();
-                showStatus('Data loaded successfully', 'success');
-            }, 1000);
-        }
-        
-        // ============================================
-        // DASHBOARD FUNCTIONS
-        // ============================================
-        
-        function updateDashboard() {
-            // Calculate KPIs
-            const totals = calculateTotals();
-            
-            document.getElementById('totalBudget').textContent = formatCurrency(totals.budget);
-            document.getElementById('totalExpenses').textContent = formatCurrency(totals.expenses);
-            document.getElementById('totalRevenue').textContent = formatCurrency(totals.revenue);
-            document.getElementById('netProfit').textContent = formatCurrency(totals.revenue - totals.expenses);
-            document.getElementById('avgProgress').textContent = calculateAvgProgress() + '%';
-            
-            // Update project table
-            updateProjectTable();
-        }
-        
-        function calculateTotals() {
-            return projects.reduce((acc, project) => {
-                acc.budget += project.budget || 0;
-                acc.expenses += project.spent || 0;
-                acc.revenue += project.revenue || 0;
-                return acc;
-            }, { budget: 0, expenses: 0, revenue: 0 });
-        }
-        
-        function calculateAvgProgress() {
-            if (projects.length === 0) return 0;
-            const total = projects.reduce((sum, p) => sum + (p.progress || 0), 0);
-            return Math.round(total / projects.length);
-        }
-        
-        function updateProjectTable() {
-            const tbody = document.getElementById('projectTableBody');
-            
-            if (projects.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No projects found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = projects.map(project => {
-                const remaining = (project.budget || 0) - (project.spent || 0);
-                const status = getProjectStatus(project.progress || 0, remaining);
-                
-                return `
-                    <tr>
-                        <td>${project.name}</td>
-                        <td>${project.manager}</td>
-                        <td>${formatCurrency(project.budget || 0)}</td>
-                        <td>${formatCurrency(project.spent || 0)}</td>
-                        <td>${formatCurrency(remaining)}</td>
-                        <td>
-                            <div class="progress">
-                                <div class="progress-bar" style="width: ${project.progress || 0}%"></div>
-                            </div>
-                            <small>${project.progress || 0}%</small>
-                        </td>
-                        <td><span class="badge" style="background: ${status.color}">${status.text}</span></td>
-                    </tr>
-                `;
-            }).join('');
-        }
-        
-        function getProjectStatus(progress, remaining) {
-            if (progress >= 100) return { text: 'Completed', color: '#28a745' };
-            if (remaining < 0) return { text: 'Over Budget', color: '#dc3545' };
-            if (progress > 75) return { text: 'Near Complete', color: '#ffc107' };
-            if (progress > 25) return { text: 'In Progress', color: '#17a2b8' };
-            return { text: 'Just Started', color: '#6c757d' };
-        }
-        
-        function updateProjectsTable() {
-            const tbody = document.getElementById('projectsTableBody');
-            
-            if (projects.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">No projects found</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = projects.map(project => {
-                const remaining = (project.budget || 0) - (project.spent || 0);
-                const status = getProjectStatus(project.progress || 0, remaining);
-                
-                return `
-                    <tr>
-                        <td>${project.id}</td>
-                        <td>${project.name}</td>
-                        <td>${project.manager}</td>
-                        <td>${project.costCenter}</td>
-                        <td>${formatCurrency(project.budget || 0)}</td>
-                        <td>${formatCurrency(project.spent || 0)}</td>
-                        <td>${formatCurrency(remaining)}</td>
-                        <td>${project.progress || 0}%</td>
-                        <td><span class="badge" style="background: ${status.color}">${status.text}</span></td>
-                    </tr>
-                `;
-            }).join('');
-        }
-        
-        function updateProjectDropdown() {
-            const select = document.getElementById('projectName');
-            if (!select) return;
-            
-            select.innerHTML = '<option value="">Select Project</option>';
-            projects.forEach(project => {
-                select.innerHTML += `<option value="${project.name}" data-id="${project.id}">${project.name} (${project.id})</option>`;
-            });
-        }
-        
-        function updateGanttView() {
-            const container = document.getElementById('ganttChart');
-            
-            if (projects.length === 0) {
-                container.innerHTML = '<p class="text-muted text-center">No projects to display</p>';
-                return;
-            }
-            
-            let html = '<div style="overflow-x: auto;">';
-            html += '<table class="table table-bordered">';
-            html += '<thead><tr><th>Project</th><th>Manager</th><th>Progress</th><th>Timeline</th></tr></thead><tbody>';
-            
-            projects.forEach(project => {
-                html += '<tr>';
-                html += `<td>${project.name}</td>`;
-                html += `<td>${project.manager}</td>`;
-                html += `<td>${project.progress}%</td>`;
-                html += '<td><div class="progress"><div class="progress-bar" style="width: ' + project.progress + '%"></div></div></td>';
-                html += '</tr>';
+                html += `<tr>
+                    <td>${p.category}</td>
+                    <td><strong>${p.manager}</strong></td>
+                    <td>${p.project}</td>
+                    <td><span class="badge-${p.status.toLowerCase()}">${p.status}</span></td>
+                    <td><strong>R ${formatNumber(p.amount)}</strong></td>
+                    <td>${p.mar26 > 0 ? 'R ' + formatNumber(p.mar26) : '-'}</td>
+                    <td>${p.apr26 > 0 ? 'R ' + formatNumber(p.apr26) : '-'}</td>
+                    <td>${p.may26 > 0 ? 'R ' + formatNumber(p.may26) : '-'}</td>
+                    <td>${p.jun26 > 0 ? 'R ' + formatNumber(p.jun26) : '-'}</td>
+                    <td>${p.jul26 > 0 ? 'R ' + formatNumber(p.jul26) : '-'}</td>
+                    <td>${p.aug26 > 0 ? 'R ' + formatNumber(p.aug26) : '-'}</td>
+                    <td>${p.sep26 > 0 ? 'R ' + formatNumber(p.sep26) : '-'}</td>
+                    <td>${p.oct26 > 0 ? 'R ' + formatNumber(p.oct26) : '-'}</td>
+                    <td>${p.nov26 > 0 ? 'R ' + formatNumber(p.nov26) : '-'}</td>
+                    <td>${p.dec26 > 0 ? 'R ' + formatNumber(p.dec26) : '-'}</td>
+                    <td>${p.jan27 > 0 ? 'R ' + formatNumber(p.jan27) : '-'}</td>
+                    <td>${p.feb27 > 0 ? 'R ' + formatNumber(p.feb27) : '-'}</td>
+                    <td>R ${formatNumber(scheduled)}</td>
+                    <td class="${variance < 0 ? 'text-danger' : 'text-success'}">R ${formatNumber(variance)}</td>
+                    <td><small>${p.notes || ''}</small></td>
+                </tr>`;
             });
             
-            html += '</tbody></table></div>';
-            container.innerHTML = html;
+            tbody.innerHTML = html;
+            showStatus('Filters applied', 'success');
         }
         
         // ============================================
         // DATA ENTRY FUNCTIONS
         // ============================================
         
-        function updateProgress(value) {
-            document.getElementById('progressDisplay').textContent = value + '%';
+        function distributeEvenly() {
+            const total = parseFloat(document.getElementById('totalAmount').value) || 0;
+            const monthly = Math.round(total / 12);
+            
+            document.getElementById('mar26').value = monthly;
+            document.getElementById('apr26').value = monthly;
+            document.getElementById('may26').value = monthly;
+            document.getElementById('jun26').value = monthly;
+            document.getElementById('jul26').value = monthly;
+            document.getElementById('aug26').value = monthly;
+            document.getElementById('sep26').value = monthly;
+            document.getElementById('oct26').value = monthly;
+            document.getElementById('nov26').value = monthly;
+            document.getElementById('dec26').value = monthly;
+            document.getElementById('jan27').value = monthly;
+            document.getElementById('feb27').value = monthly;
+            
+            updateScheduledTotal();
+            showStatus(`Distributed R ${formatNumber(total)} evenly over 12 months`, 'success');
         }
         
-        async function submitForm() {
-            // Validate form
-            const required = ['entryDate', 'projectId', 'projectName', 'projectManager', 'costCenter', 'transactionType', 'description', 'amount'];
+        function updateScheduledTotal() {
+            const months = ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27'];
+            let total = 0;
             
+            months.forEach(m => {
+                total += parseFloat(document.getElementById(m).value) || 0;
+            });
+            
+            document.getElementById('scheduledTotal').innerHTML = formatNumber(total);
+        }
+        
+        // Add event listeners to month inputs
+        document.querySelectorAll('.month-input').forEach(input => {
+            input.addEventListener('input', updateScheduledTotal);
+        });
+        
+        function submitProject() {
+            // Validate form
+            const required = ['projectCategory', 'projectManager', 'projectName', 'totalAmount'];
             for (let field of required) {
-                const element = document.getElementById(field);
-                if (!element || !element.value) {
-                    showStatus(`Please fill in all required fields`, 'error');
-                    if (element) element.focus();
+                if (!document.getElementById(field).value) {
+                    showStatus('Please fill in all required fields', 'error');
                     return;
                 }
             }
             
-            // Validate amount
-            const amount = parseFloat(document.getElementById('amount').value);
-            if (amount <= 0) {
-                showStatus('Amount must be greater than 0', 'error');
-                return;
-            }
-            
-            // Prepare form data
-            const formData = {
-                date: document.getElementById('entryDate').value,
-                projectId: document.getElementById('projectId').value,
-                projectName: document.getElementById('projectName').value,
+            // Get form data
+            const project = {
+                category: document.getElementById('projectCategory').value,
                 manager: document.getElementById('projectManager').value,
-                costCenter: document.getElementById('costCenter').value,
-                transactionType: document.getElementById('transactionType').value,
-                description: document.getElementById('description').value,
-                amount: amount,
-                progress: document.getElementById('progress').value,
-                isProjectUpdate: document.getElementById('isProjectUpdate').checked
+                project: document.getElementById('projectName').value,
+                status: document.getElementById('projectStatus').value,
+                amount: parseFloat(document.getElementById('totalAmount').value),
+                mar26: parseFloat(document.getElementById('mar26').value) || 0,
+                apr26: parseFloat(document.getElementById('apr26').value) || 0,
+                may26: parseFloat(document.getElementById('may26').value) || 0,
+                jun26: parseFloat(document.getElementById('jun26').value) || 0,
+                jul26: parseFloat(document.getElementById('jul26').value) || 0,
+                aug26: parseFloat(document.getElementById('aug26').value) || 0,
+                sep26: parseFloat(document.getElementById('sep26').value) || 0,
+                oct26: parseFloat(document.getElementById('oct26').value) || 0,
+                nov26: parseFloat(document.getElementById('nov26').value) || 0,
+                dec26: parseFloat(document.getElementById('dec26').value) || 0,
+                jan27: parseFloat(document.getElementById('jan27').value) || 0,
+                feb27: parseFloat(document.getElementById('feb27').value) || 0,
+                notes: document.getElementById('projectNotes').value,
+                margin: parseFloat(document.getElementById('margin').value) || 30,
+                retention: parseFloat(document.getElementById('retention').value) || 10
             };
             
-            console.log('Submitting form data:', formData);
+            // Add to projects array
+            projects.push(project);
             
-            // Call web app
-            const result = await callWebApp('submitTransaction', formData);
+            // Refresh displays
+            loadOrderBook();
+            applyFilters();
             
-            if (result.success) {
-                resetForm();
-                await loadInitialData();
-            }
+            // Show success message
+            showStatus('Project saved successfully!', 'success');
+            
+            // Reset form
+            resetForm();
         }
         
         function resetForm() {
-            document.getElementById('dataEntryForm').reset();
-            setDefaultDates();
-            document.getElementById('progress').value = 0;
-            document.getElementById('progressDisplay').textContent = '0%';
-            document.getElementById('isProjectUpdate').checked = false;
+            document.getElementById('projectForm').reset();
+            document.querySelectorAll('.month-input').forEach(i => i.value = 0);
+            document.getElementById('margin').value = 30;
+            document.getElementById('retention').value = 10;
+            updateScheduledTotal();
+        }
+        
+        // ============================================
+        // CHART INITIALIZATION
+        // ============================================
+        
+        function initializeCharts() {
+            // Sector Revenue Chart
+            const ctx1 = document.getElementById('sectorRevenueChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Electrical', 'Telecoms', 'Civil', 'General Buildings', 'Mechanical'],
+                    datasets: [{
+                        data: [131460619, 103100000, 86400000, 91191304, 53420000],
+                        backgroundColor: [
+                            '#ff6b6b',
+                            '#4facfe',
+                            '#43e97b',
+                            '#fa709a',
+                            '#5f0a87'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Sector Profit Chart
+            const ctx2 = document.getElementById('sectorProfitChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Electrical', 'Telecoms', 'Civil', 'General Buildings', 'Mechanical'],
+                    datasets: [{
+                        label: 'Gross Profit',
+                        data: [59157278, 46395000, 17280000, 27357139, 16026000],
+                        backgroundColor: 'rgba(30, 60, 114, 0.8)',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            
+            // Monthly Revenue Chart
+            const ctx3 = document.getElementById('monthlyRevenueChart').getContext('2d');
+            
+            // Calculate monthly totals
+            const months = ['Mar-26', 'Apr-26', 'May-26', 'Jun-26', 'Jul-26', 'Aug-26', 'Sep-26', 'Oct-26', 'Nov-26', 'Dec-26', 'Jan-27', 'Feb-27'];
+            const monthlyTotals = [0,0,0,0,0,0,0,0,0,0,0,0];
+            
+            projects.forEach(p => {
+                monthlyTotals[0] += p.mar26 || 0;
+                monthlyTotals[1] += p.apr26 || 0;
+                monthlyTotals[2] += p.may26 || 0;
+                monthlyTotals[3] += p.jun26 || 0;
+                monthlyTotals[4] += p.jul26 || 0;
+                monthlyTotals[5] += p.aug26 || 0;
+                monthlyTotals[6] += p.sep26 || 0;
+                monthlyTotals[7] += p.oct26 || 0;
+                monthlyTotals[8] += p.nov26 || 0;
+                monthlyTotals[9] += p.dec26 || 0;
+                monthlyTotals[10] += p.jan27 || 0;
+                monthlyTotals[11] += p.feb27 || 0;
+            });
+            
+            new Chart(ctx3, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'On Point',
+                            data: [39556824, 39556824, 39556824, 25290157, 25627918, 25627918, 25627918, 26627918, 17579005, 15203333, 12893333, 12893333],
+                            borderColor: '#1e3c72',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Aqua Telecoms',
+                            data: [19733333, 20886395, 20886395, 21886395, 12486395, 12486395, 10986395, 10986395, 10986395, 10986395, 10986395, 10083333],
+                            borderColor: '#4facfe',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Nkanyezi',
+                            data: [400000, 400000, 2016667, 2016667, 1466667, 900000, 700000, 700000, 700000, 700000, 700000, 700000],
+                            borderColor: '#43e97b',
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Monthly Revenue Distribution'
+                        }
+                    }
+                }
+            });
         }
         
         // ============================================
         // REPORT FUNCTIONS
         // ============================================
         
-        async function generateReport() {
+        function generateFinancialReport() {
             const type = document.getElementById('reportType').value;
-            const date = document.getElementById('reportDate').value;
+            const period = document.getElementById('reportPeriod').value;
+            const format = document.getElementById('reportFormat').value;
             
-            showStatus(`Generating ${type} report...`, 'info');
+            let reportContent = '';
             
-            // Simulate report generation
-            setTimeout(() => {
-                const preview = document.getElementById('reportPreview');
-                
-                let reportHtml = `
-                    <div class="card">
-                        <div class="card-body">
-                            <h4>${type.charAt(0).toUpperCase() + type.slice(1)} Report - ${date}</h4>
-                            <hr>
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Metric</th>
-                                        <th>Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Total Budget</td>
-                                        <td>${formatCurrency(calculateTotals().budget)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total Expenses</td>
-                                        <td>${formatCurrency(calculateTotals().expenses)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total Revenue</td>
-                                        <td>${formatCurrency(calculateTotals().revenue)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Net Profit</td>
-                                        <td>${formatCurrency(calculateTotals().revenue - calculateTotals().expenses)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Average Progress</td>
-                                        <td>${calculateAvgProgress()}%</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            <p class="text-muted mt-3">Generated from Sheet ID: ${CONFIG.spreadsheetId}</p>
-                        </div>
-                    </div>
-                `;
-                
-                preview.innerHTML = reportHtml;
-                showStatus('Report generated successfully', 'success');
-            }, 1500);
+            if (type === 'orderbook') {
+                reportContent = generateOrderBookReport();
+            } else if (type === 'revenue') {
+                reportContent = generateRevenueReport();
+            } else if (type === 'profit') {
+                reportContent = generateProfitReport();
+            } else if (type === 'manager') {
+                reportContent = generateManagerReport();
+            } else if (type === 'monthly') {
+                reportContent = generateMonthlyReport();
+            }
+            
+            if (format === 'html') {
+                document.getElementById('reportPreview').innerHTML = reportContent;
+            } else {
+                showStatus(`Report exported as ${format.toUpperCase()}`, 'success');
+            }
         }
         
-        // ============================================
-        // DASHBOARD REFRESH
-        // ============================================
+        function generateOrderBookReport() {
+            const totalConfirmed = projects.filter(p => p.status === 'Confirmed').reduce((sum, p) => sum + p.amount, 0);
+            const totalForecast = projects.filter(p => p.status === 'Forecast').reduce((sum, p) => sum + p.amount, 0);
+            
+            return `
+                <div class="report-container">
+                    <h3 class="text-center mb-4">Onpoint Group - Order Book Summary</h3>
+                    <p class="text-muted text-center">Generated: ${new Date().toLocaleString()}</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="kpi-card">
+                                <div class="kpi-title">Total Order Book</div>
+                                <div class="kpi-value">R ${formatNumber(totalConfirmed + totalForecast)}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="kpi-card">
+                                <div class="kpi-title">Confirmed</div>
+                                <div class="kpi-value text-success">R ${formatNumber(totalConfirmed)}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="kpi-card">
+                                <div class="kpi-title">Forecast</div>
+                                <div class="kpi-value text-warning">R ${formatNumber(totalForecast)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Confirmed</th>
+                                <th>Forecast</th>
+                                <th>Total</th>
+                                <th>% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${generateCategoryRows()}
+                        </tbody>
+                    </table>
+                    
+                    <div class="mt-4 text-muted">
+                        <small>Report generated from Onpoint Group Financial System</small>
+                    </div>
+                </div>
+            `;
+        }
         
-        function refreshDashboard() {
-            showStatus('Refreshing dashboard...', 'info');
-            updateDashboard();
-            showStatus('Dashboard updated', 'success');
+        function generateCategoryRows() {
+            const categories = [...new Set(projects.map(p => p.category))];
+            let rows = '';
+            const total = projects.reduce((sum, p) => sum + p.amount, 0);
+            
+            categories.forEach(cat => {
+                const catProjects = projects.filter(p => p.category === cat);
+                const confirmed = catProjects.filter(p => p.status === 'Confirmed').reduce((sum, p) => sum + p.amount, 0);
+                const forecast = catProjects.filter(p => p.status === 'Forecast').reduce((sum, p) => sum + p.amount, 0);
+                const catTotal = confirmed + forecast;
+                const percentage = ((catTotal / total) * 100).toFixed(1);
+                
+                rows += `
+                    <tr>
+                        <td><strong>${cat}</strong></td>
+                        <td>R ${formatNumber(confirmed)}</td>
+                        <td>R ${formatNumber(forecast)}</td>
+                        <td>R ${formatNumber(catTotal)}</td>
+                        <td>${percentage}%</td>
+                    </tr>
+                `;
+            });
+            
+            return rows;
+        }
+        
+        function generateRevenueReport() {
+            return `
+                <div class="report-container">
+                    <h3 class="text-center mb-4">Onpoint Group - Revenue Analysis</h3>
+                    <p class="text-muted text-center">Generated: ${new Date().toLocaleString()}</p>
+                    
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Sector</th>
+                                <th>Revenue</th>
+                                <th>Margin %</th>
+                                <th>Gross Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Electrical</td>
+                                <td>R 131,460,619</td>
+                                <td>45%</td>
+                                <td>R 59,157,278</td>
+                            </tr>
+                            <tr>
+                                <td>Telecoms</td>
+                                <td>R 103,100,000</td>
+                                <td>45%</td>
+                                <td>R 46,395,000</td>
+                            </tr>
+                            <tr>
+                                <td>Civil</td>
+                                <td>R 86,400,000</td>
+                                <td>20%</td>
+                                <td>R 17,280,000</td>
+                            </tr>
+                            <tr>
+                                <td>General Buildings</td>
+                                <td>R 91,191,304</td>
+                                <td>30%</td>
+                                <td>R 27,357,391</td>
+                            </tr>
+                            <tr>
+                                <td>Mechanical</td>
+                                <td>R 53,420,000</td>
+                                <td>30%</td>
+                                <td>R 16,026,000</td>
+                            </tr>
+                            <tr class="table-primary">
+                                <td><strong>TOTAL</strong></td>
+                                <td><strong>R 465,571,923</strong></td>
+                                <td><strong>36%</strong></td>
+                                <td><strong>R 166,215,669</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-info mt-4">
+                        <h6>Key Insights:</h6>
+                        <ul>
+                            <li>Electrical & Telecoms are highest margin sectors at 45%</li>
+                            <li>Civil sector margins at 20% - opportunity for improvement</li>
+                            <li>Overall GP Margin: 36%</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
         }
         
         // ============================================
         // UTILITY FUNCTIONS
         // ============================================
         
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(amount || 0);
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-ZA').format(Math.round(num));
+        }
+        
+        function showStatus(message, type) {
+            // Remove existing status
+            const existing = document.querySelector('.status-message');
+            if (existing) existing.remove();
+            
+            // Create new status
+            const status = document.createElement('div');
+            status.className = `status-message status-${type}`;
+            status.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 
+                              type === 'error' ? 'fa-exclamation-circle' : 
+                              'fa-info-circle'} me-2"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(status);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => status.remove(), 3000);
         }
         
         function showLoading() {
@@ -1087,39 +1728,6 @@
         function hideLoading() {
             document.getElementById('loadingOverlay').style.display = 'none';
         }
-        
-        function showStatus(message, type) {
-            // Remove existing status messages
-            const existing = document.querySelector('.status-message');
-            if (existing) existing.remove();
-            
-            // Create new status message
-            const status = document.createElement('div');
-            status.className = `status-message status-${type}`;
-            status.innerHTML = `
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 
-                              type === 'error' ? 'fa-exclamation-circle' : 
-                              'fa-info-circle'}"></i>
-                ${message}
-            `;
-            
-            document.body.appendChild(status);
-            
-            // Auto remove after 3 seconds
-            setTimeout(() => {
-                if (status.parentNode) {
-                    status.remove();
-                }
-            }, 3000);
-        }
-        
-        // Auto-populate Project ID when project name is selected
-        document.getElementById('projectName')?.addEventListener('change', function(e) {
-            const selected = e.target.selectedOptions[0];
-            if (selected && selected.getAttribute('data-id')) {
-                document.getElementById('projectId').value = selected.getAttribute('data-id');
-            }
-        });
     </script>
 </body>
 </html>
