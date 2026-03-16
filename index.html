@@ -35,7 +35,6 @@
             margin: 0 auto;
         }
         
-        /* Header */
         .company-header {
             background: white;
             border-radius: 20px;
@@ -105,7 +104,6 @@
             display: inline-block;
         }
         
-        /* Navigation */
         .nav-custom {
             background: white;
             border-radius: 15px;
@@ -146,7 +144,6 @@
             margin-right: 8px;
         }
         
-        /* Cards */
         .card {
             border: none;
             border-radius: 15px;
@@ -175,7 +172,6 @@
             border-bottom: 2px solid var(--primary);
         }
         
-        /* KPI Cards */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -205,7 +201,6 @@
             letter-spacing: 1px;
         }
         
-        /* Tables */
         .table-container {
             background: white;
             border-radius: 15px;
@@ -253,7 +248,6 @@
             display: inline-block;
         }
         
-        /* Forms */
         .form-container {
             background: white;
             border-radius: 20px;
@@ -281,7 +275,6 @@
             outline: none;
         }
         
-        /* Report Section */
         .report-section {
             background: white;
             border-radius: 15px;
@@ -358,7 +351,6 @@
         .sector-card.roads { border-left-color: #fcb045; }
         .sector-card.mechanical { border-left-color: #5f0a87; }
         
-        /* Status Messages */
         .status-message {
             position: fixed;
             top: 20px;
@@ -589,6 +581,7 @@
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
+        <div style="margin-top: 20px; color: var(--primary); font-weight: 600;" id="loadingMessage">Loading data from Google Sheets...</div>
     </div>
     
     <!-- Main Container -->
@@ -1029,24 +1022,9 @@
     
     <script>
         // ============================================
-        // CONFIGURATION - YOUR GOOGLE APPS SCRIPT URL
+        // CONFIGURATION
         // ============================================
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzutcqBaH3-KDzJlAAIDvMpjEDSq2KnNFFXEVJTdB6i56ksUYtT2WrqE50jwS9YtqUbxA/exec';
-        
-        // ============================================
-        // GOOGLE SHEETS CONFIGURATION
-        // ============================================
-        const CONFIG = {
-            spreadsheetId: '1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ',
-            sheetName: 'Financials Managers',
-            driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
-        };
-        
-        console.log('On Point Group System Initializing...');
-        console.log('Script URL:', SCRIPT_URL);
-        console.log('Spreadsheet ID:', CONFIG.spreadsheetId);
-        console.log('Sheet Name:', CONFIG.sheetName);
-        console.log('Drive Folder ID:', CONFIG.driveFolderId);
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwmfmCfb7Pq-R6Lv4ijdF5k89isPx9rDtiK5HhKSzoDZtKEFWjfQxl_z1d4TsE6_Ftz/exec';
         
         // ============================================
         // GLOBAL VARIABLES
@@ -1074,35 +1052,35 @@
         };
         
         // ============================================
-        // API CALL FUNCTION - Uses Fetch API with JSONP approach
+        // API CALL FUNCTION - FIXED for proper response handling
         // ============================================
         async function callAppsScript(action, data = {}) {
-            const payload = {
-                action: action,
-                data: data,
-                config: CONFIG
-            };
+            console.log(`Calling action: ${action}`, data);
             
-            // For GET requests to fetch data, we'll use a different approach
-            if (action === 'getProjects') {
+            // For GET requests (fetching data)
+            if (action === 'getProjects' || action === 'testConnection' || action === 'getDashboardData') {
                 return new Promise((resolve, reject) => {
-                    // Create a unique callback name
-                    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                    const callbackName = 'jsonp_callback_' + Date.now();
                     
                     // Create script element
                     const script = document.createElement('script');
                     
                     // Build URL with parameters
                     const url = new URL(SCRIPT_URL);
-                    url.searchParams.append('action', 'getProjects');
+                    url.searchParams.append('action', action);
                     url.searchParams.append('callback', callbackName);
-                    url.searchParams.append('spreadsheetId', CONFIG.spreadsheetId);
-                    url.searchParams.append('sheetName', CONFIG.sheetName);
+                    if (Object.keys(data).length > 0) {
+                        url.searchParams.append('data', JSON.stringify(data));
+                    }
+                    
+                    console.log('Fetching from URL:', url.toString());
                     
                     // Define callback function
                     window[callbackName] = function(response) {
+                        console.log('JSONP response received:', response);
                         delete window[callbackName];
                         document.body.removeChild(script);
+                        
                         if (response && response.success) {
                             resolve(response);
                         } else {
@@ -1111,33 +1089,51 @@
                     };
                     
                     // Handle errors
-                    script.onerror = function() {
+                    script.onerror = function(error) {
+                        console.error('Script error:', error);
                         delete window[callbackName];
                         document.body.removeChild(script);
-                        reject(new Error('Network error'));
+                        reject(new Error('Network error - please check if the script is deployed correctly'));
                     };
                     
                     // Set script source
                     script.src = url.toString();
                     document.body.appendChild(script);
+                    
+                    // Timeout after 15 seconds
+                    setTimeout(() => {
+                        if (window[callbackName]) {
+                            console.error('JSONP timeout');
+                            delete window[callbackName];
+                            document.body.removeChild(script);
+                            reject(new Error('Request timeout - please try again'));
+                        }
+                    }, 15000);
                 });
             } else {
-                // For POST requests (saving data), use fetch with no-cors
+                // For POST requests (saving data)
                 try {
+                    const formData = new URLSearchParams();
+                    formData.append('action', action);
+                    formData.append('payload', JSON.stringify({
+                        action: action,
+                        data: data
+                    }));
+                    
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: {
-                            'Content-Type': 'application/json',
+                            'Content-Type': 'application/x-www-form-urlencoded',
                         },
-                        body: JSON.stringify(payload)
+                        body: formData
                     });
                     
-                    console.log('Request sent successfully:', action);
+                    console.log('POST request sent successfully:', action);
                     return { success: true };
                     
                 } catch (error) {
-                    console.error('API call failed:', error);
+                    console.error('POST request failed:', error);
                     return { success: false, error: error.message };
                 }
             }
@@ -1155,7 +1151,6 @@
             // Small delay to ensure DOM is fully loaded
             setTimeout(function() {
                 testConnection();
-                loadProjectsFromSheet();
             }, 100);
             
             // Set default active tab
@@ -1181,7 +1176,7 @@
             if (status === 'connected') {
                 statusElement.classList.add('status-connected');
                 statusElement.innerHTML = '<i class="fas fa-check-circle me-2"></i> ' + message;
-                detailsElement.innerHTML = '<i class="fas fa-database"></i> Connected to Google Sheets • Auto-backup enabled';
+                detailsElement.innerHTML = '<i class="fas fa-database"></i> Connected to Google Sheets • ' + projects.length + ' projects loaded';
             } else if (status === 'disconnected') {
                 statusElement.classList.add('status-disconnected');
                 statusElement.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + message;
@@ -1203,14 +1198,19 @@
             
             try {
                 const result = await callAppsScript('testConnection');
-                if (result.success) {
+                console.log('Connection test result:', result);
+                
+                if (result && result.success) {
                     updateConnectionStatus('connected', 'Connected to Google Sheets');
+                    // Load projects after successful connection
+                    loadProjectsFromSheet();
                 } else {
-                    updateConnectionStatus('disconnected', 'Connection unavailable');
+                    throw new Error('Connection test failed');
                 }
             } catch (error) {
                 console.error('Connection error:', error);
                 updateConnectionStatus('disconnected', 'Connection unavailable');
+                showStatus('Could not connect to Google Sheets. Please check deployment.', 'error');
             }
         }
         
@@ -1220,72 +1220,175 @@
             
             try {
                 const result = await callAppsScript('getProjects');
+                console.log('Projects data received:', result);
                 
-                if (result && result.success && result.data) {
+                if (result && result.success) {
                     // Parse the data from Google Sheets
                     projects = parseSheetData(result.data);
                     filteredProjects = [...projects];
-                    updateConnectionStatus('connected', 'Connected to Google Sheets');
+                    
+                    console.log(`Parsed ${projects.length} projects`);
+                    
+                    if (projects.length > 0) {
+                        updateConnectionStatus('connected', 'Connected to Google Sheets');
+                        showStatus(`Loaded ${projects.length} projects from Google Sheets`, 'success');
+                    } else {
+                        updateConnectionStatus('connected', 'Connected to Google Sheets');
+                        showStatus('No projects found in Google Sheets. Add your first project!', 'info');
+                    }
+                    
                     updateAllViews();
-                    showStatus('Data loaded from Google Sheets', 'success');
                 } else {
-                    throw new Error('No data received');
+                    throw new Error(result?.error || 'No data received');
                 }
             } catch (error) {
                 console.error('Error loading projects from sheet:', error);
-                updateConnectionStatus('disconnected', 'No connection to Google Sheets');
+                updateConnectionStatus('disconnected', 'Failed to load data');
                 
                 // Clear any existing data
                 projects = [];
                 filteredProjects = [];
                 updateAllViews();
                 
-                showStatus('Could not load data from Google Sheets', 'error');
+                showStatus('Could not load data from Google Sheets: ' + error.message, 'error');
             } finally {
                 hideLoading();
             }
         }
         
-        // Parse sheet data into project objects
+        // Parse sheet data into project objects - FIXED to match actual sheet structure
         function parseSheetData(data) {
             const projects = [];
             
-            // Skip header row if present
-            const startRow = data[0] && data[0][0] === 'Category' ? 1 : 0;
+            if (!data) {
+                console.log('No data received');
+                return projects;
+            }
             
-            for (let i = startRow; i < data.length; i++) {
-                const row = data[i];
-                if (row && row.length >= 5) { // Minimum required columns
-                    const project = {
-                        category: row[0] || '',
-                        manager: row[1] || '',
-                        project: row[2] || '',
-                        status: row[3] || 'Forecast',
-                        amount: parseFloat(row[4]) || 0,
-                        margin: parseFloat(row[5]) || margins[row[0]] || 30,
-                        retention: parseFloat(row[6]) || 10,
-                        mar26: parseFloat(row[7]) || 0,
-                        apr26: parseFloat(row[8]) || 0,
-                        may26: parseFloat(row[9]) || 0,
-                        jun26: parseFloat(row[10]) || 0,
-                        jul26: parseFloat(row[11]) || 0,
-                        aug26: parseFloat(row[12]) || 0,
-                        sep26: parseFloat(row[13]) || 0,
-                        oct26: parseFloat(row[14]) || 0,
-                        nov26: parseFloat(row[15]) || 0,
-                        dec26: parseFloat(row[16]) || 0,
-                        jan27: parseFloat(row[17]) || 0,
-                        feb27: parseFloat(row[18]) || 0,
-                        notes: row[19] || ''
-                    };
-                    
-                    // Only add if it has required fields
-                    if (project.category && project.manager && project.project && project.amount > 0) {
-                        projects.push(project);
-                    }
+            console.log('Parsing data:', data);
+            
+            // Handle different data formats
+            let rows = [];
+            
+            if (Array.isArray(data)) {
+                rows = data;
+                console.log('Data is array with', rows.length, 'rows');
+            } else if (data.values && Array.isArray(data.values)) {
+                rows = data.values;
+                console.log('Data has values array with', rows.length, 'rows');
+            } else if (typeof data === 'object') {
+                // If data is already an object with project properties
+                if (data.category || data.manager || data.project) {
+                    console.log('Data is single project object');
+                    projects.push(data);
+                    return projects;
+                }
+                // Try to convert object to array
+                try {
+                    rows = Object.values(data);
+                    console.log('Converted object to array with', rows.length, 'items');
+                } catch (e) {
+                    console.error('Could not convert data to array:', e);
+                    return projects;
+                }
+            } else if (typeof data === 'string') {
+                try {
+                    rows = JSON.parse(data);
+                    console.log('Parsed JSON string with', rows.length, 'rows');
+                } catch (e) {
+                    console.error('Failed to parse JSON string:', e);
+                    return projects;
+                }
+            } else {
+                console.error('Unexpected data format:', typeof data);
+                return projects;
+            }
+            
+            // Skip header row if present (check if first row contains headers)
+            let startRow = 0;
+            if (rows.length > 0 && rows[0] && Array.isArray(rows[0])) {
+                const firstRow = rows[0];
+                if (firstRow[0] === 'Timestamp' || 
+                    firstRow[0] === 'timestamp' ||
+                    (typeof firstRow[0] === 'string' && firstRow[0].toLowerCase().includes('timestamp'))) {
+                    startRow = 1;
+                    console.log('Skipping header row');
                 }
             }
             
+            // Parse data rows
+            for (let i = startRow; i < rows.length; i++) {
+                const row = rows[i];
+                
+                // Handle if row is an object (not array)
+                if (row && typeof row === 'object' && !Array.isArray(row)) {
+                    // Row is already an object with properties
+                    const project = {
+                        category: row.category || row[2] || '',
+                        manager: row.manager || row[3] || '',
+                        project: row.project || row[4] || '',
+                        status: row.status || row[5] || 'Confirmed',
+                        amount: parseFloat(row.amount || row[6]) || 0,
+                        margin: parseFloat(row.margin || row[7]) || 30,
+                        retention: parseFloat(row.retention || row[8]) || 10,
+                        notes: row.notes || row[9] || '',
+                        mar26: parseFloat(row.mar26 || row[10]) || 0,
+                        apr26: parseFloat(row.apr26 || row[11]) || 0,
+                        may26: parseFloat(row.may26 || row[12]) || 0,
+                        jun26: parseFloat(row.jun26 || row[13]) || 0,
+                        jul26: parseFloat(row.jul26 || row[14]) || 0,
+                        aug26: parseFloat(row.aug26 || row[15]) || 0,
+                        sep26: parseFloat(row.sep26 || row[16]) || 0,
+                        oct26: parseFloat(row.oct26 || row[17]) || 0,
+                        nov26: parseFloat(row.nov26 || row[18]) || 0,
+                        dec26: parseFloat(row.dec26 || row[19]) || 0,
+                        jan27: parseFloat(row.jan27 || row[20]) || 0,
+                        feb27: parseFloat(row.feb27 || row[21]) || 0
+                    };
+                    
+                    if (project.category && project.manager && project.project) {
+                        projects.push(project);
+                    }
+                    continue;
+                }
+                
+                // Handle array row
+                if (!row || !Array.isArray(row) || row.length < 5) continue;
+                
+                try {
+                    const project = {
+                        category: row[2] || '',      // Column C - Category
+                        manager: row[3] || '',        // Column D - Project Manager
+                        project: row[4] || '',        // Column E - Project Name
+                        status: row[5] || 'Confirmed', // Column F - Status
+                        amount: parseFloat(row[6]) || 0,  // Column G - Total Amount
+                        margin: parseFloat(row[7]) || 30, // Column H - Margin %
+                        retention: parseFloat(row[8]) || 10, // Column I - Retention %
+                        notes: row[9] || '',           // Column J - Notes
+                        mar26: parseFloat(row[10]) || 0, // Column K - Mar-26
+                        apr26: parseFloat(row[11]) || 0, // Column L - Apr-26
+                        may26: parseFloat(row[12]) || 0, // Column M - May-26
+                        jun26: parseFloat(row[13]) || 0, // Column N - Jun-26
+                        jul26: parseFloat(row[14]) || 0, // Column O - Jul-26
+                        aug26: parseFloat(row[15]) || 0, // Column P - Aug-26
+                        sep26: parseFloat(row[16]) || 0, // Column Q - Sep-26
+                        oct26: parseFloat(row[17]) || 0, // Column R - Oct-26
+                        nov26: parseFloat(row[18]) || 0, // Column S - Nov-26
+                        dec26: parseFloat(row[19]) || 0, // Column T - Dec-26
+                        jan27: parseFloat(row[20]) || 0, // Column U - Jan-27
+                        feb27: parseFloat(row[21]) || 0  // Column V - Feb-27
+                    };
+                    
+                    // Only add if it has required fields
+                    if (project.category && project.manager && project.project) {
+                        projects.push(project);
+                    }
+                } catch (e) {
+                    console.error('Error parsing row', i, e);
+                }
+            }
+            
+            console.log(`Parsed ${projects.length} valid projects`);
             return projects;
         }
         
@@ -1632,17 +1735,22 @@
                 feb27: parseFloat(document.getElementById('feb27').value) || 0
             };
             
+            console.log('Submitting project:', project);
             showLoading();
             
             try {
                 const result = await callAppsScript('submitProject', project);
-                if (result.success) {
-                    // Reload data from sheet to ensure consistency
-                    await loadProjectsFromSheet();
-                    resetForm();
+                console.log('Submit result:', result);
+                
+                if (result && result.success) {
                     showStatus('Project saved to Google Sheets!', 'success');
+                    // Wait a moment then reload data
+                    setTimeout(() => {
+                        loadProjectsFromSheet();
+                        resetForm();
+                    }, 1000);
                 } else {
-                    showStatus('Error saving: ' + (result.error || 'Unknown error'), 'error');
+                    showStatus('Error saving: ' + (result?.error || 'Unknown error'), 'error');
                 }
             } catch (error) {
                 console.error('Error:', error);
