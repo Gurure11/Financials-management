@@ -27,6 +27,7 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             padding: 20px;
+            margin: 0;
         }
         
         .main-container {
@@ -38,7 +39,7 @@
         .company-header {
             background: white;
             border-radius: 20px;
-            padding: 30px;
+            padding: 25px 30px;
             margin-bottom: 25px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
             border-bottom: 4px solid var(--primary);
@@ -54,7 +55,7 @@
         
         .company-subtitle {
             color: #6c757d;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 400;
         }
         
@@ -65,6 +66,7 @@
             border-radius: 50px;
             font-size: 14px;
             font-weight: 600;
+            display: inline-block;
         }
         
         /* Navigation */
@@ -76,15 +78,29 @@
             box-shadow: 0 5px 20px rgba(0,0,0,0.1);
         }
         
+        .nav-custom .nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
         .nav-custom .nav-link {
             color: #6c757d;
             padding: 12px 25px;
             border-radius: 10px;
             font-weight: 600;
             transition: all 0.3s;
+            border: none;
+            background: transparent;
+            cursor: pointer;
         }
         
-        .nav-custom .nav-link:hover,
+        .nav-custom .nav-link:hover {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+        
         .nav-custom .nav-link.active {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
@@ -100,6 +116,7 @@
             border-radius: 15px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.08);
             margin-bottom: 25px;
+            background: white;
         }
         
         .card-header {
@@ -109,16 +126,23 @@
             padding: 15px 20px;
             font-weight: 600;
             font-size: 16px;
+            border: none;
         }
         
         .card-header i {
             margin-right: 10px;
         }
         
+        .card-header.bg-light {
+            background: #f8f9fa !important;
+            color: var(--dark);
+            border-bottom: 2px solid var(--primary);
+        }
+        
         /* KPI Cards */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             margin-bottom: 25px;
         }
@@ -135,6 +159,7 @@
             font-size: 28px;
             font-weight: 700;
             color: var(--dark);
+            margin: 5px 0;
         }
         
         .kpi-label {
@@ -155,6 +180,7 @@
         .table {
             margin-bottom: 0;
             font-size: 14px;
+            width: 100%;
         }
         
         .table thead th {
@@ -168,6 +194,7 @@
         .table tbody td {
             padding: 10px 12px;
             vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
         }
         
         .badge-confirmed {
@@ -177,6 +204,7 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
+            display: inline-block;
         }
         
         .badge-forecast {
@@ -186,6 +214,7 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 600;
+            display: inline-block;
         }
         
         /* Forms */
@@ -207,11 +236,13 @@
             border-radius: 10px;
             padding: 10px 15px;
             font-size: 14px;
+            width: 100%;
         }
         
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
             box-shadow: 0 0 0 0.2rem rgba(30, 60, 114, 0.25);
+            outline: none;
         }
         
         /* Report Section */
@@ -233,12 +264,14 @@
             color: var(--primary);
             font-size: 32px;
             font-weight: 700;
+            margin: 0;
         }
         
         .report-header h3 {
             color: #6c757d;
             font-size: 18px;
             font-weight: 400;
+            margin: 5px 0 0;
         }
         
         .report-metrics {
@@ -300,6 +333,7 @@
             font-weight: 600;
             z-index: 9999;
             animation: slideIn 0.3s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         }
         
         @keyframes slideIn {
@@ -344,6 +378,10 @@
             padding: 10px 25px;
             border-radius: 10px;
             font-weight: 600;
+            color: white;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
         }
         
         .btn-primary:hover {
@@ -351,9 +389,141 @@
             box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
         }
         
-        @media print {
-            .no-print { display: none; }
-            .print-only { display: block; }
+        .btn-outline-primary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-outline-secondary {
+            background: transparent;
+            border: 2px solid #6c757d;
+            color: #6c757d;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+        }
+        
+        .text-end {
+            text-align: right;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-danger { color: #dc3545; }
+        .text-success { color: #28a745; }
+        .text-muted { color: #6c757d; }
+        
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-3 { margin-top: 1rem; }
+        .mt-4 { margin-top: 1.5rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-4 { margin-bottom: 1.5rem; }
+        .me-2 { margin-right: 0.5rem; }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -12px;
+        }
+        
+        .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-lg-4, .col-lg-6, .col-lg-8 {
+            padding: 0 12px;
+            box-sizing: border-box;
+        }
+        
+        .col-md-3 { width: 25%; }
+        .col-md-4 { width: 33.333%; }
+        .col-md-6 { width: 50%; }
+        .col-md-8 { width: 66.667%; }
+        .col-lg-4 { width: 33.333%; }
+        .col-lg-6 { width: 50%; }
+        .col-lg-8 { width: 66.667%; }
+        
+        @media (max-width: 768px) {
+            .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-lg-4, .col-lg-6, .col-lg-8 {
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            
+            .company-title {
+                font-size: 32px;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .report-metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .d-flex {
+            display: flex;
+        }
+        
+        .justify-content-between {
+            justify-content: space-between;
+        }
+        
+        .align-items-center {
+            align-items: center;
+        }
+        
+        .gap-2 {
+            gap: 0.5rem;
+        }
+        
+        .w-100 {
+            width: 100%;
+        }
+        
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .no-print {
+            @media print {
+                display: none;
+            }
+        }
+        
+        hr {
+            border: none;
+            border-top: 1px solid #dee2e6;
+            margin: 1rem 0;
         }
     </style>
 </head>
@@ -389,28 +559,20 @@
         
         <!-- Navigation -->
         <div class="nav-custom no-print">
-            <ul class="nav nav-pills justify-content-center" id="mainTabs">
-                <li class="nav-item">
-                    <button class="nav-link active" onclick="showTab('dashboard')">
-                        <i class="fas fa-chart-pie"></i> Dashboard
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" onclick="showTab('orderbook')">
-                        <i class="fas fa-book"></i> Order Book
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" onclick="showTab('dataentry')">
-                        <i class="fas fa-edit"></i> Data Entry
-                    </button>
-                </li>
-                <li class="nav-item">
-                    <button class="nav-link" onclick="showTab('financial')">
-                        <i class="fas fa-file-invoice-dollar"></i> Financial Report
-                    </button>
-                </li>
-            </ul>
+            <div class="nav">
+                <button class="nav-link active" onclick="showTab('dashboard', this)">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </button>
+                <button class="nav-link" onclick="showTab('orderbook', this)">
+                    <i class="fas fa-book"></i> Order Book
+                </button>
+                <button class="nav-link" onclick="showTab('dataentry', this)">
+                    <i class="fas fa-edit"></i> Data Entry
+                </button>
+                <button class="nav-link" onclick="showTab('financial', this)">
+                    <i class="fas fa-file-invoice-dollar"></i> Financial Report
+                </button>
+            </div>
         </div>
         
         <!-- Dashboard Tab -->
@@ -547,7 +709,7 @@
                     <div class="form-container">
                         <h4 class="mb-4"><i class="fas fa-pen"></i> Project Data Entry</h4>
                         
-                        <form id="projectForm">
+                        <form id="projectForm" onsubmit="event.preventDefault();">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Category *</label>
@@ -563,7 +725,7 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Project Manager *</label>
-                                    <input type="text" class="form-control" id="projectManager" list="managersList" required>
+                                    <input type="text" class="form-control" id="projectManager" list="managersList" required placeholder="Type or select manager">
                                     <datalist id="managersList"></datalist>
                                 </div>
                             </div>
@@ -571,7 +733,7 @@
                             <div class="row">
                                 <div class="col-md-8 mb-3">
                                     <label class="form-label">Project Name *</label>
-                                    <input type="text" class="form-control" id="projectName" required>
+                                    <input type="text" class="form-control" id="projectName" required placeholder="Enter project name">
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Status *</label>
@@ -585,15 +747,15 @@
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Total Amount (R) *</label>
-                                    <input type="number" class="form-control" id="totalAmount" step="1000" required>
+                                    <input type="number" class="form-control" id="totalAmount" step="1000" min="0" required placeholder="e.g., 28400000">
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Margin %</label>
-                                    <input type="number" class="form-control" id="margin" step="0.1" value="30">
+                                    <input type="number" class="form-control" id="margin" step="0.1" min="0" max="100" value="30">
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Retention %</label>
-                                    <input type="number" class="form-control" id="retention" step="0.1" value="10">
+                                    <input type="number" class="form-control" id="retention" step="0.1" min="0" max="20" value="10">
                                 </div>
                             </div>
                             
@@ -605,51 +767,51 @@
                                     <div class="row">
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Mar-26</label>
-                                            <input type="number" class="form-control month-input" id="mar26" value="0">
+                                            <input type="number" class="form-control month-input" id="mar26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Apr-26</label>
-                                            <input type="number" class="form-control month-input" id="apr26" value="0">
+                                            <input type="number" class="form-control month-input" id="apr26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">May-26</label>
-                                            <input type="number" class="form-control month-input" id="may26" value="0">
+                                            <input type="number" class="form-control month-input" id="may26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Jun-26</label>
-                                            <input type="number" class="form-control month-input" id="jun26" value="0">
+                                            <input type="number" class="form-control month-input" id="jun26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Jul-26</label>
-                                            <input type="number" class="form-control month-input" id="jul26" value="0">
+                                            <input type="number" class="form-control month-input" id="jul26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Aug-26</label>
-                                            <input type="number" class="form-control month-input" id="aug26" value="0">
+                                            <input type="number" class="form-control month-input" id="aug26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Sep-26</label>
-                                            <input type="number" class="form-control month-input" id="sep26" value="0">
+                                            <input type="number" class="form-control month-input" id="sep26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Oct-26</label>
-                                            <input type="number" class="form-control month-input" id="oct26" value="0">
+                                            <input type="number" class="form-control month-input" id="oct26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Nov-26</label>
-                                            <input type="number" class="form-control month-input" id="nov26" value="0">
+                                            <input type="number" class="form-control month-input" id="nov26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Dec-26</label>
-                                            <input type="number" class="form-control month-input" id="dec26" value="0">
+                                            <input type="number" class="form-control month-input" id="dec26" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Jan-27</label>
-                                            <input type="number" class="form-control month-input" id="jan27" value="0">
+                                            <input type="number" class="form-control month-input" id="jan27" value="0" min="0" step="1000">
                                         </div>
                                         <div class="col-md-3 mb-2">
                                             <label class="form-label">Feb-27</label>
-                                            <input type="number" class="form-control month-input" id="feb27" value="0">
+                                            <input type="number" class="form-control month-input" id="feb27" value="0" min="0" step="1000">
                                         </div>
                                     </div>
                                     
@@ -668,7 +830,7 @@
                             
                             <div class="mb-3">
                                 <label class="form-label">Notes / Comments</label>
-                                <textarea class="form-control" id="projectNotes" rows="2"></textarea>
+                                <textarea class="form-control" id="projectNotes" rows="2" placeholder="Add any notes or comments..."></textarea>
                             </div>
                             
                             <div class="d-grid gap-2">
@@ -676,7 +838,7 @@
                                     <i class="fas fa-save"></i> Save Project
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary" onclick="resetForm()">
-                                    <i class="fas fa-undo"></i> Reset
+                                    <i class="fas fa-undo"></i> Reset Form
                                 </button>
                             </div>
                         </form>
@@ -710,7 +872,7 @@
                     </div>
                 </div>
                 
-                <!-- Order Book Table - Exact format from spreadsheet -->
+                <!-- Order Book Table -->
                 <div class="table-container mt-4">
                     <table class="table table-bordered" id="financialReportTable">
                         <thead>
@@ -740,7 +902,6 @@
                             <tr><td colspan="19" class="text-center">Loading...</td></tr>
                         </tbody>
                         <tfoot id="financialReportFooter" style="font-weight: bold; background: #f8f9fa;">
-                            <!-- Totals will be inserted here -->
                         </tfoot>
                     </table>
                 </div>
@@ -777,7 +938,6 @@
                             </div>
                             <div class="card-body">
                                 <div class="sector-grid" id="sectorProfitGrid">
-                                    <!-- Populated by JavaScript -->
                                 </div>
                             </div>
                         </div>
@@ -831,42 +991,67 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateCurrentDate();
             initializeDropdowns();
-            loadSampleData(); // In production, this would load from Google Sheets
-            showTab('dashboard');
+            testConnection();
+            loadProjectsFromSheet();
+            showTab('dashboard', document.querySelector('.nav-link'));
+            
+            // Add event listeners for month inputs
+            document.querySelectorAll('.month-input').forEach(input => {
+                input.addEventListener('input', updateScheduledTotal);
+            });
         });
         
-        function updateCurrentDate() {
-            const options = { year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('currentDate').innerHTML = new Date().toLocaleDateString('en-ZA', options);
-            document.getElementById('reportDate').innerHTML = new Date().toLocaleString('en-ZA');
+        function testConnection() {
+            showLoading();
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        console.log('Connected to:', result.spreadsheetUrl);
+                        hideLoading();
+                    } else {
+                        console.error('Connection failed:', result.error);
+                        loadSampleData();
+                        hideLoading();
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Connection error:', error);
+                    loadSampleData();
+                    hideLoading();
+                })
+                .testConnection();
         }
         
-        function initializeDropdowns() {
-            // Category filter
-            const catFilter = document.getElementById('categoryFilter');
-            categories.forEach(c => {
-                catFilter.innerHTML += `<option value="${c}">${c}</option>`;
-            });
+        function loadProjectsFromSheet() {
+            showLoading();
             
-            // Manager filter
-            const mgrFilter = document.getElementById('managerFilter');
-            managers.forEach(m => {
-                mgrFilter.innerHTML += `<option value="${m}">${m}</option>`;
-            });
-            
-            // Manager datalist
-            const mgrList = document.getElementById('managersList');
-            managers.forEach(m => {
-                mgrList.innerHTML += `<option value="${m}">`;
-            });
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success && result.projects && result.projects.length > 0) {
+                        projects = result.projects;
+                        filteredProjects = [...projects];
+                        updateAllViews();
+                        showStatus('Data loaded from Google Sheets', 'success');
+                    } else {
+                        loadSampleData();
+                        showStatus('Using sample data', 'info');
+                    }
+                    hideLoading();
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error loading projects:', error);
+                    loadSampleData();
+                    hideLoading();
+                })
+                .getProjects();
         }
         
         // ============================================
-        // SAMPLE DATA (Matches your spreadsheet)
+        // SAMPLE DATA (Fallback)
         // ============================================
         function loadSampleData() {
             projects = [
-                // On Point On Time
                 {category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, margin: 45,
                  mar26: 7666667, apr26: 7666667, may26: 7666667, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
                 {category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20,
@@ -879,22 +1064,14 @@
                  mar26: 8373913, apr26: 8373913, may26: 8373913, jun26: 8373913, jul26: 8373913, aug26: 8373913, sep26: 8373913, oct26: 8373913, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
                 {category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Forecast', amount: 25565217, margin: 30,
                  mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
-                
-                // Aqua Telecoms
                 {category: 'Electrical', manager: 'Stanley', project: 'Stellenbosh', status: 'Confirmed', amount: 10034021, margin: 45,
                  mar26: 0, apr26: 903062, may26: 903062, jun26: 903062, jul26: 903062, aug26: 903062, sep26: 903062, oct26: 903062, nov26: 903062, dec26: 903062, jan27: 903062, feb27: 0},
                 {category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Confirmed', amount: 22000000, margin: 45,
                  mar26: 5500000, apr26: 5500000, may26: 5500000, jun26: 5500000, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
                 {category: 'Telecoms', manager: 'Tinotenda', project: 'Telkom', status: 'Confirmed', amount: 18000000, margin: 45,
                  mar26: 1500000, apr26: 1500000, may26: 1500000, jun26: 1500000, jul26: 1500000, aug26: 1500000, sep26: 1500000, oct26: 1500000, nov26: 1500000, dec26: 1500000, jan27: 1500000, feb27: 1500000},
-                {category: 'Telecoms', manager: 'Sydney', project: 'Telkom', status: 'Confirmed', amount: 30000000, margin: 45,
-                 mar26: 2500000, apr26: 2500000, may26: 2500000, jun26: 2500000, jul26: 2500000, aug26: 2500000, sep26: 2500000, oct26: 2500000, nov26: 2500000, dec26: 2500000, jan27: 2500000, feb27: 2500000},
-                
-                // Nkanyezi
                 {category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
-                 mar26: 300000, apr26: 300000, may26: 300000, jun26: 300000, jul26: 300000, aug26: 300000, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
-                {category: 'General Buildings', manager: 'Moeti', project: 'COE Buildings', status: 'Confirmed', amount: 3000000, margin: 30,
-                 mar26: 0, apr26: 0, may26: 566667, jun26: 566667, jul26: 566667, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0}
+                 mar26: 300000, apr26: 300000, may26: 300000, jun26: 300000, jul26: 300000, aug26: 300000, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0}
             ];
             
             filteredProjects = [...projects];
@@ -902,13 +1079,48 @@
         }
         
         // ============================================
-        // UPDATE ALL VIEWS
+        // UPDATE FUNCTIONS
         // ============================================
         function updateAllViews() {
             updateDashboard();
             updateOrderBook();
             updateFinancialReport();
             updateManagerSummary();
+        }
+        
+        function updateCurrentDate() {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').innerHTML = new Date().toLocaleDateString('en-ZA', options);
+            document.getElementById('reportDate').innerHTML = new Date().toLocaleString('en-ZA');
+        }
+        
+        function initializeDropdowns() {
+            // Category filter
+            const catFilter = document.getElementById('categoryFilter');
+            if (catFilter) {
+                catFilter.innerHTML = '<option value="All">All Categories</option>';
+                categories.forEach(c => {
+                    catFilter.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+            }
+            
+            // Manager filter
+            const mgrFilter = document.getElementById('managerFilter');
+            if (mgrFilter) {
+                mgrFilter.innerHTML = '<option value="All">All Managers</option>';
+                managers.forEach(m => {
+                    mgrFilter.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+            }
+            
+            // Manager datalist
+            const mgrList = document.getElementById('managersList');
+            if (mgrList) {
+                mgrList.innerHTML = '';
+                managers.forEach(m => {
+                    mgrList.innerHTML += `<option value="${m}">`;
+                });
+            }
         }
         
         function updateDashboard() {
@@ -919,7 +1131,6 @@
             document.getElementById('confirmedTotal').innerHTML = 'R ' + formatNumber(totalConfirmed);
             document.getElementById('forecastTotal').innerHTML = 'R ' + formatNumber(totalForecast);
             
-            // Calculate average margin
             let totalGP = 0;
             let totalRevenue = 0;
             projects.forEach(p => {
@@ -964,7 +1175,7 @@
                 </tr>`;
             });
             
-            document.getElementById('managerSummaryBody').innerHTML = html;
+            document.getElementById('managerSummaryBody').innerHTML = html || '<tr><td colspan="6" class="text-center">No data available</td></tr>';
         }
         
         function updateOrderBook() {
@@ -996,7 +1207,7 @@
                 </tr>`;
             });
             
-            document.getElementById('orderBookBody').innerHTML = html;
+            document.getElementById('orderBookBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available</td></tr>';
         }
         
         function updateFinancialReport() {
@@ -1048,9 +1259,8 @@
                 </tr>`;
             });
             
-            document.getElementById('financialReportBody').innerHTML = html;
+            document.getElementById('financialReportBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available</td></tr>';
             
-            // Add footer with totals
             const footer = `<tr style="background: #e9ecef; font-weight: bold;">
                 <td colspan="4"><strong>TOTAL</strong></td>
                 <td class="text-end"><strong>R ${formatNumber(totalAmount)}</strong></td>
@@ -1072,7 +1282,6 @@
             
             document.getElementById('financialReportFooter').innerHTML = footer;
             
-            // Update report metrics
             const confirmed = projects.filter(p => p.status === 'Confirmed').reduce((sum, p) => sum + p.amount, 0);
             const forecast = projects.filter(p => p.status === 'Forecast').reduce((sum, p) => sum + p.amount, 0);
             
@@ -1080,7 +1289,6 @@
             document.getElementById('reportConfirmed').innerHTML = 'R ' + formatNumber(confirmed);
             document.getElementById('reportForecast').innerHTML = 'R ' + formatNumber(forecast);
             
-            // Update sector revenue
             updateSectorRevenue();
         }
         
@@ -1116,8 +1324,8 @@
                 }
             });
             
-            document.getElementById('sectorRevenueBody').innerHTML = sectorHtml;
-            document.getElementById('sectorProfitGrid').innerHTML = sectorProfitHtml;
+            document.getElementById('sectorRevenueBody').innerHTML = sectorHtml || '<tr><td colspan="4" class="text-center">No data available</td></tr>';
+            document.getElementById('sectorProfitGrid').innerHTML = sectorProfitHtml || '<p class="text-muted">No data available</p>';
         }
         
         // ============================================
@@ -1169,15 +1377,13 @@
             document.getElementById('scheduledTotal').innerHTML = formatNumber(total);
         }
         
-        document.querySelectorAll('.month-input').forEach(input => {
-            input.addEventListener('input', updateScheduledTotal);
-        });
-        
         function submitProject() {
             const required = ['projectCategory', 'projectManager', 'projectName', 'totalAmount'];
             for (let field of required) {
-                if (!document.getElementById(field).value) {
+                const element = document.getElementById(field);
+                if (!element || !element.value) {
                     showStatus('Please fill in all required fields', 'error');
+                    if (element) element.focus();
                     return;
                 }
             }
@@ -1188,7 +1394,9 @@
                 project: document.getElementById('projectName').value,
                 status: document.getElementById('projectStatus').value,
                 amount: parseFloat(document.getElementById('totalAmount').value),
-                margin: parseFloat(document.getElementById('margin').value),
+                margin: parseFloat(document.getElementById('margin').value) || 30,
+                retention: parseFloat(document.getElementById('retention').value) || 10,
+                notes: document.getElementById('projectNotes').value || '',
                 mar26: parseFloat(document.getElementById('mar26').value) || 0,
                 apr26: parseFloat(document.getElementById('apr26').value) || 0,
                 may26: parseFloat(document.getElementById('may26').value) || 0,
@@ -1203,17 +1411,34 @@
                 feb27: parseFloat(document.getElementById('feb27').value) || 0
             };
             
-            projects.push(project);
-            filteredProjects = [...projects];
-            updateAllViews();
-            resetForm();
-            showStatus('Project saved successfully!', 'success');
+            showLoading();
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        projects.push(project);
+                        filteredProjects = [...projects];
+                        updateAllViews();
+                        resetForm();
+                        showStatus('Project saved to Google Sheets!', 'success');
+                    } else {
+                        showStatus('Error saving: ' + (result.error || 'Unknown error'), 'error');
+                    }
+                    hideLoading();
+                })
+                .withFailureHandler(function(error) {
+                    console.error('Error:', error);
+                    showStatus('Failed to connect to server', 'error');
+                    hideLoading();
+                })
+                .submitProject(project);
         }
         
         function resetForm() {
             document.getElementById('projectForm').reset();
             document.querySelectorAll('.month-input').forEach(i => i.value = 0);
             document.getElementById('margin').value = 30;
+            document.getElementById('retention').value = 10;
             updateScheduledTotal();
         }
         
@@ -1221,7 +1446,7 @@
         // UTILITY FUNCTIONS
         // ============================================
         function formatNumber(num) {
-            if (!num) return '0';
+            if (!num && num !== 0) return '0';
             return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
         
@@ -1245,12 +1470,16 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
         
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+        function showTab(tabName, element) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
             document.getElementById(tabName).style.display = 'block';
             
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            element.classList.add('active');
         }
         
         function exportToExcel() {
@@ -1269,6 +1498,7 @@
             a.href = url;
             a.download = `Onpoint_Group_Report_${new Date().toISOString().split('T')[0]}.csv`;
             a.click();
+            window.URL.revokeObjectURL(url);
         }
     </script>
 </body>
