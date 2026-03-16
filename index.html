@@ -416,7 +416,6 @@
             font-weight: 600;
             color: white;
             cursor: pointer;
-            border: none;
             transition: all 0.3s;
         }
         
@@ -1024,13 +1023,8 @@
         // ============================================
         // GOOGLE APPS SCRIPT CONFIGURATION
         // ============================================
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTBlsFXhQclgS4nvAWRsxN0d7MYsMBLVNeXV_N63B0JQcOZl-rqHSIMJ4mJPPjE4bF/exec';
-        
-        const CONFIG = {
-            spreadsheetId: '1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ',
-            sheetName: 'Financials Managers',
-            driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
-        };
+        // Note: The SCRIPT_URL is not needed as we're using google.script.run
+        // The CONFIG is handled by the Apps Script backend
         
         // ============================================
         // GLOBAL VARIABLES
@@ -1064,8 +1058,13 @@
             updateCurrentDate();
             initializeDropdowns();
             updateConnectionStatus('checking', 'Connecting to Google Sheets...');
-            testConnection();
-            loadProjectsFromSheet();
+            
+            // Small delay to ensure DOM is fully loaded
+            setTimeout(function() {
+                testConnection();
+                loadProjectsFromSheet();
+            }, 100);
+            
             showTab('dashboard', document.querySelector('.nav-link'));
             
             // Add event listeners for month inputs
@@ -1077,6 +1076,8 @@
         function updateConnectionStatus(status, message) {
             const statusElement = document.getElementById('connectionStatus');
             const detailsElement = document.getElementById('connectionDetails');
+            
+            if (!statusElement || !detailsElement) return;
             
             statusElement.className = 'connection-status ';
             
@@ -1096,14 +1097,22 @@
         }
         
         function testConnection() {
+            // Check if google.script.run is available
+            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                console.log('Google Apps Script API not available, using sample data');
+                updateConnectionStatus('disconnected', 'Using offline mode');
+                loadSampleData();
+                return;
+            }
+            
             google.script.run
                 .withSuccessHandler(function(result) {
-                    if (result.success) {
+                    if (result && result.success) {
                         updateConnectionStatus('connected', 'Connected to Google Sheets');
                         console.log('Connected to:', result.spreadsheetUrl);
                     } else {
                         updateConnectionStatus('disconnected', 'Using offline mode');
-                        console.error('Connection failed:', result.error);
+                        console.error('Connection failed:', result ? result.error : 'Unknown error');
                         loadSampleData();
                     }
                 })
@@ -1116,11 +1125,17 @@
         }
         
         function loadProjectsFromSheet() {
+            // Check if google.script.run is available
+            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                loadSampleData();
+                return;
+            }
+            
             showLoading();
             
             google.script.run
                 .withSuccessHandler(function(result) {
-                    if (result.success && result.projects && result.projects.length > 0) {
+                    if (result && result.success && result.projects && result.projects.length > 0) {
                         projects = result.projects;
                         filteredProjects = [...projects];
                         updateAllViews();
@@ -1507,16 +1522,28 @@
             
             showLoading();
             
+            // Check if google.script.run is available
+            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
+                // Save locally
+                projects.push(project);
+                filteredProjects = [...projects];
+                updateAllViews();
+                resetForm();
+                hideLoading();
+                showStatus('Project saved locally (offline mode)', 'info');
+                return;
+            }
+            
             google.script.run
                 .withSuccessHandler(function(result) {
-                    if (result.success) {
+                    if (result && result.success) {
                         projects.push(project);
                         filteredProjects = [...projects];
                         updateAllViews();
                         resetForm();
                         showStatus('Project saved to Google Sheets!', 'success');
                     } else {
-                        showStatus('Error saving: ' + (result.error || 'Unknown error'), 'error');
+                        showStatus('Error saving: ' + (result ? result.error : 'Unknown error'), 'error');
                     }
                     hideLoading();
                 })
@@ -1578,7 +1605,9 @@
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
             });
-            element.classList.add('active');
+            if (element) {
+                element.classList.add('active');
+            }
         }
         
         function exportToExcel() {
