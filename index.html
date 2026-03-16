@@ -1074,7 +1074,7 @@
         };
         
         // ============================================
-        // API CALL FUNCTION - Uses Fetch API
+        // API CALL FUNCTION - Uses Fetch API with JSONP approach
         // ============================================
         async function callAppsScript(action, data = {}) {
             const payload = {
@@ -1083,23 +1083,63 @@
                 config: CONFIG
             };
             
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors', // Important for Google Apps Script
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
+            // For GET requests to fetch data, we'll use a different approach
+            if (action === 'getProjects') {
+                return new Promise((resolve, reject) => {
+                    // Create a unique callback name
+                    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                    
+                    // Create script element
+                    const script = document.createElement('script');
+                    
+                    // Build URL with parameters
+                    const url = new URL(SCRIPT_URL);
+                    url.searchParams.append('action', 'getProjects');
+                    url.searchParams.append('callback', callbackName);
+                    url.searchParams.append('spreadsheetId', CONFIG.spreadsheetId);
+                    url.searchParams.append('sheetName', CONFIG.sheetName);
+                    
+                    // Define callback function
+                    window[callbackName] = function(response) {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        if (response && response.success) {
+                            resolve(response);
+                        } else {
+                            reject(new Error(response?.error || 'Failed to load data'));
+                        }
+                    };
+                    
+                    // Handle errors
+                    script.onerror = function() {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        reject(new Error('Network error'));
+                    };
+                    
+                    // Set script source
+                    script.src = url.toString();
+                    document.body.appendChild(script);
                 });
-                
-                // With no-cors, we can't read response, so we assume success
-                console.log('Request sent successfully:', action);
-                return { success: true };
-                
-            } catch (error) {
-                console.error('API call failed:', error);
-                return { success: false, error: error.message };
+            } else {
+                // For POST requests (saving data), use fetch with no-cors
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    console.log('Request sent successfully:', action);
+                    return { success: true };
+                    
+                } catch (error) {
+                    console.error('API call failed:', error);
+                    return { success: false, error: error.message };
+                }
             }
         }
         
@@ -1145,7 +1185,12 @@
             } else if (status === 'disconnected') {
                 statusElement.classList.add('status-disconnected');
                 statusElement.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + message;
-                detailsElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Using local sample data • Changes not saved';
+                detailsElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Connection failed • No data available';
+                
+                // Clear any existing data
+                projects = [];
+                filteredProjects = [];
+                updateAllViews();
             } else {
                 statusElement.classList.add('status-checking');
                 statusElement.innerHTML = '<i class="fas fa-sync-alt fa-spin me-2"></i> ' + message;
@@ -1161,56 +1206,87 @@
                 if (result.success) {
                     updateConnectionStatus('connected', 'Connected to Google Sheets');
                 } else {
-                    updateConnectionStatus('disconnected', 'Using offline mode');
-                    loadSampleData();
+                    updateConnectionStatus('disconnected', 'Connection unavailable');
                 }
             } catch (error) {
                 console.error('Connection error:', error);
                 updateConnectionStatus('disconnected', 'Connection unavailable');
-                loadSampleData();
             }
         }
         
         async function loadProjectsFromSheet() {
-            console.log('Loading projects from sheet...');
+            console.log('Loading projects from Google Sheets...');
             showLoading();
             
             try {
-                // For now, use sample data since we can't read response with no-cors
-                // In production, you'd need to use a different approach or CORS-enabled endpoint
-                loadSampleData();
-                hideLoading();
+                const result = await callAppsScript('getProjects');
                 
+                if (result && result.success && result.data) {
+                    // Parse the data from Google Sheets
+                    projects = parseSheetData(result.data);
+                    filteredProjects = [...projects];
+                    updateConnectionStatus('connected', 'Connected to Google Sheets');
+                    updateAllViews();
+                    showStatus('Data loaded from Google Sheets', 'success');
+                } else {
+                    throw new Error('No data received');
+                }
             } catch (error) {
-                console.error('Error loading projects:', error);
-                loadSampleData();
+                console.error('Error loading projects from sheet:', error);
+                updateConnectionStatus('disconnected', 'No connection to Google Sheets');
+                
+                // Clear any existing data
+                projects = [];
+                filteredProjects = [];
+                updateAllViews();
+                
+                showStatus('Could not load data from Google Sheets', 'error');
+            } finally {
                 hideLoading();
             }
         }
         
-        // ============================================
-        // SAMPLE DATA (Fallback)
-        // ============================================
-        function loadSampleData() {
-            console.log('Loading sample data...');
-            projects = [
-                {category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, margin: 45,
-                 mar26: 7666667, apr26: 7666667, may26: 7666667, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
-                {category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20,
-                 mar26: 4100000, apr26: 4100000, may26: 4100000, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
-                {category: 'Civil', manager: 'Dave', project: 'Joe Gqabi', status: 'Confirmed', amount: 68479374, margin: 20,
-                 mar26: 3800000, apr26: 3800000, may26: 3800000, jun26: 5000000, jul26: 5000000, aug26: 5000000, sep26: 5000000, oct26: 5000000, nov26: 5000000, dec26: 5000000, jan27: 5000000, feb27: 5000000},
-                {category: 'Mechanical', manager: 'James', project: 'Temba', status: 'Confirmed', amount: 58800000, margin: 30,
-                 mar26: 4410000, apr26: 4410000, may26: 4410000, jun26: 4410000, jul26: 4410000, aug26: 4410000, sep26: 4410000, oct26: 4410000, nov26: 4410000, dec26: 4410000, jan27: 4410000, feb27: 4410000},
-                {category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Confirmed', amount: 74434783, margin: 30,
-                 mar26: 8373913, apr26: 8373913, may26: 8373913, jun26: 8373913, jul26: 8373913, aug26: 8373913, sep26: 8373913, oct26: 8373913, nov26: 0, dec26: 0, jan27: 0, feb27: 0},
-                {category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Forecast', amount: 25565217, margin: 30,
-                 mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0}
-            ];
+        // Parse sheet data into project objects
+        function parseSheetData(data) {
+            const projects = [];
             
-            filteredProjects = [...projects];
-            updateAllViews();
-            updateConnectionStatus('disconnected', 'Using offline mode');
+            // Skip header row if present
+            const startRow = data[0] && data[0][0] === 'Category' ? 1 : 0;
+            
+            for (let i = startRow; i < data.length; i++) {
+                const row = data[i];
+                if (row && row.length >= 5) { // Minimum required columns
+                    const project = {
+                        category: row[0] || '',
+                        manager: row[1] || '',
+                        project: row[2] || '',
+                        status: row[3] || 'Forecast',
+                        amount: parseFloat(row[4]) || 0,
+                        margin: parseFloat(row[5]) || margins[row[0]] || 30,
+                        retention: parseFloat(row[6]) || 10,
+                        mar26: parseFloat(row[7]) || 0,
+                        apr26: parseFloat(row[8]) || 0,
+                        may26: parseFloat(row[9]) || 0,
+                        jun26: parseFloat(row[10]) || 0,
+                        jul26: parseFloat(row[11]) || 0,
+                        aug26: parseFloat(row[12]) || 0,
+                        sep26: parseFloat(row[13]) || 0,
+                        oct26: parseFloat(row[14]) || 0,
+                        nov26: parseFloat(row[15]) || 0,
+                        dec26: parseFloat(row[16]) || 0,
+                        jan27: parseFloat(row[17]) || 0,
+                        feb27: parseFloat(row[18]) || 0,
+                        notes: row[19] || ''
+                    };
+                    
+                    // Only add if it has required fields
+                    if (project.category && project.manager && project.project && project.amount > 0) {
+                        projects.push(project);
+                    }
+                }
+            }
+            
+            return projects;
         }
         
         // ============================================
@@ -1310,7 +1386,7 @@
                 </tr>`;
             });
             
-            document.getElementById('managerSummaryBody').innerHTML = html || '<tr><td colspan="6" class="text-center">No data available</td></tr>';
+            document.getElementById('managerSummaryBody').innerHTML = html || '<tr><td colspan="6" class="text-center">No data available from Google Sheets</td></tr>';
         }
         
         function updateOrderBook() {
@@ -1342,7 +1418,7 @@
                 </tr>`;
             });
             
-            document.getElementById('orderBookBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available</td></tr>';
+            document.getElementById('orderBookBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available from Google Sheets</td></tr>';
         }
         
         function updateFinancialReport() {
@@ -1394,28 +1470,31 @@
                 </tr>`;
             });
             
-            document.getElementById('financialReportBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available</td></tr>';
+            document.getElementById('financialReportBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available from Google Sheets</td></tr>';
             
-            const footer = `<tr style="background: #e9ecef; font-weight: bold;">
-                <td colspan="4"><strong>TOTAL</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(totalAmount)}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[0])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[1])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[2])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[3])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[4])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[5])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[6])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[7])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[8])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[9])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[10])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(monthlyTotals[11])}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(totalScheduled)}</strong></td>
-                <td class="text-end"><strong>R ${formatNumber(totalAmount - totalScheduled)}</strong></td>
-            </tr>`;
-            
-            document.getElementById('financialReportFooter').innerHTML = footer;
+            if (projects.length > 0) {
+                const footer = `<tr style="background: #e9ecef; font-weight: bold;">
+                    <td colspan="4"><strong>TOTAL</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(totalAmount)}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[0])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[1])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[2])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[3])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[4])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[5])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[6])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[7])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[8])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[9])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[10])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(monthlyTotals[11])}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(totalScheduled)}</strong></td>
+                    <td class="text-end"><strong>R ${formatNumber(totalAmount - totalScheduled)}</strong></td>
+                </tr>`;
+                document.getElementById('financialReportFooter').innerHTML = footer;
+            } else {
+                document.getElementById('financialReportFooter').innerHTML = '';
+            }
             
             const confirmed = projects.filter(p => p.status === 'Confirmed').reduce((sum, p) => sum + p.amount, 0);
             const forecast = projects.filter(p => p.status === 'Forecast').reduce((sum, p) => sum + p.amount, 0);
@@ -1513,6 +1592,13 @@
         }
         
         async function submitProject() {
+            // Check connection status first
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement.classList.contains('status-disconnected')) {
+                showStatus('Cannot save: Not connected to Google Sheets', 'error');
+                return;
+            }
+            
             const required = ['projectCategory', 'projectManager', 'projectName', 'totalAmount'];
             for (let field of required) {
                 const element = document.getElementById(field);
@@ -1551,9 +1637,8 @@
             try {
                 const result = await callAppsScript('submitProject', project);
                 if (result.success) {
-                    projects.push(project);
-                    filteredProjects = [...projects];
-                    updateAllViews();
+                    // Reload data from sheet to ensure consistency
+                    await loadProjectsFromSheet();
                     resetForm();
                     showStatus('Project saved to Google Sheets!', 'success');
                 } else {
@@ -1561,12 +1646,7 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showStatus('Failed to connect to server. Using offline mode.', 'error');
-                // Save locally even if server fails
-                projects.push(project);
-                filteredProjects = [...projects];
-                updateAllViews();
-                resetForm();
+                showStatus('Failed to connect to Google Sheets', 'error');
             } finally {
                 hideLoading();
             }
@@ -1623,6 +1703,11 @@
         }
         
         function exportToExcel() {
+            if (projects.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+            
             let csv = "Category,Project Manager,Project,Status,Amount,Mar-26,Apr-26,May-26,Jun-26,Jul-26,Aug-26,Sep-26,Oct-26,Nov-26,Dec-26,Jan-27,Feb-27,Total,Check\n";
             
             projects.forEach(p => {
