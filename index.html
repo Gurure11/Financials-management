@@ -1023,8 +1023,21 @@
         // ============================================
         // GOOGLE APPS SCRIPT CONFIGURATION
         // ============================================
-        // Note: The SCRIPT_URL is not needed as we're using google.script.run
-        // The CONFIG is handled by the Apps Script backend
+        // Apps Script Web App URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxTBlsFXhQclgS4nvAWRsxN0d7MYsMBLVNeXV_N63B0JQcOZl-rqHSIMJ4mJPPjE4bF/exec';
+        
+        // Google Sheets Configuration
+        const CONFIG = {
+            spreadsheetId: '1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ',
+            sheetName: 'Financials Managers',
+            driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
+        };
+        
+        // Log configuration for debugging
+        console.log('Connecting to:', SCRIPT_URL);
+        console.log('Spreadsheet ID:', CONFIG.spreadsheetId);
+        console.log('Sheet Name:', CONFIG.sheetName);
+        console.log('Drive Folder ID:', CONFIG.driveFolderId);
         
         // ============================================
         // GLOBAL VARIABLES
@@ -1110,6 +1123,7 @@
                     if (result && result.success) {
                         updateConnectionStatus('connected', 'Connected to Google Sheets');
                         console.log('Connected to:', result.spreadsheetUrl);
+                        console.log('Sheet Name:', result.sheetName);
                     } else {
                         updateConnectionStatus('disconnected', 'Using offline mode');
                         console.error('Connection failed:', result ? result.error : 'Unknown error');
