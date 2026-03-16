@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Timeline - Gantt View</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .gantt-container {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #1e3c72;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    
+    .ids {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: #666;
+      word-break: break-all;
+    }
+    
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    
+    .filters {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    select, input {
+      padding: 10px 15px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      font-size: 14px;
+      min-width: 200px;
+    }
+    
+    select:focus, input:focus {
+      border-color: #1e3c72;
+      outline: none;
+    }
+    
+    .stats-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+    }
+    
+    .stat-card h3 {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    
+    .gantt-chart {
+      position: relative;
+      margin-top: 30px;
+      overflow-x: auto;
+    }
+    
+    .timeline-months {
+      display: grid;
+      grid-template-columns: 250px repeat(12, 1fr);
+      background: #1e3c72;
+      color: white;
+      border-radius: 10px 10px 0 0;
+      overflow: hidden;
+      min-width: 1000px;
+    }
+    
+    .month-cell {
+      padding: 15px;
+      text-align: center;
+      font-weight: 600;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .month-cell:first-child {
+      background: #2a5298;
+      text-align: left;
+    }
+    
+    .project-row {
+      display: grid;
+      grid-template-columns: 250px repeat(12, 1fr);
+      border-bottom: 1px solid #e9ecef;
+      min-height: 80px;
+      min-width: 1000px;
+    }
+    
+    .project-info {
+      padding: 15px;
+      background: #f8f9fa;
+      border-right: 2px solid #dee2e6;
+    }
+    
+    .project-name {
+      font-weight: 600;
+      color: #1e3c72;
+      margin-bottom: 5px;
+    }
+    
+    .project-manager {
+      font-size: 12px;
+      color: #6c757d;
+      margin-bottom: 5px;
+    }
+    
+    .timeline-cell {
+      position: relative;
+      padding: 15px;
+      border-right: 1px solid #e9ecef;
+    }
+    
+    .progress-bar {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 40px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 20px;
+      transition: width 0.3s;
+      opacity: 0.9;
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+    }
+    
+    .progress-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      z-index: 2;
+    }
+    
+    .milestone {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: #ffc107;
+      border: 3px solid white;
+      border-radius: 50%;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 3;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+    
+    .status-active { background: #28a745; color: white; }
+    .status-delayed { background: #dc3545; color: white; }
+    .status-completed { background: #1e3c72; color: white; }
+    .status-started { background: #ffc107; color: white; }
+    
+    .legend {
+      display: flex;
+      gap: 25px;
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .legend-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+    }
+    
+    .footer {
+      margin-top: 30px;
+      padding: 15px;
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+      border-top: 1px solid #e9ecef;
+    }
+    
+    @media (max-width: 768px) {
+      .gantt-container {
+        padding: 15px;
+      }
+      
+      .filters {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      select, input {
+        width: 100%;
+      }
+    }
+  </style>
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="gantt-container">
+    <div class="timeline-header">
+      <div>
+        <h1><i class="fas fa-chart-gantt"></i> Project Timeline</h1>
+        <div class="subtitle">Gantt Chart View - Real-time project tracking</div>
+      </div>
+      <div class="filters">
+        <select id="managerFilter" onchange="filterProjects()">
+          <option value="all">All Managers</option>
+        </select>
+        <input type="text" id="searchProject" placeholder="🔍 Search projects..." onkeyup="filterProjects()">
+        <button class="btn-refresh" onclick="loadProjectData()" style="padding: 10px 20px; background: #1e3c72; color: white; border: none; border-radius: 8px; cursor: pointer;">
+          <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+      </div>
+    </div>
+    
+    <div class="ids">
+      <i class="fas fa-link"></i> 
+      <strong>Sheet ID:</strong> 1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ | 
+      <strong>Drive Folder:</strong> 1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM
+    </div>
+    
+    <div class="stats-panel" id="statsPanel">
+      <!-- Stats will be populated by JavaScript -->
+    </div>
+    
+    <div class="gantt-chart" id="ganttChart">
+      <div class="timeline-months" id="monthHeaders">
+        <!-- Month headers will be generated -->
+      </div>
+      <div id="projectRows">
+        <!-- Project rows will be generated -->
+      </div>
+    </div>
+    
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: linear-gradient(135deg, #667eea, #764ba2);"></div>
+        <span>Project Duration</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ffc107;"></div>
+        <span>Milestone (Today)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #28a745;"></div>
+        <span>On Track</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #dc3545;"></div>
+        <span>Delayed/Over Budget</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #1e3c72;"></div>
+        <span>Completed</span>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <i class="fas fa-database"></i> Data pulled from Financials Managers spreadsheet • 
+      <i class="fas fa-cloud"></i> Backups stored in Onpoint Group Drive
+    </div>
+  </div>
+  
+  <script>
+    let projects = [];
+    let filteredProjects = [];
+    let months = [];
+    
+    const CONFIG = {
+      spreadsheetId: '1sW8NFt2ZmUfz48DvCdYJ2ZOeWhil0S5IAk4sYOnk_cQ',
+      driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
+    };
+    
+    window.onload = function() {
+      console.log('Gantt View Connected to:', CONFIG.spreadsheetId);
+      loadProjectData();
+    };
+    
+    function loadProjectData() {
+      showLoading();
+      
+      google.script.run
+        .withSuccessHandler(function(data) {
+          projects = data || [];
+          filteredProjects = [...projects];
+          generateTimeline();
+          populateFilters();
+          updateStats();
+          hideLoading();
+        })
+        .withFailureHandler(function(error) {
+          console.error('Error loading projects:', error);
+          document.getElementById('projectRows').innerHTML = 
+            '<div style="color: #dc3545; padding: 40px; text-align: center;">' +
+            '<i class="fas fa-exclamation-triangle"></i> Error loading project data: ' + error +
+            '</div>';
+          hideLoading();
+        })
+        .getProjectTimelineData();
+    }
+    
+    function generateTimeline() {
+      generateMonthHeaders();
+      generateProjectRows();
+    }
+    
+    function generateMonthHeaders() {
+      const today = new Date();
+      months = [];
+      
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(today.getFullYear(), today.getMonth() + i, 1);
+        months.push({
+          name: date.toLocaleString('default', { month: 'short' }) + ' ' + date.getFullYear(),
+          start: new Date(date.getFullYear(), date.getMonth(), 1),
+          end: new Date(date.getFullYear(), date.getMonth() + 1, 0)
+        });
+      }
+      
+      let html = '<div class="month-cell"><i class="fas fa-project-diagram"></i> Project</div>';
+      months.forEach(month => {
+        html += `<div class="month-cell">${month.name}</div>`;
+      });
+      
+      document.getElementById('monthHeaders').innerHTML = html;
+    }
+    
+    function generateProjectRows() {
+      if (!filteredProjects || filteredProjects.length === 0) {
+        document.getElementById('projectRows').innerHTML = 
+          '<div style="padding: 40px; text-align: center; color: #666;">' +
+          '<i class="fas fa-folder-open"></i> No projects found</div>';
+        return;
+      }
+      
+      let html = '';
+      const today = new Date();
+      
+      filteredProjects.forEach(project => {
+        const startDate = new Date(project.startDate);
+        const endDate = new Date(project.endDate);
+        
+        html += `<div class="project-row">`;
+        html += `<div class="project-info">`;
+        html += `<div class="project-name"><i class="fas fa-tasks"></i> ${project.name}</div>`;
+        html += `<div class="project-manager"><i class="fas fa-user"></i> ${project.manager}</div>`;
+        
+        let statusClass = 'status-active';
+        if (project.progress >= 100) statusClass = 'status-completed';
+        else if (project.progress === 0) statusClass = 'status-started';
+        
+        html += `<span class="status-badge status-${statusClass.split('-')[1]}">`;
+        html += `${project.status} (${project.progress}%)`;
+        html += `</span>`;
+        html += `</div>`;
+        
+        // Generate timeline cells
+        months.forEach((month, index) => {
+          html += `<div class="timeline-cell">`;
+          
+          // Check if project spans this month
+          if (startDate <= month.end && endDate >= month.start) {
+            const monthStart = month.start;
+            const monthEnd = month.end;
+            
+            // Calculate position within month
+            const projectStartInMonth = new Date(Math.max(startDate, monthStart));
+            const projectEndInMonth = new Date(Math.min(endDate, monthEnd));
+            
+            const monthDuration = (monthEnd - monthStart) / (1000 * 60 * 60 * 24);
+            const projectDurationInMonth = (projectEndInMonth - projectStartInMonth) / (1000 * 60 * 60 * 24);
+            
+            const startOffset = Math.max(0, (projectStartInMonth - monthStart) / (1000 * 60 * 60 * 24));
+            const widthPercent = Math.max(5, (projectDurationInMonth / monthDuration) * 100);
+            const leftPercent = (startOffset / monthDuration) * 100;
+            
+            html += `<div class="progress-bar" style="left: ${leftPercent}%; width: ${widthPercent}%;"></div>`;
+            
+            // Add progress label
+            if (index === 0 || (index > 0 && startDate > months[index-1].end)) {
+              html += `<div class="progress-label" style="left: ${leftPercent + 5}%;">${project.progress}%</div>`;
+            }
+            
+            // Add milestone for today if within this month
+            if (today >= monthStart && today <= monthEnd) {
+              const todayOffset = ((today - monthStart) / (1000 * 60 * 60 * 24) / monthDuration) * 100;
+              html += `<div class="milestone" style="left: ${todayOffset}%;" title="Today"></div>`;
+            }
+          }
+          
+          html += `</div>`;
+        });
+        
+        html += `</div>`;
+      });
+      
+      document.getElementById('projectRows').innerHTML = html;
+    }
+    
+    function populateFilters() {
+      const managers = [...new Set(projects.map(p => p.manager))];
+      const select = document.getElementById('managerFilter');
+      
+      managers.forEach(manager => {
+        const option = document.createElement('option');
+        option.value = manager;
+        option.textContent = manager;
+        select.appendChild(option);
+      });
+    }
+    
+    function filterProjects() {
+      const manager = document.getElementById('managerFilter').value;
+      const search = document.getElementById('searchProject').value.toLowerCase();
+      
+      filteredProjects = projects.filter(p => {
+        const matchManager = manager === 'all' || p.manager === manager;
+        const matchSearch = p.name.toLowerCase().includes(search) || 
+                           p.manager.toLowerCase().includes(search) ||
+                           p.id.toLowerCase().includes(search);
+        return matchManager && matchSearch;
+      });
+      
+      generateProjectRows();
+      updateStats();
+    }
+    
+    function updateStats() {
+      const stats = {
+        total: filteredProjects.length,
+        active: filteredProjects.filter(p => p.status === 'Active' || p.status === 'Just Started').length,
+        completed: filteredProjects.filter(p => p.status === 'Completed').length,
+        delayed: filteredProjects.filter(p => p.status === 'Delayed' || p.progress < 20).length,
+        avgProgress: filteredProjects.length > 0 ? 
+          Math.round(filteredProjects.reduce((sum, p) => sum + p.progress, 0) / filteredProjects.length) : 0
+      };
+      
+      const html = `
+        <div class="stat-card">
+          <h3><i class="fas fa-folder"></i> Total Projects</h3>
+          <div class="value">${stats.total}</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #28a745, #20c997);">
+          <h3><i class="fas fa-play"></i> Active</h3>
+          <div class="value">${stats.active}</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #1e3c72, #2a5298);">
+          <h3><i class="fas fa-check-circle"></i> Completed</h3>
+          <div class="value">${stats.completed}</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+          <h3><i class="fas fa-exclamation-triangle"></i> At Risk</h3>
+          <div class="value">${stats.delayed}</div>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #ffc107, #e0a800);">
+          <h3><i class="fas fa-chart-line"></i> Avg Progress</h3>
+          <div class="value">${stats.avgProgress}%</div>
+        </div>
+      `;
+      
+      document.getElementById('statsPanel').innerHTML = html;
+    }
+    
+    function showLoading() {
+      const rows = document.getElementById('projectRows');
+      if (rows) {
+        rows.innerHTML = '<div style="padding: 40px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading project data...</div>';
+      }
+    }
+    
+    function hideLoading() {
+      // Loading hidden by data display
+    }
+    
+    // Auto-refresh every 5 minutes
+    setInterval(loadProjectData, 300000);
+  </script>
+</body>
+</html>
