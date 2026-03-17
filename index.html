@@ -684,63 +684,127 @@
         </div>
 
         <!-- Daily Revenue Tab -->
-        <div id="dailyRevenue" class="tab-content" style="display:none;">
-            <div class="row">
-                <div class="col-lg-8 mx-auto">
-                    <div class="card">
-                        <div class="card-header">
-                            <i class="fas fa-calendar-alt"></i> Daily Revenue Entry by Project Manager
+        <!-- Daily Revenue Tab -->
+<div id="dailyRevenue" class="tab-content" style="display:none;">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calendar-alt"></i> Daily Revenue Entry by Project Manager
+                </div>
+                <div class="card-body">
+                    <form id="dailyRevenueForm" onsubmit="event.preventDefault();">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Date *</label>
+                                <input type="date" class="form-control" id="revenueDate" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Company *</label>
+                                <select class="form-select" id="revenueCompany" required onchange="loadCompanyManagers()">
+                                    <option value="">Select Company</option>
+                                    <option value="Onpoint Group">Onpoint Group</option>
+                                    <option value="Aqua Telecoms">Aqua Telecoms</option>
+                                    <option value="Nkanyezi Projects">Nkanyezi Projects</option>
+                                    <option value="DI Solutions">DI Solutions</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Category *</label>
+                                <select class="form-select" id="revenueCategory" required onchange="loadCategoryProjects()">
+                                    <option value="">Select Category</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Civil">Civil</option>
+                                    <option value="Mechanical">Mechanical</option>
+                                    <option value="Roads">Roads</option>
+                                    <option value="General Buildings">General Buildings</option>
+                                    <option value="Telecoms">Telecoms</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <form id="dailyRevenueForm" onsubmit="event.preventDefault();">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Date *</label>
-                                        <input type="date" class="form-control" id="revenueDate" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Project Manager *</label>
-                                        <select class="form-select" id="revenueManager" required onchange="loadManagerProjects()">
-                                            <option value="">Select Manager</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Project *</label>
-                                        <select class="form-select" id="revenueProject" required onchange="updateProjectBudget()">
-                                            <option value="">Select Project</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Category</label>
-                                        <input type="text" class="form-control" id="revenueCategory" readonly>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Daily Revenue (R) *</label>
-                                        <input type="number" class="form-control" id="dailyAmount" step="1000" min="0" required oninput="calculateVariance()">
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Daily Budget (R)</label>
-                                        <input type="text" class="form-control" id="dailyBudget" readonly>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Variance (R)</label>
-                                        <input type="text" class="form-control" id="dailyVariance" readonly>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Notes</label>
-                                    <input type="text" class="form-control" id="revenueNotes">
-                                </div>
-                                <button type="button" class="btn btn-success w-100" onclick="submitDailyRevenue()">
-                                    <i class="fas fa-save me-2"></i> Save Daily Revenue
-                                </button>
-                            </form>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Project Manager *</label>
+                                <select class="form-select" id="revenueManager" required onchange="loadManagerProjects()">
+                                    <option value="">Select Manager</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Project *</label>
+                                <select class="form-select" id="revenueProject" required onchange="updateProjectBudget()">
+                                    <option value="">Select Project</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Daily Revenue (R) *</label>
+                                <input type="number" class="form-control" id="dailyAmount" step="1000" min="0" required oninput="calculateVariance()">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Daily Budget (R)</label>
+                                <input type="text" class="form-control" id="dailyBudget" readonly>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Variance (R)</label>
+                                <input type="text" class="form-control" id="dailyVariance" readonly>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Notes</label>
+                                <input type="text" class="form-control" id="revenueNotes">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-success w-100" onclick="submitDailyRevenue()">
+                            <i class="fas fa-save me-2"></i> Save Daily Revenue
+                        </button>
+                    </form>
 
-                            <!-- Today's Stats -->
+                    <!-- Today's Stats -->
+                    <div class="daily-stats mt-4">
+                        <div class="stat-card">
+                            <div class="stat-value" id="todayTotal">R 0</div>
+                            <div class="stat-label">Today's Total</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="todayBudget">R 0</div>
+                            <div class="stat-label">Today's Budget</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="todayVariance">R 0</div>
+                            <div class="stat-label">Today's Variance</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="todayAchievement">0%</div>
+                            <div class="stat-label">Achievement</div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Entries -->
+                    <div class="mt-4">
+                        <h6>Recent Daily Entries</h6>
+                        <div class="table-container" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Company</th>
+                                        <th>Category</th>
+                                        <th>Manager</th>
+                                        <th>Project</th>
+                                        <th>Amount</th>
+                                        <th>Budget</th>
+                                        <th>Variance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentDailyTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>                    <!-- Today's Stats -->
                             <div class="daily-stats mt-4">
                                 <div class="stat-card">
                                     <div class="stat-value" id="todayTotal">R 0</div>
