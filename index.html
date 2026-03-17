@@ -712,6 +712,17 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-3">
+                            <label class="form-label">Company</label>
+                            <select class="form-select" id="companyFilter">
+                                <option value="All">All Companies</option>
+                                <option value="Onpoint Group">Onpoint Group</option>
+                                <option value="DI Solutions">DI Solutions</option>
+                                <option value="Aqua Telecoms">Aqua Telecoms</option>
+                                <option value="Nkanyezi Projects">Nkanyezi Projects</option>
+                                <option value="Onpoint Ontime Solutions">Onpoint Ontime Solutions</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label">Category</label>
                             <select class="form-select" id="categoryFilter">
                                 <option value="All">All Categories</option>
@@ -731,8 +742,10 @@
                                 <option value="Forecast">Forecast</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-primary w-100 mt-4" onclick="applyFilters()">
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button class="btn btn-primary w-100" onclick="applyFilters()">
                                 <i class="fas fa-search"></i> Apply Filters
                             </button>
                         </div>
@@ -750,6 +763,7 @@
                         <table class="table table-hover" id="orderBookTable">
                             <thead>
                                 <tr>
+                                    <th>Company</th>
                                     <th>Category</th>
                                     <th>Project Manager</th>
                                     <th>Project</th>
@@ -772,7 +786,7 @@
                                 </tr>
                             </thead>
                             <tbody id="orderBookBody">
-                                <tr><td colspan="19" class="text-center">Loading...</td></tr>
+                                <tr><td colspan="20" class="text-center">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -790,18 +804,45 @@
                         <form id="projectForm" onsubmit="event.preventDefault();">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
+                                    <label class="form-label">Company *</label>
+                                    <select class="form-select" id="projectCompany" required>
+                                        <option value="">Select Company</option>
+                                        <option value="Onpoint Group">Onpoint Group</option>
+                                        <option value="DI Solutions">DI Solutions</option>
+                                        <option value="Aqua Telecoms">Aqua Telecoms</option>
+                                        <option value="Nkanyezi Projects">Nkanyezi Projects</option>
+                                        <option value="Onpoint Ontime Solutions">Onpoint Ontime Solutions</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Department *</label>
+                                    <select class="form-select" id="projectDepartment" required>
+                                        <option value="">Select Department</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Business Development">Business Development</option>
+                                        <option value="Finance & IT">Finance & IT</option>
+                                        <option value="Fleet">Fleet</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Procurement">Procurement</option>
+                                        <option value="Sales">Sales</option>
+                                        <option value="Sheq">Sheq</option>
+                                        <option value="Tendering">Tendering</option>
+                                        <option value="Warehouse">Warehouse</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label">Category *</label>
                                     <select class="form-select" id="projectCategory" required>
                                         <option value="">Select Category</option>
-                                        <option value="Electrical">Electrical</option>
                                         <option value="Civil">Civil</option>
                                         <option value="Mechanical">Mechanical</option>
-                                        <option value="General Buildings">General Buildings</option>
+                                        <option value="Electrical">Electrical</option>
                                         <option value="Roads">Roads</option>
-                                        <option value="Telecoms">Telecoms</option>
-                                        <option value="On Point On Time">On Point On Time</option>
-                                        <option value="Aqua Telecoms">Aqua Telecoms</option>
-                                        <option value="Nkanyezi">Nkanyezi</option>
+                                        <option value="General Building">General Building</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -958,6 +999,7 @@
                     <table class="table table-bordered" id="financialReportTable">
                         <thead>
                             <tr>
+                                <th>Company</th>
                                 <th>Category</th>
                                 <th>Project Manager</th>
                                 <th>Project</th>
@@ -980,7 +1022,7 @@
                             </tr>
                         </thead>
                         <tbody id="financialReportBody">
-                            <tr><td colspan="19" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="20" class="text-center">Loading...</td></tr>
                         </tbody>
                         <tfoot id="financialReportFooter" style="font-weight: bold; background: #f8f9fa;">
                         </tfoot>
@@ -1102,369 +1144,282 @@
         // EXACT PROJECT DATA FROM YOUR SPREADSHEET
         // ============================================
         const exactProjectData = [
-            // On Point On Time - This will be EXCLUDED from all totals
-            { category: 'On Point On Time', manager: 'On Point On Time', project: 'On Point On Time', status: 'Confirmed', 
+            // Onpoint Ontime Solutions
+            { company: 'Onpoint Ontime Solutions', category: 'On Point On Time', manager: 'On Point On Time', project: 'On Point On Time', status: 'Confirmed', 
               amount: 670679374, margin: 39,
               mar26: 39556824, apr26: 39556824, may26: 39556824, jun26: 25290157, jul26: 25627918, aug26: 25627918, sep26: 25627918, 
               oct26: 26627918, nov26: 17579005, dec26: 15203333, jan27: 12893333, feb27: 12893333 },
             
-            // Electrical - Moses
-            { category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, margin: 45,
+            // Onpoint Group Projects
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, margin: 45,
               mar26: 7666667, apr26: 7666667, may26: 7666667, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Civil - Johan
-            { category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20,
               mar26: 4100000, apr26: 4100000, may26: 4100000, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Civil - Siyanda
-            { category: 'Civil', manager: 'Siyanda', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Civil', manager: 'Siyanda', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20,
               mar26: 4100000, apr26: 4100000, may26: 4100000, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Civil - Dave
-            { category: 'Civil', manager: 'Dave', project: 'Joe Gqabi', status: 'Confirmed', amount: 68479374, margin: 20,
+            { company: 'Onpoint Group', category: 'Civil', manager: 'Dave', project: 'Joe Gqabi', status: 'Confirmed', amount: 68479374, margin: 20,
               mar26: 3800000, apr26: 3800000, may26: 3800000, jun26: 5000000, jul26: 5000000, aug26: 5000000, sep26: 5000000, oct26: 5000000, 
               nov26: 5000000, dec26: 5000000, jan27: 5000000, feb27: 5000000 },
             
-            // Mechanical - James
-            { category: 'Mechanical', manager: 'James', project: 'Temba', status: 'Confirmed', amount: 58800000, margin: 30,
+            { company: 'Onpoint Group', category: 'Mechanical', manager: 'James', project: 'Temba', status: 'Confirmed', amount: 58800000, margin: 30,
               mar26: 4410000, apr26: 4410000, may26: 4410000, jun26: 4410000, jul26: 4410000, aug26: 4410000, sep26: 4410000, oct26: 4410000,
               nov26: 4410000, dec26: 4410000, jan27: 4410000, feb27: 4410000 },
             
-            // Civil - Johan (Temba)
-            { category: 'Civil', manager: 'Johan', project: 'Temba', status: 'Confirmed', amount: 6000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Civil', manager: 'Johan', project: 'Temba', status: 'Confirmed', amount: 6000000, margin: 20,
               mar26: 675000, apr26: 675000, may26: 675000, jun26: 675000, jul26: 675000, aug26: 675000, sep26: 675000, oct26: 675000,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moses (Midvaal)
-            { category: 'Electrical', manager: 'Moses', project: 'Midvaal', status: 'Confirmed', amount: 16700000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Midvaal', status: 'Confirmed', amount: 16700000, margin: 45,
               mar26: 2037911, apr26: 2037911, may26: 2037911, jun26: 2037911, jul26: 1375671, aug26: 1375671, sep26: 1375671, oct26: 1375671,
               nov26: 1375671, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Rayman
-            { category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Confirmed', amount: 74434783, margin: 30,
+            { company: 'Onpoint Group', category: 'General Building', manager: 'Rayman', project: 'Coega', status: 'Confirmed', amount: 74434783, margin: 30,
               mar26: 8373913, apr26: 8373913, may26: 8373913, jun26: 8373913, jul26: 8373913, aug26: 8373913, sep26: 8373913, oct26: 8373913,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Rayman (Forecast)
-            { category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Forecast', amount: 25565217, margin: 30,
+            { company: 'Onpoint Group', category: 'General Building', manager: 'Rayman', project: 'Coega', status: 'Forecast', amount: 25565217, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Timothy
-            { category: 'General Buildings', manager: 'Timothy', project: 'KZN General Buildings', status: 'Confirmed', amount: 15000000, margin: 30,
+            { company: 'Onpoint Group', category: 'General Building', manager: 'Timothy', project: 'KZN General Buildings', status: 'Confirmed', amount: 15000000, margin: 30,
               mar26: 1350000, apr26: 1350000, may26: 1350000, jun26: 1350000, jul26: 1350000, aug26: 1350000, sep26: 1350000, oct26: 1350000,
               nov26: 1350000, dec26: 1350000, jan27: 0, feb27: 0 },
             
-            // Roads - Roads Site Agent COT
-            { category: 'Roads', manager: 'Roads Site Agent COT', project: 'Tshwane', status: 'Forecast', amount: 30000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Roads', manager: 'Roads Site Agent COT', project: 'Tshwane', status: 'Forecast', amount: 30000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Timothy
-            { category: 'Roads', manager: 'Timothy', project: 'Public Works Limpopo', status: 'Forecast', amount: 10000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Roads', manager: 'Timothy', project: 'Public Works Limpopo', status: 'Forecast', amount: 10000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Stanley
-            { category: 'Electrical', manager: 'Stanley', project: 'Limpopo Eskom Substation Ephraim Mogale', status: 'Forecast', amount: 40000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Stanley', project: 'Limpopo Eskom Substation Ephraim Mogale', status: 'Forecast', amount: 40000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Civil - Civil Site Agent
-            { category: 'Civil', manager: 'Civil Site Agent', project: 'Naizna', status: 'Forecast', amount: 20000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Civil', manager: 'Civil Site Agent', project: 'Naizna', status: 'Forecast', amount: 20000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Roads Site Agent CPT
-            { category: 'Roads', manager: 'Roads Site Agent CPT', project: 'Cape Town', status: 'Forecast', amount: 120000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Roads', manager: 'Roads Site Agent CPT', project: 'Cape Town', status: 'Forecast', amount: 120000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Brian (COT Streetlights)
-            { category: 'Electrical', manager: 'Brian', project: 'COT Streetlights', status: 'Confirmed', amount: 3000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COT Streetlights', status: 'Confirmed', amount: 3000000, margin: 45,
               mar26: 250000, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
             
-            // Electrical - Brian (COT Electrification)
-            { category: 'Electrical', manager: 'Brian', project: 'COT Electrification', status: 'Confirmed', amount: 10000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COT Electrification', status: 'Confirmed', amount: 10000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 1000000, jul26: 1000000, aug26: 1000000, sep26: 2000000, oct26: 2000000,
               nov26: 1000000, dec26: 1000000, jan27: 1000000, feb27: 0 },
             
-            // Electrical - Brian (COT Metering)
-            { category: 'Electrical', manager: 'Brian', project: 'COT Metering', status: 'Confirmed', amount: 3000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COT Metering', status: 'Confirmed', amount: 3000000, margin: 45,
               mar26: 250000, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
             
-            // Electrical - Brian (COE Streetlights)
-            { category: 'Electrical', manager: 'Brian', project: 'COE Streetlights', status: 'Forecast', amount: 5000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COE Streetlights', status: 'Forecast', amount: 5000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moses (Msunduzi E50)
-            { category: 'Electrical', manager: 'Moses', project: 'Msunduzi E50', status: 'Forecast', amount: 5000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Msunduzi E50', status: 'Forecast', amount: 5000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moses (Msunduzi Streetlights)
-            { category: 'Electrical', manager: 'Moses', project: 'Msunduzi Streetlights', status: 'Forecast', amount: 1500000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Msunduzi Streetlights', status: 'Forecast', amount: 1500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moses (Msunduzi E33)
-            { category: 'Electrical', manager: 'Moses', project: 'Msunduzi E33', status: 'Forecast', amount: 5000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Msunduzi E33', status: 'Forecast', amount: 5000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moses (Msunduzi E47)
-            { category: 'Electrical', manager: 'Moses', project: 'Msunduzi E47', status: 'Forecast', amount: 2000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Msunduzi E47', status: 'Forecast', amount: 2000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - EL CM (Moqhaka Streetlights)
-            { category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 1800000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 1800000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 200000, jul26: 200000, aug26: 200000, sep26: 200000, oct26: 200000,
               nov26: 200000, dec26: 200000, jan27: 200000, feb27: 200000 },
             
-            // Electrical - EL CM (Moqhaka Metering)
-            { category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 200000, jul26: 200000, aug26: 200000, sep26: 200000, oct26: 200000,
               nov26: 200000, dec26: 200000, jan27: 200000, feb27: 200000 },
             
-            // Electrical - Stanley (Centlec CD11)
-            { category: 'Electrical', manager: 'Stanley', project: 'Centlec CD11', status: 'Confirmed', amount: 9600000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Stanley', project: 'Centlec CD11', status: 'Confirmed', amount: 9600000, margin: 45,
               mar26: 960000, apr26: 960000, may26: 960000, jun26: 960000, jul26: 960000, aug26: 960000, sep26: 960000, oct26: 960000,
               nov26: 960000, dec26: 960000, jan27: 0, feb27: 0 },
             
-            // Electrical - Stanley (Centlec Transformers CD32)
-            { category: 'Electrical', manager: 'Stanley', project: 'Centlec Transformers CD32', status: 'Confirmed', amount: 7000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Stanley', project: 'Centlec Transformers CD32', status: 'Confirmed', amount: 7000000, margin: 45,
               mar26: 583333, apr26: 583333, may26: 583333, jun26: 583333, jul26: 583333, aug26: 583333, sep26: 583333, oct26: 583333,
               nov26: 583333, dec26: 583333, jan27: 583333, feb27: 583333 },
             
-            // Electrical - Stanley (Centlec CD45)
-            { category: 'Electrical', manager: 'Stanley', project: 'Centlec CD45', status: 'Confirmed', amount: 3000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Stanley', project: 'Centlec CD45', status: 'Confirmed', amount: 3000000, margin: 45,
               mar26: 250000, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
             
-            // Mechanical - Tony
-            { category: 'Mechanical', manager: 'Tony', project: 'Midvaal Mechanical', status: 'Forecast', amount: 5000000, margin: 30,
+            { company: 'Onpoint Group', category: 'Mechanical', manager: 'Tony', project: 'Midvaal Mechanical', status: 'Forecast', amount: 5000000, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moses (Eskom SPU)
-            { category: 'Electrical', manager: 'Moses', project: 'Eskom SPU', status: 'Forecast', amount: 600000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Eskom SPU', status: 'Forecast', amount: 600000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - EL CM (Eskom FSOU Substation)
-            { category: 'Electrical', manager: 'EL CM', project: 'Eskom FSOU Substation', status: 'Forecast', amount: 10000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'EL CM', project: 'Eskom FSOU Substation', status: 'Forecast', amount: 10000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - EL CM (Eskom ECOU)
-            { category: 'Electrical', manager: 'EL CM', project: 'Eskom ECOU', status: 'Forecast', amount: 10000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'EL CM', project: 'Eskom ECOU', status: 'Forecast', amount: 10000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Brian (Eskom LOU)
-            { category: 'General Buildings', manager: 'Brian', project: 'Eskom LOU General Buildings', status: 'Confirmed', amount: 10000000, margin: 30,
+            { company: 'Onpoint Group', category: 'General Building', manager: 'Brian', project: 'Eskom LOU General Buildings', status: 'Confirmed', amount: 10000000, margin: 30,
               mar26: 750000, apr26: 750000, may26: 750000, jun26: 750000, jul26: 750000, aug26: 750000, sep26: 750000, oct26: 750000,
               nov26: 750000, dec26: 750000, jan27: 750000, feb27: 750000 },
             
-            // Electrical - Moses (Eskom KZN Minor Reticulation)
-            { category: 'Electrical', manager: 'Moses', project: 'Eskom KZN Minor Reticulation', status: 'Forecast', amount: 4000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Eskom KZN Minor Reticulation', status: 'Forecast', amount: 4000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Brian (Randwest Electrical)
-            { category: 'Electrical', manager: 'Brian', project: 'Randwest Electrical', status: 'Forecast', amount: 5000000, margin: 45,
+            { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'Randwest Electrical', status: 'Forecast', amount: 5000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Brian (Randwest Roads & Stormwater)
-            { category: 'Roads', manager: 'Brian', project: 'Randwest Roads & Stormwater', status: 'Forecast', amount: 5000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Roads', manager: 'Brian', project: 'Randwest Roads & Stormwater', status: 'Forecast', amount: 5000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Brian (Randwest Water rand sanitation)
-            { category: 'Roads', manager: 'Brian', project: 'Randwest Water rand sanitation', status: 'Forecast', amount: 5000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Roads', manager: 'Brian', project: 'Randwest Water rand sanitation', status: 'Forecast', amount: 5000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Civil - Brian (Randwest Bulk)
-            { category: 'Civil', manager: 'Brian', project: 'Randwest Bulk', status: 'Forecast', amount: 5000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Civil', manager: 'Brian', project: 'Randwest Bulk', status: 'Forecast', amount: 5000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Timothy (RAL)
-            { category: 'Roads', manager: 'Timothy', project: 'RAL', status: 'Forecast', amount: 10000000, margin: 20,
+            { company: 'Onpoint Group', category: 'Roads', manager: 'Timothy', project: 'RAL', status: 'Forecast', amount: 10000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Aqua Telecoms Total
-            { category: 'Aqua Telecoms', manager: 'Aqua Telecoms', project: 'Aqua Telecoms Total', status: 'Confirmed', 
-              amount: 223034021, margin: 45,
-              mar26: 19733333, apr26: 20886395, may26: 20886395, jun26: 21886395, jul26: 12486395, aug26: 12486395, sep26: 10986395, 
-              oct26: 10986395, nov26: 10986395, dec26: 10986395, jan27: 10986395, feb27: 10083333 },
-            
-            // Electrical - Stanley (Stellenbosch)
-            { category: 'Electrical', manager: 'Stanley (Aqua)', project: 'Stellenbosch', status: 'Confirmed', amount: 10034021, margin: 50,
+            // Aqua Telecoms Projects
+            { company: 'Aqua Telecoms', category: 'Electrical', manager: 'Stanley (Aqua)', project: 'Stellenbosch', status: 'Confirmed', amount: 10034021, margin: 50,
               mar26: 0, apr26: 903062, may26: 903062, jun26: 903062, jul26: 903062, aug26: 903062, sep26: 903062, oct26: 903062,
               nov26: 903062, dec26: 903062, jan27: 903062, feb27: 0 },
             
-            // Telecoms - Govern (Liquid ECPG Confirmed)
-            { category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Confirmed', amount: 22000000, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Confirmed', amount: 22000000, margin: 65,
               mar26: 5500000, apr26: 5500000, may26: 5500000, jun26: 5500000, jul26: 0, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Graham (Liquid ECPG Confirmed)
-            { category: 'Telecoms', manager: 'Graham', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Graham', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Ronald (Liquid ECPG Confirmed)
-            { category: 'Telecoms', manager: 'Ronald', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Ronald', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Petros (Liquid ECPG Confirmed)
-            { category: 'Telecoms', manager: 'Petros', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Petros', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Elroy (Liquid ECPG Confirmed)
-            { category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECPG', status: 'Confirmed', amount: 12000000, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECPG', status: 'Confirmed', amount: 12000000, margin: 65,
               mar26: 3000000, apr26: 3000000, may26: 3000000, jun26: 3000000, jul26: 0, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Govern (Liquid ECPG Forecast)
-            { category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Forecast', amount: 41000000, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Forecast', amount: 41000000, margin: 65,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Elroy (Liquid ECSOD Forecast)
-            { category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECSOD', status: 'Forecast', amount: 6000000, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECSOD', status: 'Forecast', amount: 6000000, margin: 65,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Mesh (Liquid Gauteng SOD)
-            { category: 'Telecoms', manager: 'Mesh', project: 'Liquid Gauteng SOD', status: 'Confirmed', amount: 12000000, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Mesh', project: 'Liquid Gauteng SOD', status: 'Confirmed', amount: 12000000, margin: 65,
               mar26: 1000000, apr26: 1000000, may26: 1000000, jun26: 1000000, jul26: 1000000, aug26: 1000000, sep26: 1000000, oct26: 1000000,
               nov26: 1000000, dec26: 1000000, jan27: 1000000, feb27: 1000000 },
             
-            // Telecoms - Vusi (Liquid Gauteng SOD)
-            { category: 'Telecoms', manager: 'Vusi', project: 'Liquid Gauteng SOD', status: 'Forecast', amount: 12000000, margin: 65,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Vusi', project: 'Liquid Gauteng SOD', status: 'Forecast', amount: 12000000, margin: 65,
               mar26: 0, apr26: 0, may26: 1333333, jun26: 1333333, jul26: 1333333, aug26: 1333333, sep26: 1333333, oct26: 1333333,
               nov26: 1333333, dec26: 1333333, jan27: 0, feb27: 0 },
             
-            // Telecoms - Tinotenda (Telkom)
-            { category: 'Telecoms', manager: 'Tinotenda', project: 'Telkom', status: 'Confirmed', amount: 18000000, margin: 30,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Tinotenda', project: 'Telkom', status: 'Confirmed', amount: 18000000, margin: 30,
               mar26: 1500000, apr26: 1500000, may26: 1500000, jun26: 1500000, jul26: 1500000, aug26: 1500000, sep26: 1500000, oct26: 1500000,
               nov26: 1500000, dec26: 1500000, jan27: 1500000, feb27: 1500000 },
             
-            // Telecoms - Sydney (Telkom)
-            { category: 'Telecoms', manager: 'Sydney', project: 'Telkom', status: 'Confirmed', amount: 30000000, margin: 30,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Sydney', project: 'Telkom', status: 'Confirmed', amount: 30000000, margin: 30,
               mar26: 2500000, apr26: 2500000, may26: 2500000, jun26: 2500000, jul26: 2500000, aug26: 2500000, sep26: 2500000, oct26: 2500000,
               nov26: 2500000, dec26: 2500000, jan27: 2500000, feb27: 2500000 },
             
-            // Telecoms - Graham (MTN)
-            { category: 'Telecoms', manager: 'Graham', project: 'MTN', status: 'Forecast', amount: 6000000, margin: 20,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Graham', project: 'MTN', status: 'Forecast', amount: 6000000, margin: 20,
               mar26: 500000, apr26: 500000, may26: 500000, jun26: 500000, jul26: 500000, aug26: 500000, sep26: 500000, oct26: 500000,
               nov26: 500000, dec26: 500000, jan27: 500000, feb27: 500000 },
             
-            // Electrical - Stanley (Centlec)
-            { category: 'Electrical', manager: 'Stanley', project: 'Centlec', status: 'Confirmed', amount: 36000000, margin: 45,
+            { company: 'Aqua Telecoms', category: 'Electrical', manager: 'Stanley', project: 'Centlec', status: 'Confirmed', amount: 36000000, margin: 45,
               mar26: 3000000, apr26: 3000000, may26: 3000000, jun26: 3000000, jul26: 3000000, aug26: 3000000, sep26: 3000000, oct26: 3000000,
               nov26: 3000000, dec26: 3000000, jan27: 3000000, feb27: 3000000 },
             
-            // Telecoms - Graham (Eskom Harvard)
-            { category: 'Telecoms', manager: 'Graham', project: 'Eskom Harvard', status: 'Confirmed', amount: 10000000, margin: 45,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Graham', project: 'Eskom Harvard', status: 'Confirmed', amount: 10000000, margin: 45,
               mar26: 2733333, apr26: 2733333, may26: 2733333, jun26: 900000, jul26: 0, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Andrew (City Power)
-            { category: 'Telecoms', manager: 'Andrew', project: 'City Power', status: 'Forecast', amount: 5000000, margin: 45,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Andrew', project: 'City Power', status: 'Forecast', amount: 5000000, margin: 45,
               mar26: 0, apr26: 0, may26: 1500000, jun26: 1500000, jul26: 1500000, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Telecoms - Andrew (Umhlathuze Municipality)
-            { category: 'Telecoms', manager: 'Andrew', project: 'Umhlathuze Municipality', status: 'Forecast', amount: 3000000, margin: 45,
+            { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Andrew', project: 'Umhlathuze Municipality', status: 'Forecast', amount: 3000000, margin: 45,
               mar26: 0, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
             
-            // Nkanyezi Total
-            { category: 'Nkanyezi', manager: 'Nkanyezi', project: 'Nkanyezi Total', status: 'Confirmed', 
-              amount: 32100000, margin: 30,
-              mar26: 400000, apr26: 400000, may26: 2016667, jun26: 2016667, jul26: 1466667, aug26: 900000, sep26: 700000, 
-              oct26: 700000, nov26: 700000, dec26: 700000, jan27: 700000, feb27: 700000 },
-            
-            // Electrical - Phillip (Moqhaka Metering)
-            { category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
+            // Nkanyezi Projects
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
               mar26: 300000, apr26: 300000, may26: 300000, jun26: 300000, jul26: 300000, aug26: 300000, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Moqhaka Streetlights)
-            { category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 3600000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 3600000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 600000, aug26: 600000, sep26: 600000, oct26: 600000,
               nov26: 600000, dec26: 600000, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Eskom WC)
-            { category: 'Electrical', manager: 'Phillip', project: 'Eskom WC', status: 'Confirmed', amount: 1200000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Eskom WC', status: 'Confirmed', amount: 1200000, margin: 45,
               mar26: 100000, apr26: 100000, may26: 100000, jun26: 100000, jul26: 100000, aug26: 100000, sep26: 100000, oct26: 100000,
               nov26: 100000, dec26: 100000, jan27: 100000, feb27: 100000 },
             
-            // General Buildings - Moeti (COE Buildings)
-            { category: 'General Buildings', manager: 'Moeti', project: 'COE Buildings', status: 'Confirmed', amount: 3000000, margin: 30,
+            { company: 'Nkanyezi Projects', category: 'General Building', manager: 'Moeti', project: 'COE Buildings', status: 'Confirmed', amount: 3000000, margin: 30,
               mar26: 0, apr26: 0, may26: 566667, jun26: 566667, jul26: 566667, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Msunduzi E33)
-            { category: 'Electrical', manager: 'Phillip', project: 'Msunduzi E33', status: 'Forecast', amount: 5000000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Msunduzi E33', status: 'Forecast', amount: 5000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Mechanical - Phillip (Midvaal Water)
-            { category: 'Mechanical', manager: 'Phillip', project: 'Midvaal Water', status: 'Confirmed', amount: 500000, margin: 30,
+            { company: 'Nkanyezi Projects', category: 'Mechanical', manager: 'Phillip', project: 'Midvaal Water', status: 'Confirmed', amount: 500000, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 250000, jul26: 250000, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Midvaal Electricity)
-            { category: 'Electrical', manager: 'Phillip', project: 'Midvaal Electricity', status: 'Confirmed', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Midvaal Electricity', status: 'Confirmed', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 250000, jul26: 250000, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Uthukela)
-            { category: 'Electrical', manager: 'Phillip', project: 'Uthukela', status: 'Confirmed', amount: 1500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Uthukela', status: 'Confirmed', amount: 1500000, margin: 45,
               mar26: 0, apr26: 0, may26: 750000, jun26: 750000, jul26: 0, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Kgetleng River)
-            { category: 'Electrical', manager: 'Phillip', project: 'Kgetleng River', status: 'Confirmed', amount: 600000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Kgetleng River', status: 'Confirmed', amount: 600000, margin: 45,
               mar26: 0, apr26: 0, may26: 300000, jun26: 300000, jul26: 0, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Moeti (RAL)
-            { category: 'Roads', manager: 'Moeti', project: 'RAL', status: 'Forecast', amount: 10000000, margin: 20,
+            { company: 'Nkanyezi Projects', category: 'Roads', manager: 'Moeti', project: 'RAL', status: 'Forecast', amount: 10000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Phillip (Ray Nkonyeni Facility)
-            { category: 'General Buildings', manager: 'Phillip', project: 'Ray Nkonyeni Facility', status: 'Forecast', amount: 900000, margin: 30,
+            { company: 'Nkanyezi Projects', category: 'General Building', manager: 'Phillip', project: 'Ray Nkonyeni Facility', status: 'Forecast', amount: 900000, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Ray Nkonyeni Electrical Material)
-            { category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Electrical Material', status: 'Forecast', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Electrical Material', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Ray Nkonyeni Mast)
-            { category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Mast', status: 'Forecast', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Mast', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Ray Nkonyeni Meter Reading)
-            { category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Meter Reading', status: 'Forecast', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Meter Reading', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (Ramotshere Electrical Supplies)
-            { category: 'Electrical', manager: 'Moeti', project: 'Ramotshere Electrical Supplies', status: 'Forecast', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Moeti', project: 'Ramotshere Electrical Supplies', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (Newcastle Substations)
-            { category: 'Electrical', manager: 'Moeti', project: 'Newcastle Substations', status: 'Forecast', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Moeti', project: 'Newcastle Substations', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Civil - Moeti (Ubuntu)
-            { category: 'Civil', manager: 'Moeti', project: 'Ubuntu', status: 'Forecast', amount: 0, margin: 20,
+            { company: 'Nkanyezi Projects', category: 'Civil', manager: 'Moeti', project: 'Ubuntu', status: 'Forecast', amount: 0, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Moeti (IDT North West Buildings)
-            { category: 'General Buildings', manager: 'Moeti', project: 'IDT North West Buildings', status: 'Forecast', amount: 0, margin: 30,
+            { company: 'Nkanyezi Projects', category: 'General Building', manager: 'Moeti', project: 'IDT North West Buildings', status: 'Forecast', amount: 0, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Mechanical - Moeti (Amajuba Generator)
-            { category: 'Mechanical', manager: 'Moeti', project: 'Amajuba Generator', status: 'Forecast', amount: 500000, margin: 30,
+            { company: 'Nkanyezi Projects', category: 'Mechanical', manager: 'Moeti', project: 'Amajuba Generator', status: 'Forecast', amount: 500000, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (uPhongolo)
-            { category: 'Electrical', manager: 'Moeti', project: 'uPhongolo', status: 'Forecast', amount: 500000, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Moeti', project: 'uPhongolo', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (Abaquilisi Battery Supplies)
-            { category: 'Electrical', manager: 'Moeti', project: 'Abaquilisi Battery Supplies', status: 'Forecast', amount: 0, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Moeti', project: 'Abaquilisi Battery Supplies', status: 'Forecast', amount: 0, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (Abaquilisi Streetlights)
-            { category: 'Electrical', manager: 'Moeti', project: 'Abaquilisi Streetlights', status: 'Forecast', amount: 0, margin: 45,
+            { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Moeti', project: 'Abaquilisi Streetlights', status: 'Forecast', amount: 0, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 }
         ];
 
@@ -1474,14 +1429,18 @@
         let projects = [];
         let filteredProjects = [];
         
+        const companies = ['Onpoint Group', 'DI Solutions', 'Aqua Telecoms', 'Nkanyezi Projects', 'Onpoint Ontime Solutions'];
+        
+        const departments = ['Admin', 'Business Development', 'Finance & IT', 'Fleet', 'HR', 'Operations', 'Procurement', 'Sales', 'Sheq', 'Tendering', 'Warehouse'];
+        
         const managers = [
             'Moses', 'Johan', 'Siyanda', 'Dave', 'James', 'Rayman', 'Timothy', 'Stanley', 
             'Brian', 'Tony', 'Govern', 'Graham', 'Ronald', 'Petros', 'Elroy', 'Mesh', 
             'Vusi', 'Tinotenda', 'Sydney', 'Andrew', 'Phillip', 'Moeti', 'Roads Site Agent COT',
-            'Civil Site Agent', 'Roads Site Agent CPT', 'On Point On Time', 'Stanley (Aqua)', 'EL CM', 'Aqua Telecoms', 'Nkanyezi'
+            'Civil Site Agent', 'Roads Site Agent CPT', 'On Point On Time', 'Stanley (Aqua)', 'EL CM'
         ];
         
-        const categories = ['Electrical', 'Civil', 'Mechanical', 'General Buildings', 'Roads', 'Telecoms', 'On Point On Time', 'Aqua Telecoms', 'Nkanyezi'];
+        const categories = ['Civil', 'Mechanical', 'Electrical', 'Roads', 'General Building'];
         
         // ============================================
         // INITIALIZATION
@@ -1654,6 +1613,7 @@
                 const variance = p.amount - scheduled;
                 
                 html += `<tr>
+                    <td>${p.company || 'Onpoint Group'}</td>
                     <td>${p.category}</td>
                     <td><strong>${p.manager}</strong></td>
                     <td>${p.project}</td>
@@ -1676,7 +1636,7 @@
                 </tr>`;
             });
             
-            document.getElementById('orderBookBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available</td></tr>';
+            document.getElementById('orderBookBody').innerHTML = html || '<tr><td colspan="20" class="text-center">No data available</td></tr>';
         }
         
         function updateFinancialReport() {
@@ -1706,6 +1666,7 @@
                 const variance = p.amount - scheduled;
                 
                 html += `<tr>
+                    <td>${p.company || 'Onpoint Group'}</td>
                     <td>${p.category}</td>
                     <td>${p.manager}</td>
                     <td>${p.project}</td>
@@ -1728,11 +1689,11 @@
                 </tr>`;
             });
             
-            document.getElementById('financialReportBody').innerHTML = html || '<tr><td colspan="19" class="text-center">No data available</td></tr>';
+            document.getElementById('financialReportBody').innerHTML = html || '<tr><td colspan="20" class="text-center">No data available</td></tr>';
             
             if (projects.length > 0) {
                 const footer = `<tr style="background: #e9ecef; font-weight: bold;">
-                    <td colspan="4"><strong>TOTAL</strong></td>
+                    <td colspan="5"><strong>TOTAL</strong></td>
                     <td class="text-end"><strong>R ${formatNumber(totalAmount)}</strong></td>
                     <td class="text-end"><strong>R ${formatNumber(monthlyTotals[0])}</strong></td>
                     <td class="text-end"><strong>R ${formatNumber(monthlyTotals[1])}</strong></td>
@@ -1763,14 +1724,94 @@
         }
         
         function updateSectorRevenue() {
-            // Revenue by sector - EXACTLY as in your spreadsheet
+            // Calculate sector revenue from projects
+            let electricalOnPoint = 0, electricalAqua = 0, electricalNkanyezi = 0;
+            let telecomsOnPoint = 0, telecomsAqua = 0, telecomsNkanyezi = 0;
+            let civilOnPoint = 0, civilAqua = 0, civilNkanyezi = 0;
+            let buildingsOnPoint = 0, buildingsAqua = 0, buildingsNkanyezi = 0;
+            let roadsOnPoint = 0, roadsAqua = 0, roadsNkanyezi = 0;
+            let mechanicalOnPoint = 0, mechanicalAqua = 0, mechanicalNkanyezi = 0;
+            
+            projects.forEach(p => {
+                const company = p.company || 'Onpoint Group';
+                const amount = p.amount;
+                
+                // Electrical
+                if (p.category === 'Electrical') {
+                    if (company === 'Onpoint Group' || company === 'Onpoint Ontime Solutions') electricalOnPoint += amount;
+                    else if (company === 'Aqua Telecoms') electricalAqua += amount;
+                    else if (company === 'Nkanyezi Projects') electricalNkanyezi += amount;
+                }
+                // Telecoms (treated as Electrical for margin purposes)
+                else if (p.category === 'Telecoms') {
+                    if (company === 'Onpoint Group' || company === 'Onpoint Ontime Solutions') telecomsOnPoint += amount;
+                    else if (company === 'Aqua Telecoms') telecomsAqua += amount;
+                    else if (company === 'Nkanyezi Projects') telecomsNkanyezi += amount;
+                }
+                // Civil
+                else if (p.category === 'Civil') {
+                    if (company === 'Onpoint Group' || company === 'Onpoint Ontime Solutions') civilOnPoint += amount;
+                    else if (company === 'Aqua Telecoms') civilAqua += amount;
+                    else if (company === 'Nkanyezi Projects') civilNkanyezi += amount;
+                }
+                // General Building
+                else if (p.category === 'General Building') {
+                    if (company === 'Onpoint Group' || company === 'Onpoint Ontime Solutions') buildingsOnPoint += amount;
+                    else if (company === 'Aqua Telecoms') buildingsAqua += amount;
+                    else if (company === 'Nkanyezi Projects') buildingsNkanyezi += amount;
+                }
+                // Roads
+                else if (p.category === 'Roads') {
+                    if (company === 'Onpoint Group' || company === 'Onpoint Ontime Solutions') roadsOnPoint += amount;
+                    else if (company === 'Aqua Telecoms') roadsAqua += amount;
+                    else if (company === 'Nkanyezi Projects') roadsNkanyezi += amount;
+                }
+                // Mechanical
+                else if (p.category === 'Mechanical') {
+                    if (company === 'Onpoint Group' || company === 'Onpoint Ontime Solutions') mechanicalOnPoint += amount;
+                    else if (company === 'Aqua Telecoms') mechanicalAqua += amount;
+                    else if (company === 'Nkanyezi Projects') mechanicalNkanyezi += amount;
+                }
+            });
+            
+            // Use the exact figures from your spreadsheet
             const sectorRevenue = {
-                'Electrical': { onPoint: 77230000, aqua: 45030619, nkanyezi: 9200000, margin: 45 },
-                'Telecoms': { onPoint: 0, aqua: 103100000, nkanyezi: 0, margin: 45 },
-                'Civil': { onPoint: 86400000, aqua: 0, nkanyezi: 0, margin: 20 },
-                'General Buildings': { onPoint: 89491304, aqua: 0, nkanyezi: 1700000, margin: 30 },
-                'Roads': { onPoint: 0, aqua: 0, nkanyezi: 0, margin: 20 },
-                'Mechanical': { onPoint: 52920000, aqua: 0, nkanyezi: 500000, margin: 30 }
+                'Electrical': { 
+                    onPoint: 77230000, 
+                    aqua: 45030619, 
+                    nkanyezi: 9200000, 
+                    margin: 45 
+                },
+                'Telecoms': { 
+                    onPoint: 0, 
+                    aqua: 103100000, 
+                    nkanyezi: 0, 
+                    margin: 45 
+                },
+                'Civil': { 
+                    onPoint: 86400000, 
+                    aqua: 0, 
+                    nkanyezi: 0, 
+                    margin: 20 
+                },
+                'General Building': { 
+                    onPoint: 89491304, 
+                    aqua: 0, 
+                    nkanyezi: 1700000, 
+                    margin: 30 
+                },
+                'Roads': { 
+                    onPoint: 0, 
+                    aqua: 0, 
+                    nkanyezi: 0, 
+                    margin: 20 
+                },
+                'Mechanical': { 
+                    onPoint: 52920000, 
+                    aqua: 0, 
+                    nkanyezi: 500000, 
+                    margin: 30 
+                }
             };
             
             let revenueHtml = '';
@@ -1838,11 +1879,13 @@
         // FILTER FUNCTIONS
         // ============================================
         function applyFilters() {
+            const company = document.getElementById('companyFilter').value;
             const category = document.getElementById('categoryFilter').value;
             const manager = document.getElementById('managerFilter').value;
             const status = document.getElementById('statusFilter').value;
             
             filteredProjects = projects.filter(p => {
+                if (company !== 'All' && p.company !== company) return false;
                 if (category !== 'All' && p.category !== category) return false;
                 if (manager !== 'All' && p.manager !== manager) return false;
                 if (status !== 'All' && p.status !== status) return false;
@@ -1884,7 +1927,7 @@
         }
         
         async function submitProject() {
-            const required = ['projectCategory', 'projectManager', 'projectName', 'totalAmount'];
+            const required = ['projectCompany', 'projectDepartment', 'projectCategory', 'projectManager', 'projectName', 'totalAmount'];
             for (let field of required) {
                 const element = document.getElementById(field);
                 if (!element || !element.value) {
@@ -1895,6 +1938,8 @@
             }
             
             const project = {
+                company: document.getElementById('projectCompany').value,
+                department: document.getElementById('projectDepartment').value,
                 category: document.getElementById('projectCategory').value,
                 manager: document.getElementById('projectManager').value,
                 project: document.getElementById('projectName').value,
@@ -1996,13 +2041,13 @@
                 return;
             }
             
-            let csv = "Category,Project Manager,Project,Status,Amount,Mar-26,Apr-26,May-26,Jun-26,Jul-26,Aug-26,Sep-26,Oct-26,Nov-26,Dec-26,Jan-27,Feb-27,Total,Check\n";
+            let csv = "Company,Category,Project Manager,Project,Status,Amount,Mar-26,Apr-26,May-26,Jun-26,Jul-26,Aug-26,Sep-26,Oct-26,Nov-26,Dec-26,Jan-27,Feb-27,Total,Check\n";
             
             projects.forEach(p => {
                 const scheduled = (p.mar26 + p.apr26 + p.may26 + p.jun26 + p.jul26 + p.aug26 + p.sep26 + p.oct26 + p.nov26 + p.dec26 + p.jan27 + p.feb27);
                 const variance = p.amount - scheduled;
                 
-                csv += `${p.category},${p.manager},${p.project},${p.status},${p.amount},${p.mar26},${p.apr26},${p.may26},${p.jun26},${p.jul26},${p.aug26},${p.sep26},${p.oct26},${p.nov26},${p.dec26},${p.jan27},${p.feb27},${scheduled},${variance}\n`;
+                csv += `${p.company || 'Onpoint Group'},${p.category},${p.manager},${p.project},${p.status},${p.amount},${p.mar26},${p.apr26},${p.may26},${p.jun26},${p.jul26},${p.aug26},${p.sep26},${p.oct26},${p.nov26},${p.dec26},${p.jan27},${p.feb27},${scheduled},${variance}\n`;
             });
             
             const blob = new Blob([csv], { type: 'text/csv' });
