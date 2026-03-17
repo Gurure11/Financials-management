@@ -1100,7 +1100,7 @@
         // EXACT PROJECT DATA FROM YOUR SPREADSHEET
         // ============================================
         const exactProjectData = [
-            // On Point On Time
+            // On Point On Time - This will be excluded from totals
             { category: 'On Point On Time', manager: 'On Point On Time', project: 'On Point On Time', status: 'Confirmed', 
               amount: 670679374, margin: 39,
               mar26: 39556824, apr26: 39556824, may26: 39556824, jun26: 25290157, jul26: 25627918, aug26: 25627918, sep26: 25627918, 
@@ -1546,18 +1546,21 @@
         }
         
         function updateDashboard() {
-            const totalConfirmed = projects.filter(p => p.status === 'Confirmed').reduce((sum, p) => sum + p.amount, 0);
-            const totalForecast = projects.filter(p => p.status === 'Forecast').reduce((sum, p) => sum + p.amount, 0);
+            // EXCLUDE "On Point On Time" from totals - only include from Moses to Moeti
+            const projectsWithoutOnPoint = projects.filter(p => p.manager !== 'On Point On Time' && p.category !== 'On Point On Time');
+            
+            const totalConfirmed = projectsWithoutOnPoint.filter(p => p.status === 'Confirmed').reduce((sum, p) => sum + p.amount, 0);
+            const totalForecast = projectsWithoutOnPoint.filter(p => p.status === 'Forecast').reduce((sum, p) => sum + p.amount, 0);
             const totalOrderBook = totalConfirmed + totalForecast;
             
             document.getElementById('totalOrderBook').innerHTML = 'R ' + formatNumber(totalOrderBook);
             document.getElementById('confirmedTotal').innerHTML = 'R ' + formatNumber(totalConfirmed);
             document.getElementById('forecastTotal').innerHTML = 'R ' + formatNumber(totalForecast);
             
-            // Calculate weighted average margin
+            // Calculate weighted average margin (excluding On Point On Time)
             let totalGP = 0;
             let totalRevenue = 0;
-            projects.forEach(p => {
+            projectsWithoutOnPoint.forEach(p => {
                 const margin = p.margin;
                 totalGP += p.amount * (margin / 100);
                 totalRevenue += p.amount;
