@@ -2339,6 +2339,221 @@
             a.click();
             window.URL.revokeObjectURL(url);
         }
+        // Add these functions after your existing functions
+
+function loadCompanyManagers() {
+    var company = document.getElementById('revenueCompany') ? document.getElementById('revenueCompany').value : '';
+    var category = document.getElementById('revenueCategory') ? document.getElementById('revenueCategory').value : '';
+    
+    // Reset dependent dropdowns
+    var managerSelect = document.getElementById('revenueManager');
+    var projectSelect = document.getElementById('revenueProject');
+    
+    if (managerSelect) {
+        managerSelect.innerHTML = '<option value="">Select Manager</option>';
+    }
+    if (projectSelect) {
+        projectSelect.innerHTML = '<option value="">Select Project</option>';
+    }
+    
+    if (!company || !category) return;
+    
+    // Filter managers by company and category
+    var companyManagers = [];
+    for (var i = 0; i < projects.length; i++) {
+        var p = projects[i];
+        if (p.company === company && p.category === category && p.manager && !companyManagers.includes(p.manager)) {
+            companyManagers.push(p.manager);
+        }
+    }
+    
+    // Sort managers alphabetically
+    companyManagers.sort();
+    
+    // Populate manager dropdown
+    if (managerSelect) {
+        for (var m = 0; m < companyManagers.length; m++) {
+            var option = document.createElement('option');
+            option.value = companyManagers[m];
+            option.textContent = companyManagers[m];
+            managerSelect.appendChild(option);
+        }
+    }
+}
+
+function loadCategoryProjects() {
+    var company = document.getElementById('revenueCompany') ? document.getElementById('revenueCompany').value : '';
+    var category = document.getElementById('revenueCategory') ? document.getElementById('revenueCategory').value : '';
+    
+    // Reset manager and project dropdowns
+    var managerSelect = document.getElementById('revenueManager');
+    var projectSelect = document.getElementById('revenueProject');
+    
+    if (managerSelect) {
+        managerSelect.innerHTML = '<option value="">Select Manager</option>';
+    }
+    if (projectSelect) {
+        projectSelect.innerHTML = '<option value="">Select Project</option>';
+    }
+    
+    if (!company || !category) return;
+    
+    // Get unique managers for this company and category
+    var companyManagers = [];
+    for (var i = 0; i < projects.length; i++) {
+        var p = projects[i];
+        if (p.company === company && p.category === category && p.manager && !companyManagers.includes(p.manager)) {
+            companyManagers.push(p.manager);
+        }
+    }
+    
+    // Sort managers alphabetically
+    companyManagers.sort();
+    
+    // Populate manager dropdown
+    if (managerSelect) {
+        for (var m = 0; m < companyManagers.length; m++) {
+            var option = document.createElement('option');
+            option.value = companyManagers[m];
+            option.textContent = companyManagers[m];
+            managerSelect.appendChild(option);
+        }
+    }
+}
+
+// Modified loadManagerProjects function
+function loadManagerProjects() {
+    var company = document.getElementById('revenueCompany') ? document.getElementById('revenueCompany').value : '';
+    var category = document.getElementById('revenueCategory') ? document.getElementById('revenueCategory').value : '';
+    var manager = document.getElementById('revenueManager') ? document.getElementById('revenueManager').value : '';
+    var projectSelect = document.getElementById('revenueProject');
+    
+    if (!projectSelect) return;
+    
+    projectSelect.innerHTML = '<option value="">Select Project</option>';
+    
+    if (!company || !category || !manager) return;
+    
+    for (var i = 0; i < projects.length; i++) {
+        var p = projects[i];
+        if (p.company === company && p.category === category && p.manager === manager && !p.isSummary) {
+            p.id = i + 1;
+            var option = document.createElement('option');
+            option.value = p.id;
+            option.setAttribute('data-project', JSON.stringify(p));
+            option.textContent = p.project + ' - R ' + (p.amount || 0).toLocaleString();
+            projectSelect.appendChild(option);
+        }
+    }
+}
+
+// Modified updateRecentDailyTable function to include company and category
+function updateRecentDailyTable() {
+    var tbody = document.getElementById('recentDailyTable');
+    if (!tbody) return;
+    
+    var html = '';
+    var start = Math.max(0, dailyRevenue.length - 10);
+    for (var i = dailyRevenue.length - 1; i >= start; i--) {
+        var r = dailyRevenue[i];
+        if (!r) continue;
+        
+        var project = null;
+        for (var j = 0; j < projects.length; j++) {
+            if (projects[j].project === r.projectName) {
+                project = projects[j];
+                break;
+            }
+        }
+        
+        var budget = 0;
+        if (project) {
+            var date = new Date(r.date);
+            var monthIndex = date.getMonth() - 2;
+            if (monthIndex >= 0 && monthIndex < 12) {
+                budget = ((project.months && project.months[monthIndex]) || 0) / 22;
+            }
+        }
+        var variance = (r.amount || 0) - budget;
+        var varianceClass = variance >= 0 ? 'variance-positive' : 'variance-negative';
+        
+        html += '<tr>' +
+            '<td>' + (r.date || '') + '</td>' +
+            '<td>' + (r.company || '') + '</td>' +
+            '<td>' + (r.category || '') + '</td>' +
+            '<td>' + (r.manager || '') + '</td>' +
+            '<td>' + (r.projectName || '') + '</td>' +
+            '<td>R ' + (r.amount || 0).toLocaleString() + '</td>' +
+            '<td>R ' + Math.round(budget).toLocaleString() + '</td>' +
+            '<td class="' + varianceClass + '">R ' + Math.round(variance).toLocaleString() + '</td>' +
+        '</tr>';
+    }
+    
+    tbody.innerHTML = html || '<tr><td colspan="8" class="text-center">No entries</td></tr>';
+}
+
+// Modified submitDailyRevenue function to include company and category
+async function submitDailyRevenue() {
+    var projectSelect = document.getElementById('revenueProject');
+    if (!projectSelect) return;
+    
+    var selected = projectSelect.options[projectSelect.selectedIndex];
+    
+    if (!selected || !selected.value) {
+        showStatus('Please select a project', 'error');
+        return;
+    }
+
+    var project = JSON.parse(selected.dataset.project || '{}');
+    var amount = parseFloat(document.getElementById('dailyAmount') ? document.getElementById('dailyAmount').value : 0) || 0;
+    
+    if (amount <= 0) {
+        showStatus('Please enter a valid amount', 'error');
+        return;
+    }
+
+    var revenueData = {
+        date: document.getElementById('revenueDate') ? document.getElementById('revenueDate').value : '',
+        company: document.getElementById('revenueCompany') ? document.getElementById('revenueCompany').value : '',
+        category: document.getElementById('revenueCategory') ? document.getElementById('revenueCategory').value : '',
+        projectId: project.id || '',
+        projectName: project.project || '',
+        manager: document.getElementById('revenueManager') ? document.getElementById('revenueManager').value : '',
+        amount: amount,
+        notes: document.getElementById('revenueNotes') ? document.getElementById('revenueNotes').value : ''
+    };
+
+    showLoading('Saving daily revenue to Google Sheets...');
+
+    try {
+        var response = await fetch(CONFIG.scriptURL, {
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'addRevenue',
+                sheetId: CONFIG.revenueSheetId,
+                revenue: revenueData
+            })
+        });
+        
+        var result = await response.json();
+        
+        if (result.success) {
+            showStatus('Daily revenue saved to Google Sheets', 'success');
+            if (document.getElementById('dailyAmount')) document.getElementById('dailyAmount').value = '';
+            if (document.getElementById('revenueNotes')) document.getElementById('revenueNotes').value = '';
+            await loadAllData();
+        } else {
+            throw new Error(result.error || 'Failed to save revenue');
+        }
+    } catch (error) {
+        console.error('Error saving:', error);
+        showStatus('Error saving to Google Sheets: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
     </script>
 </body>
 </html>
