@@ -800,6 +800,8 @@
                                         <option value="Roads">Roads</option>
                                         <option value="Telecoms">Telecoms</option>
                                         <option value="On Point On Time">On Point On Time</option>
+                                        <option value="Aqua Telecoms">Aqua Telecoms</option>
+                                        <option value="Nkanyezi">Nkanyezi</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -997,6 +999,7 @@
                                     <thead>
                                         <tr>
                                             <th>Sector</th>
+                                            <th class="text-end">Margin</th>
                                             <th class="text-end">On Point</th>
                                             <th class="text-end">Aqua Telecoms</th>
                                             <th class="text-end">Nkanyezi</th>
@@ -1021,7 +1024,6 @@
                                     <thead>
                                         <tr>
                                             <th>Sector</th>
-                                            <th class="text-end">Margin</th>
                                             <th class="text-end">On Point</th>
                                             <th class="text-end">Aqua</th>
                                             <th class="text-end">Nkanyezi</th>
@@ -1090,7 +1092,7 @@
         const SHEET_CONFIG = {
             spreadsheetId: '1qXz55Luti1s-0dh8qCPwxupX14kCNhtyWPJF6dpUdF0',
             sheetName: 'Orders',
-            driveFileId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
+            driveFolderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM'
         };
         
         // Google Apps Script Web App URL - REPLACE WITH YOUR DEPLOYED URL
@@ -1100,7 +1102,7 @@
         // EXACT PROJECT DATA FROM YOUR SPREADSHEET
         // ============================================
         const exactProjectData = [
-            // On Point On Time - This will be excluded from totals
+            // On Point On Time - This will be EXCLUDED from all totals
             { category: 'On Point On Time', manager: 'On Point On Time', project: 'On Point On Time', status: 'Confirmed', 
               amount: 670679374, margin: 39,
               mar26: 39556824, apr26: 39556824, may26: 39556824, jun26: 25290157, jul26: 25627918, aug26: 25627918, sep26: 25627918, 
@@ -1161,7 +1163,7 @@
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
             // Electrical - Stanley
-            { category: 'Electrical', manager: 'Stanley', project: 'Limpopo Eskom Substation', status: 'Forecast', amount: 40000000, margin: 45,
+            { category: 'Electrical', manager: 'Stanley', project: 'Limpopo Eskom Substation Ephraim Mogale', status: 'Forecast', amount: 40000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
             // Civil - Civil Site Agent
@@ -1172,17 +1174,17 @@
             { category: 'Roads', manager: 'Roads Site Agent CPT', project: 'Cape Town', status: 'Forecast', amount: 120000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Brian (Streetlights)
+            // Electrical - Brian (COT Streetlights)
             { category: 'Electrical', manager: 'Brian', project: 'COT Streetlights', status: 'Confirmed', amount: 3000000, margin: 45,
               mar26: 250000, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
             
-            // Electrical - Brian (Electrification)
+            // Electrical - Brian (COT Electrification)
             { category: 'Electrical', manager: 'Brian', project: 'COT Electrification', status: 'Confirmed', amount: 10000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 1000000, jul26: 1000000, aug26: 1000000, sep26: 2000000, oct26: 2000000,
               nov26: 1000000, dec26: 1000000, jan27: 1000000, feb27: 0 },
             
-            // Electrical - Brian (Metering)
+            // Electrical - Brian (COT Metering)
             { category: 'Electrical', manager: 'Brian', project: 'COT Metering', status: 'Confirmed', amount: 3000000, margin: 45,
               mar26: 250000, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
@@ -1207,12 +1209,12 @@
             { category: 'Electrical', manager: 'Moses', project: 'Msunduzi E47', status: 'Forecast', amount: 2000000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - EL CM (Streetlights)
+            // Electrical - EL CM (Moqhaka Streetlights)
             { category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 1800000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 200000, jul26: 200000, aug26: 200000, sep26: 200000, oct26: 200000,
               nov26: 200000, dec26: 200000, jan27: 200000, feb27: 200000 },
             
-            // Electrical - EL CM (Metering)
+            // Electrical - EL CM (Moqhaka Metering)
             { category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 200000, jul26: 200000, aug26: 200000, sep26: 200000, oct26: 200000,
               nov26: 200000, dec26: 200000, jan27: 200000, feb27: 200000 },
@@ -1265,7 +1267,7 @@
             { category: 'Roads', manager: 'Brian', project: 'Randwest Roads & Stormwater', status: 'Forecast', amount: 5000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Roads - Brian (Randwest Water)
+            // Roads - Brian (Randwest Water rand sanitation)
             { category: 'Roads', manager: 'Brian', project: 'Randwest Water rand sanitation', status: 'Forecast', amount: 5000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
@@ -1277,8 +1279,14 @@
             { category: 'Roads', manager: 'Timothy', project: 'RAL', status: 'Forecast', amount: 10000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Aqua Telecoms - Stanley (Stellenbosch)
-            { category: 'Telecoms', manager: 'Stanley (Aqua)', project: 'Stellenbosch', status: 'Confirmed', amount: 10034021, margin: 50,
+            // Aqua Telecoms Total
+            { category: 'Aqua Telecoms', manager: 'Aqua Telecoms', project: 'Aqua Telecoms Total', status: 'Confirmed', 
+              amount: 223034021, margin: 45,
+              mar26: 19733333, apr26: 20886395, may26: 20886395, jun26: 21886395, jul26: 12486395, aug26: 12486395, sep26: 10986395, 
+              oct26: 10986395, nov26: 10986395, dec26: 10986395, jan27: 10986395, feb27: 10083333 },
+            
+            // Electrical - Stanley (Stellenbosch)
+            { category: 'Electrical', manager: 'Stanley (Aqua)', project: 'Stellenbosch', status: 'Confirmed', amount: 10034021, margin: 50,
               mar26: 0, apr26: 903062, may26: 903062, jun26: 903062, jul26: 903062, aug26: 903062, sep26: 903062, oct26: 903062,
               nov26: 903062, dec26: 903062, jan27: 903062, feb27: 0 },
             
@@ -1286,6 +1294,18 @@
             { category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Confirmed', amount: 22000000, margin: 65,
               mar26: 5500000, apr26: 5500000, may26: 5500000, jun26: 5500000, jul26: 0, aug26: 0, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // Telecoms - Graham (Liquid ECPG Confirmed)
+            { category: 'Telecoms', manager: 'Graham', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // Telecoms - Ronald (Liquid ECPG Confirmed)
+            { category: 'Telecoms', manager: 'Ronald', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // Telecoms - Petros (Liquid ECPG Confirmed)
+            { category: 'Telecoms', manager: 'Petros', project: 'Liquid ECPG', status: 'Confirmed', amount: 0, margin: 65,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
             // Telecoms - Elroy (Liquid ECPG Confirmed)
             { category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECPG', status: 'Confirmed', amount: 12000000, margin: 65,
@@ -1345,7 +1365,13 @@
               mar26: 0, apr26: 250000, may26: 250000, jun26: 250000, jul26: 250000, aug26: 250000, sep26: 250000, oct26: 250000,
               nov26: 250000, dec26: 250000, jan27: 250000, feb27: 250000 },
             
-            // Nkanyezi - Phillip (Moqhaka Metering)
+            // Nkanyezi Total
+            { category: 'Nkanyezi', manager: 'Nkanyezi', project: 'Nkanyezi Total', status: 'Confirmed', 
+              amount: 32100000, margin: 30,
+              mar26: 400000, apr26: 400000, may26: 2016667, jun26: 2016667, jul26: 1466667, aug26: 900000, sep26: 700000, 
+              oct26: 700000, nov26: 700000, dec26: 700000, jan27: 700000, feb27: 700000 },
+            
+            // Electrical - Phillip (Moqhaka Metering)
             { category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45,
               mar26: 300000, apr26: 300000, may26: 300000, jun26: 300000, jul26: 300000, aug26: 300000, sep26: 0, oct26: 0,
               nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
@@ -1393,11 +1419,11 @@
             { category: 'Roads', manager: 'Moeti', project: 'RAL', status: 'Forecast', amount: 10000000, margin: 20,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // General Buildings - Phillip (Ray Nkonyeni)
+            // General Buildings - Phillip (Ray Nkonyeni Facility)
             { category: 'General Buildings', manager: 'Phillip', project: 'Ray Nkonyeni Facility', status: 'Forecast', amount: 900000, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Ray Nkonyeni Electrical)
+            // Electrical - Phillip (Ray Nkonyeni Electrical Material)
             { category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Electrical Material', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
@@ -1405,24 +1431,40 @@
             { category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Mast', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Phillip (Ray Nkonyeni Meter)
+            // Electrical - Phillip (Ray Nkonyeni Meter Reading)
             { category: 'Electrical', manager: 'Phillip', project: 'Ray Nkonyeni Meter Reading', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (Ramotshere)
+            // Electrical - Moeti (Ramotshere Electrical Supplies)
             { category: 'Electrical', manager: 'Moeti', project: 'Ramotshere Electrical Supplies', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Electrical - Moeti (Newcastle)
+            // Electrical - Moeti (Newcastle Substations)
             { category: 'Electrical', manager: 'Moeti', project: 'Newcastle Substations', status: 'Forecast', amount: 500000, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
-            // Mechanical - Moeti (Amajuba)
+            // Civil - Moeti (Ubuntu)
+            { category: 'Civil', manager: 'Moeti', project: 'Ubuntu', status: 'Forecast', amount: 0, margin: 20,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // General Buildings - Moeti (IDT North West Buildings)
+            { category: 'General Buildings', manager: 'Moeti', project: 'IDT North West Buildings', status: 'Forecast', amount: 0, margin: 30,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // Mechanical - Moeti (Amajuba Generator)
             { category: 'Mechanical', manager: 'Moeti', project: 'Amajuba Generator', status: 'Forecast', amount: 500000, margin: 30,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
             
             // Electrical - Moeti (uPhongolo)
             { category: 'Electrical', manager: 'Moeti', project: 'uPhongolo', status: 'Forecast', amount: 500000, margin: 45,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // Electrical - Moeti (Abaquilisi Battery Supplies)
+            { category: 'Electrical', manager: 'Moeti', project: 'Abaquilisi Battery Supplies', status: 'Forecast', amount: 0, margin: 45,
+              mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 },
+            
+            // Electrical - Moeti (Abaquilisi Streetlights)
+            { category: 'Electrical', manager: 'Moeti', project: 'Abaquilisi Streetlights', status: 'Forecast', amount: 0, margin: 45,
               mar26: 0, apr26: 0, may26: 0, jun26: 0, jul26: 0, aug26: 0, sep26: 0, oct26: 0, nov26: 0, dec26: 0, jan27: 0, feb27: 0 }
         ];
 
@@ -1436,10 +1478,10 @@
             'Moses', 'Johan', 'Siyanda', 'Dave', 'James', 'Rayman', 'Timothy', 'Stanley', 
             'Brian', 'Tony', 'Govern', 'Graham', 'Ronald', 'Petros', 'Elroy', 'Mesh', 
             'Vusi', 'Tinotenda', 'Sydney', 'Andrew', 'Phillip', 'Moeti', 'Roads Site Agent COT',
-            'Civil Site Agent', 'Roads Site Agent CPT', 'On Point On Time', 'Stanley (Aqua)', 'EL CM'
+            'Civil Site Agent', 'Roads Site Agent CPT', 'On Point On Time', 'Stanley (Aqua)', 'EL CM', 'Aqua Telecoms', 'Nkanyezi'
         ];
         
-        const categories = ['Electrical', 'Civil', 'Mechanical', 'General Buildings', 'Roads', 'Telecoms', 'On Point On Time'];
+        const categories = ['Electrical', 'Civil', 'Mechanical', 'General Buildings', 'Roads', 'Telecoms', 'On Point On Time', 'Aqua Telecoms', 'Nkanyezi'];
         
         // ============================================
         // INITIALIZATION
@@ -1448,7 +1490,7 @@
             console.log('DOM loaded, initializing...');
             console.log('Sheet ID:', SHEET_CONFIG.spreadsheetId);
             console.log('Sheet Name:', SHEET_CONFIG.sheetName);
-            console.log('Drive File ID:', SHEET_CONFIG.driveFileId);
+            console.log('Drive Folder ID:', SHEET_CONFIG.driveFolderId);
             
             updateCurrentDate();
             initializeDropdowns();
@@ -1754,6 +1796,7 @@
                 
                 revenueHtml += `<tr>
                     <td>${sector}</td>
+                    <td class="text-end">${data.margin}%</td>
                     <td class="text-end">R ${formatNumber(data.onPoint)}</td>
                     <td class="text-end">R ${formatNumber(data.aqua)}</td>
                     <td class="text-end">R ${formatNumber(data.nkanyezi)}</td>
@@ -1762,7 +1805,6 @@
                 
                 profitHtml += `<tr>
                     <td>${sector}</td>
-                    <td class="text-end">${data.margin}%</td>
                     <td class="text-end">R ${formatNumber(onPointGP)}</td>
                     <td class="text-end">R ${formatNumber(aquaGP)}</td>
                     <td class="text-end">R ${formatNumber(nkanyeziGP)}</td>
@@ -1773,6 +1815,7 @@
             // Add totals row
             revenueHtml += `<tr style="font-weight: bold; background: #e9ecef;">
                 <td><strong>TOTAL</strong></td>
+                <td class="text-end"></td>
                 <td class="text-end"><strong>R ${formatNumber(totalOnPoint)}</strong></td>
                 <td class="text-end"><strong>R ${formatNumber(totalAqua)}</strong></td>
                 <td class="text-end"><strong>R ${formatNumber(totalNkanyezi)}</strong></td>
@@ -1781,7 +1824,6 @@
             
             profitHtml += `<tr style="font-weight: bold; background: #e9ecef;">
                 <td><strong>TOTAL</strong></td>
-                <td class="text-end"></td>
                 <td class="text-end"><strong>R ${formatNumber(totalOnPointGP)}</strong></td>
                 <td class="text-end"><strong>R ${formatNumber(totalAquaGP)}</strong></td>
                 <td class="text-end"><strong>R ${formatNumber(totalNkanyeziGP)}</strong></td>
@@ -1909,6 +1951,7 @@
         // ============================================
         function formatNumber(num) {
             if (!num && num !== 0) return '0';
+            // Format with commas, ensuring all digits are shown
             return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
         
