@@ -488,10 +488,10 @@
                     <button class="btn btn-success" onclick="refreshData()">
                         <i class="fas fa-sync-alt"></i> Refresh
                     </button>
-                    <button class="btn btn-primary" id="loadSheetBtn" onclick="loadFromSheet()">
+                    <button class="btn btn-primary" id="loadSheetBtn" onclick="loadFromScript()">
                         <i class="fas fa-cloud-download-alt"></i> Load from Sheet
                     </button>
-                    <button class="btn btn-success" id="saveSheetBtn" onclick="saveToDrive()">
+                    <button class="btn btn-success" id="saveSheetBtn" onclick="saveToScript()">
                         <i class="fas fa-cloud-upload-alt"></i> Save to Drive
                     </button>
                 </div>
@@ -612,17 +612,11 @@
         <div class="spinner"></div>
     </div>
 
-    <!-- Google Sheets API Script -->
-    <script src="https://apis.google.com/js/api.js"></script>
-
     <script>
         // =============================================
-        // GOOGLE SHEETS CONFIGURATION
+        // GOOGLE APPS SCRIPT WEB APP URL
         // =============================================
-        const SHEET_ID = '16IO6zy09cT5_5eJfl4KshS32xP4bqVBFyMj9IRybFvU';
-        const SHEET_NAME = 'Kpi';
-        const DRIVE_ID = '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM';
-        const API_KEY = 'AIzaSyBzzS0hCQgR5qQ5zQ5zQ5zQ5zQ5zQ5zQ5zQ5'; // Replace with your actual API key
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzuy-KZHU6MxS13KgimDeEMfp2I0IpEa_DuIHcGyjv-pa14Vmh7MedtzeUMHND-T9NR/exec';
         
         // =============================================
         // MASTER DATA WITH EXACT PERCENTAGES FROM YOUR TABLE
@@ -692,114 +686,91 @@
             renderDashboard();
             updateStats();
             
-            // Initialize Google API
-            initializeGoogleAPI();
-            
             // Update connection status
             document.getElementById('statusDot').classList.add('connected');
-            document.getElementById('statusText').textContent = 'Connected • Live Data';
+            document.getElementById('statusText').textContent = 'Connected • Ready';
         });
 
-        // Initialize Google API
-        function initializeGoogleAPI() {
-            gapi.load('client', function() {
-                gapi.client.init({
-                    apiKey: API_KEY,
-                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-                }).then(function() {
-                    console.log('Google Sheets API initialized');
-                    document.getElementById('statusText').textContent = 'Connected • Google Sheets Ready';
-                }, function(error) {
-                    console.error('Error initializing Google API', error);
-                    document.getElementById('statusText').textContent = 'Connected • Sheets Offline';
-                });
-            });
-        }
-
-        // Load data from Google Sheets
-        function loadFromSheet() {
+        // Load data from Google Apps Script
+        function loadFromScript() {
             showLoading();
             
-            gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: SHEET_ID,
-                range: `${SHEET_NAME}!A:F`, // Columns: Cost Center, Manager, Confirmed, Forecast, Capacity, Daily Actual
-            }).then(function(response) {
-                const rows = response.result.values;
-                if (rows && rows.length > 0) {
-                    // Skip header row
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        if (row.length < 5) continue;
-                        
-                        const costCenter = row[0] || '';
-                        const managerName = row[1] || '';
-                        const confirmed = parseFloat(row[2]) || 0;
-                        const forecast = parseFloat(row[3]) || 0;
-                        const capacity = parseFloat(row[4]) || 0;
-                        const dailyActual = parseFloat(row[5]) || 0;
-                        
-                        // Skip summary rows (where manager name equals cost center)
-                        if (managerName === costCenter || 
-                            managerName === 'On Point' || 
-                            managerName === 'Aqua Telecoms' || 
-                            managerName === 'Nkanyezi') {
-                            continue;
-                        }
-                        
-                        // Find the project
-                        const project = masterData.projects.find(p => p.name === costCenter);
-                        if (project) {
-                            // Find or create manager
-                            let manager = project.managers.find(m => m.name === managerName);
-                            if (manager) {
-                                manager.confirmed = confirmed;
-                                manager.forecast = forecast;
-                                manager.capacity = capacity;
-                            } else {
-                                project.managers.push({
-                                    name: managerName,
-                                    confirmed: confirmed,
-                                    forecast: forecast,
-                                    capacity: capacity,
-                                    confCapPct: calculatePercentage(confirmed, capacity),
-                                    confAdjPct: calculateAdjustedPercentage(confirmed, forecast, capacity)
-                                });
+            fetch(SCRIPT_URL + '?action=getData')
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.rows && data.rows.length > 0) {
+                        // Process the data (similar to before but with the response format)
+                        data.rows.forEach(row => {
+                            const costCenter = row.costCenter || '';
+                            const managerName = row.managerName || '';
+                            const confirmed = parseFloat(row.confirmed) || 0;
+                            const forecast = parseFloat(row.forecast) || 0;
+                            const capacity = parseFloat(row.capacity) || 0;
+                            const dailyActual = parseFloat(row.dailyActual) || 0;
+                            
+                            // Skip summary rows
+                            if (managerName === costCenter || 
+                                managerName === 'On Point' || 
+                                managerName === 'Aqua Telecoms' || 
+                                managerName === 'Nkanyezi') {
+                                return;
                             }
                             
-                            // Store daily actual
-                            if (dailyActual > 0) {
-                                const actualKey = `${costCenter}_${managerName}`;
-                                dailyActuals[actualKey] = dailyActual;
+                            // Find the project
+                            const project = masterData.projects.find(p => p.name === costCenter);
+                            if (project) {
+                                // Find or create manager
+                                let manager = project.managers.find(m => m.name === managerName);
+                                if (manager) {
+                                    manager.confirmed = confirmed;
+                                    manager.forecast = forecast;
+                                    manager.capacity = capacity;
+                                } else {
+                                    project.managers.push({
+                                        name: managerName,
+                                        confirmed: confirmed,
+                                        forecast: forecast,
+                                        capacity: capacity,
+                                        confCapPct: calculatePercentage(confirmed, capacity),
+                                        confAdjPct: calculateAdjustedPercentage(confirmed, forecast, capacity)
+                                    });
+                                }
+                                
+                                // Store daily actual
+                                if (dailyActual > 0) {
+                                    const actualKey = `${costCenter}_${managerName}`;
+                                    dailyActuals[actualKey] = dailyActual;
+                                }
                             }
-                        }
+                        });
+                        
+                        // Recalculate percentages
+                        recalculatePercentages();
+                        
+                        // Save to localStorage
+                        saveActuals();
+                        
+                        // Re-render
+                        renderDashboard();
+                        updateStats();
+                        
+                        showMessage('Data loaded from Google Sheets successfully!', 'success');
                     }
-                    
-                    // Recalculate percentages
-                    recalculatePercentages();
-                    
-                    // Save to localStorage
-                    saveActuals();
-                    
-                    // Re-render
-                    renderDashboard();
-                    updateStats();
-                    
-                    showMessage('Data loaded from Google Sheets successfully!', 'success');
-                }
-                hideLoading();
-            }, function(error) {
-                console.error('Error loading from sheet', error);
-                showMessage('Failed to load from Google Sheets', 'error');
-                hideLoading();
-            });
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error loading from script:', error);
+                    showMessage('Failed to load from Google Sheets', 'error');
+                    hideLoading();
+                });
         }
 
-        // Save to Google Drive as CSV
-        function saveToDrive() {
+        // Save to Google Apps Script
+        function saveToScript() {
             showLoading();
             
-            // Generate CSV content
-            let csv = 'Cost Center,Project Manager,Confirmed,Forecast,Capacity,Daily Actual\n';
+            // Prepare data to save
+            const saveData = [];
             
             masterData.projects.forEach(project => {
                 project.managers.forEach(manager => {
@@ -814,45 +785,37 @@
                     const actualKey = `${project.name}_${manager.name}`;
                     const dailyActual = dailyActuals[actualKey] || 0;
                     
-                    csv += `"${project.name}","${manager.name}",${manager.confirmed},${manager.forecast},${manager.capacity},${dailyActual}\n`;
+                    saveData.push({
+                        costCenter: project.name,
+                        managerName: manager.name,
+                        confirmed: manager.confirmed,
+                        forecast: manager.forecast,
+                        capacity: manager.capacity,
+                        dailyActual: dailyActual
+                    });
                 });
             });
             
-            // Create file metadata
-            const metadata = {
-                name: `Project_Dashboard_${new Date().toISOString().split('T')[0]}.csv`,
-                mimeType: 'text/csv',
-                parents: [DRIVE_ID]
-            };
-            
-            // Convert CSV to Blob
-            const blob = new Blob([csv], {type: 'text/csv'});
-            const file = new File([blob], metadata.name, {type: 'text/csv'});
-            
-            // Use Drive API to upload
-            const accessToken = gapi.auth.getToken().access_token;
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
-            form.append('file', file);
-            
-            fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            // Send data to script
+            fetch(SCRIPT_URL, {
                 method: 'POST',
-                headers: new Headers({'Authorization': 'Bearer ' + accessToken}),
-                body: form
-            }).then(response => response.json()).then(data => {
-                showMessage('File saved to Google Drive successfully!', 'success');
+                mode: 'no-cors', // Important for CORS issues with Apps Script
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'saveData',
+                    data: saveData
+                })
+            }).then(() => {
+                showMessage('Data saved to Google Drive successfully!', 'success');
                 hideLoading();
             }).catch(error => {
-                console.error('Error saving to Drive', error);
+                console.error('Error saving to script:', error);
                 showMessage('Failed to save to Google Drive. Downloading CSV instead.', 'warning');
                 
                 // Fallback to CSV download
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = metadata.name;
-                a.click();
-                
+                exportToCSV();
                 hideLoading();
             });
         }
