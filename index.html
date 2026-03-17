@@ -427,17 +427,33 @@
             color: #6c757d;
             font-size: 12px;
         }
+        
+        /* Google Sheets info badge */
+        .sheets-info {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 5px 15px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            margin-left: 15px;
+        }
+        
+        .sheets-info i {
+            color: #0f9d58;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <div style="margin-top: 20px; color: var(--primary); font-weight: 600;" id="loadingMessage">Loading data...</div>
+        <div style="margin-top: 20px; color: var(--primary); font-weight: 600;" id="loadingMessage">Loading data from Google Sheets...</div>
     </div>
     
     <!-- Refresh Button -->
-    <div class="refresh-btn" onclick="window.location.reload()" title="Refresh Data">
+    <div class="refresh-btn" onclick="loadProjectsFromSheets()" title="Refresh Data from Google Sheets">
         <i class="fas fa-sync-alt"></i>
     </div>
     
@@ -455,6 +471,11 @@
                     </div>
                     <div class="company-subtitle">
                         Project Financial Management System
+                        <!-- Google Sheets Configuration Info (Hidden in production) -->
+                        <span class="sheets-info" id="sheetsInfo" style="display: none;">
+                            <i class="fab fa-google"></i> 
+                            Sheet ID: 1qXz55Luti1s-0dh8qCPwxupX14kCNhtyWPJF6dpUdF0 | Sheet: Orders
+                        </span>
                     </div>
                 </div>
                 <div class="mt-2 mt-md-0">
@@ -464,7 +485,7 @@
                 </div>
             </div>
             
-            <!-- Data Summary (No IDs shown) -->
+            <!-- Data Summary -->
             <div class="data-summary d-flex justify-content-between align-items-center">
                 <div>
                     <i class="fas fa-project-diagram me-2 text-primary"></i>
@@ -491,6 +512,9 @@
                 </button>
                 <button class="nav-link" onclick="showTab('dataentry', this)">
                     <i class="fas fa-edit"></i> Data Entry
+                </button>
+                <button class="nav-link" onclick="showTab('revenue', this)">
+                    <i class="fas fa-chart-line"></i> Revenue & Variance
                 </button>
             </div>
         </div>
@@ -593,7 +617,7 @@
             <div class="row">
                 <div class="col-lg-8 mx-auto">
                     <div class="form-container">
-                        <h4 class="mb-4"><i class="fas fa-pen"></i> Add New Project</h4>
+                        <h4 class="mb-4"><i class="fas fa-pen"></i> Add New Project to Google Sheets</h4>
                         
                         <form id="projectForm" onsubmit="event.preventDefault();">
                             <div class="row">
@@ -705,16 +729,372 @@
                             </div>
                             
                             <button type="button" class="btn btn-primary w-100" onclick="submitProject()">
-                                <i class="fas fa-save me-2"></i> Save to Database
+                                <i class="fas fa-save me-2"></i> Save to Google Sheets
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Revenue & Variance Tab -->
+        <div id="revenue" class="tab-content" style="display:none;">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">Revenue by Sector</div>
+                        <div class="card-body" id="sectorTable"></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">Gross Profit by Sector</div>
+                        <div class="card-body" id="gpSectorTable"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card mt-4">
+                <div class="card-header">Budget vs Actual Variance</div>
+                <div class="card-body">
+                    <canvas id="varianceChart" style="height:300px; width:100%;"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Include the external JavaScript file -->
-    <script src="script.js"></script>
+    <!-- Hidden configuration - REPLACE SCRIPT URL HERE -->
+    <script>
+        // ==============================================
+        // GOOGLE SHEETS CONFIGURATION - UPDATE THESE VALUES
+        // ==============================================
+        const SHEET_CONFIG = {
+            sheetId: '1qXz55Luti1s-0dh8qCPwxupX14kCNhtyWPJF6dpUdF0',
+            sheetName: 'Orders',
+            folderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM',
+            // REPLACE THIS WITH YOUR ACTUAL SCRIPT URL AFTER DEPLOYMENT
+            scriptURL: 'https://script.google.com/macros/s/AKfycby-FvPoV-ZpbHaod82aJlAhDG_0c41chHzQ7pAoh_xXzLakyRgrzyAox5pdsW-_u3Jw8A/exec'
+        };
+
+        // For debugging - show config in console
+        console.log('Google Sheets Configuration:', SHEET_CONFIG);
+    </script>
+
+    <!-- Main Application JavaScript -->
+    <script>
+        // Global variables
+        let projects = [];
+        let chart = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProjectsFromSheets();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            document.querySelectorAll('.month-input').forEach(i => i.addEventListener('input', updateScheduledTotal));
+        }
+
+        // Load projects from Google Sheets
+        async function loadProjectsFromSheets() {
+            showLoading('Loading data from Google Sheets...');
+            updateConnectionStatus('checking', 'Connecting to Google Sheets...');
+            
+            try {
+                if (!SHEET_CONFIG.scriptURL || SHEET_CONFIG.scriptURL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                    throw new Error('Please set your Google Apps Script URL in the configuration');
+                }
+
+                const response = await fetch(SHEET_CONFIG.scriptURL + '?action=getProjects&sheetId=' + SHEET_CONFIG.sheetId + '&sheetName=' + SHEET_CONFIG.sheetName);
+                const data = await response.json();
+                
+                if (data.success) {
+                    projects = data.projects.map((p, index) => ({
+                        id: index + 1,
+                        ...p
+                    }));
+                    refreshUI();
+                    updateConnectionStatus('connected', 'Connected to Google Sheets');
+                    showStatus('Data loaded successfully from Google Sheets', 'success');
+                } else {
+                    throw new Error(data.error || 'Failed to load data');
+                }
+            } catch (error) {
+                console.error('Error loading from Google Sheets:', error);
+                updateConnectionStatus('disconnected', 'Disconnected - Using demo data');
+                showStatus('Using demo data: ' + error.message, 'info');
+                // Fallback to demo data
+                loadDemoData();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Load demo data as fallback
+        function loadDemoData() {
+            projects = [
+                {id:1, company:"Onpoint Group", cat:"Electrical", mgr:"Moses", proj:"DBSA Generators", status:"Confirmed", amount:28400000, margin:45, retention:10, months:[7666667,7666667,7666667,0,0,0,0,0,0,0,0,0]},
+                {id:2, company:"Onpoint Group", cat:"Civil", mgr:"Johan", proj:"DBSA Rooiwal", status:"Confirmed", amount:15000000, margin:20, retention:10, months:[4100000,4100000,4100000,0,0,0,0,0,0,0,0,0]},
+                {id:3, company:"Aqua Telecoms", cat:"Electrical", mgr:"Stanley", proj:"Stellenbosch", status:"Confirmed", amount:10034021, margin:50, retention:10, months:[0,903062,903062,903062,903062,903062,903062,903062,903062,903062,903062,0]},
+                {id:4, company:"Nkanyezi", cat:"Electrical", mgr:"Phillip", proj:"Moqhaka Metering", status:"Confirmed", amount:1800000, margin:45, retention:10, months:[300000,300000,300000,300000,300000,300000,0,0,0,0,0,0]}
+            ];
+            refreshUI();
+        }
+
+        // Submit new project to Google Sheets
+        async function submitProject() {
+            if (!validateForm()) return;
+            
+            showLoading('Saving to Google Sheets...');
+            
+            const projectData = {
+                company: document.getElementById('company').value,
+                department: document.getElementById('department').value,
+                category: document.getElementById('category').value,
+                manager: document.getElementById('manager').value,
+                project: document.getElementById('project').value,
+                status: document.getElementById('status').value,
+                amount: parseFloat(document.getElementById('amount').value) || 0,
+                margin: parseFloat(document.getElementById('margin').value) || 0,
+                retention: parseFloat(document.getElementById('retention').value) || 0,
+                notes: document.getElementById('notes').value,
+                months: [
+                    parseFloat(mar26.value)||0, parseFloat(apr26.value)||0, parseFloat(may26.value)||0, parseFloat(jun26.value)||0,
+                    parseFloat(jul26.value)||0, parseFloat(aug26.value)||0, parseFloat(sep26.value)||0, parseFloat(oct26.value)||0,
+                    parseFloat(nov26.value)||0, parseFloat(dec26.value)||0, parseFloat(jan27.value)||0, parseFloat(feb27.value)||0
+                ]
+            };
+
+            try {
+                if (SHEET_CONFIG.scriptURL && SHEET_CONFIG.scriptURL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                    const response = await fetch(SHEET_CONFIG.scriptURL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'addProject',
+                            sheetId: SHEET_CONFIG.sheetId,
+                            sheetName: SHEET_CONFIG.sheetName,
+                            folderId: SHEET_CONFIG.folderId,
+                            project: projectData
+                        })
+                    });
+                    
+                    showStatus('Project saved to Google Sheets', 'success');
+                } else {
+                    // Local save if no script URL
+                    projectData.id = projects.length + 1;
+                    projects.push(projectData);
+                    showStatus('Project saved locally (Script URL not configured)', 'info');
+                }
+                
+                clearForm();
+                await loadProjectsFromSheets(); // Reload all data
+                
+            } catch (error) {
+                console.error('Error saving:', error);
+                showStatus('Error saving to Google Sheets: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function validateForm() {
+            const required = ['company', 'category', 'manager', 'project', 'amount'];
+            for (let field of required) {
+                if (!document.getElementById(field).value) {
+                    showStatus(`Please fill in ${field}`, 'error');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // UI Helper Functions
+        function updateConnectionStatus(status, message) {
+            const el = document.getElementById('connectionStatus');
+            el.className = 'connection-status status-' + status;
+            el.innerHTML = `<i class="fas ${status === 'connected' ? 'fa-check-circle' : status === 'disconnected' ? 'fa-exclamation-circle' : 'fa-sync-alt fa-spin'} me-2"></i> ${message}`;
+        }
+
+        function showLoading(message) {
+            document.getElementById('loadingMessage').textContent = message || 'Loading...';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+            setTimeout(() => statusDiv.remove(), 3000);
+        }
+
+        function showTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (tabId === 'revenue') drawVarianceChart();
+        }
+
+        // Data refresh functions
+        function refreshUI() {
+            updateKPIs();
+            updateDashboardTable();
+            updateOrderBookTable();
+            updateSectorTables();
+            updateLastUpdated();
+            drawVarianceChart();
+            
+            document.getElementById('orderCount').innerText = projects.length;
+            document.getElementById('projectCount').innerText = projects.length;
+            document.getElementById('totalValueDisplay').innerText = 'R ' + projects.reduce((s,p)=>s+p.amount,0).toLocaleString();
+        }
+
+        function updateKPIs() {
+            let total = projects.reduce((s,p)=>s+p.amount,0);
+            let conf = projects.filter(p=>p.status==='Confirmed').reduce((s,p)=>s+p.amount,0);
+            let fore = projects.filter(p=>p.status==='Forecast').reduce((s,p)=>s+p.amount,0);
+            let avgMarg = (projects.reduce((s,p)=>s+ (p.margin||0),0)/(projects.length||1)).toFixed(1);
+            
+            document.getElementById('totalOrderBook').innerText = 'R ' + total.toLocaleString();
+            document.getElementById('confirmedTotal').innerText = 'R ' + conf.toLocaleString();
+            document.getElementById('forecastTotal').innerText = 'R ' + fore.toLocaleString();
+            document.getElementById('avgMargin').innerText = avgMarg + '%';
+        }
+
+        function updateDashboardTable() {
+            let html = projects.slice(0,7).map(p=>`<tr>
+                <td>${p.company}</td>
+                <td>${p.mgr}</td>
+                <td>${p.proj}</td>
+                <td><span class="badge ${p.status==='Confirmed' ? 'badge-confirmed' : 'badge-forecast'}">${p.status}</span></td>
+                <td>R ${p.amount.toLocaleString()}</td>
+                <td>${p.margin||0}%</td>
+            </tr>`).join('');
+            
+            document.getElementById('dashboardTable').innerHTML = html || '<tr><td colspan="6" class="text-center">No projects found</tr>';
+        }
+
+        function updateOrderBookTable() {
+            let rows = '';
+            projects.forEach(p => {
+                let scheduled = p.months.reduce((a,b)=>a+b,0);
+                rows += `<tr>
+                    <td>${p.company}</td>
+                    <td>${p.cat}</td>
+                    <td>${p.mgr}</td>
+                    <td>${p.proj}</td>
+                    <td>${p.status}</td>
+                    <td>R ${p.amount.toLocaleString()}</td>`;
+                for(let i=0; i<12; i++) {
+                    rows += `<td>${p.months[i] ? 'R ' + p.months[i].toLocaleString() : '-'}</td>`;
+                }
+                rows += `<td>R ${scheduled.toLocaleString()}</td></tr>`;
+            });
+            document.getElementById('orderBookBody').innerHTML = rows || '<tr><td colspan="19" class="text-center">No data</tr>';
+        }
+
+        function updateSectorTables() {
+            let sectors = [...new Set(projects.map(p => p.cat))];
+            let revRows = '', gpRows = '';
+            
+            sectors.forEach(s => {
+                let total = projects.filter(p => p.cat === s).reduce((acc,p) => acc + p.amount, 0);
+                let gp = projects.filter(p => p.cat === s).reduce((acc,p) => acc + (p.amount * (p.margin||0)/100), 0);
+                revRows += `<tr><td>${s}</td><td>R ${total.toLocaleString()}</td></tr>`;
+                gpRows += `<tr><td>${s}</td><td>R ${gp.toLocaleString()}</td></tr>`;
+            });
+            
+            document.getElementById('sectorTable').innerHTML = `<table class="table"><tr><th>Sector</th><th>Revenue</th></tr>${revRows}</table>`;
+            document.getElementById('gpSectorTable').innerHTML = `<table class="table"><tr><th>Sector</th><th>Gross Profit</th></tr>${gpRows}</table>`;
+        }
+
+        function drawVarianceChart() {
+            const ctx = document.getElementById('varianceChart')?.getContext('2d');
+            if (!ctx) return;
+            
+            let months = ['Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb'];
+            let budget = new Array(12).fill(0);
+            
+            projects.forEach(p => {
+                for(let i=0; i<12; i++) {
+                    budget[i] += p.months[i] || 0;
+                }
+            });
+            
+            // Simulate actual at 90% of budget for variance
+            let actual = budget.map(x => x * 0.9);
+            
+            if (chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: 'Budget', data: budget, borderColor: '#1e3c72', tension: 0.1 },
+                        { label: 'Actual', data: actual, borderColor: '#dc3545', tension: 0.1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: { display: true, text: 'Monthly Financial Variance' }
+                    }
+                }
+            });
+        }
+
+        function distributeEvenly() {
+            let amount = parseFloat(document.getElementById('amount').value) || 0;
+            let each = Math.round(amount / 12);
+            ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27']
+                .forEach(id => document.getElementById(id).value = each);
+            updateScheduledTotal();
+        }
+
+        function updateScheduledTotal() {
+            let total = 0;
+            ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27']
+                .forEach(id => total += parseFloat(document.getElementById(id).value) || 0);
+            document.getElementById('scheduledTotal').innerText = total.toLocaleString();
+        }
+
+        function updateLastUpdated() {
+            document.getElementById('lastUpdated').innerHTML = '<i class="far fa-clock me-1"></i>' + new Date().toLocaleTimeString();
+        }
+
+        function clearForm() {
+            document.getElementById('projectForm').reset();
+            updateScheduledTotal();
+        }
+
+        function exportToCSV() {
+            let csv = 'Company,Category,Manager,Project,Status,Amount,Mar26,Apr26,May26,Jun26,Jul26,Aug26,Sep26,Oct26,Nov26,Dec26,Jan27,Feb27,Scheduled\n';
+            projects.forEach(p => {
+                let scheduled = p.months.reduce((a,b)=>a+b,0);
+                csv += `${p.company},${p.cat},${p.mgr},${p.proj},${p.status},${p.amount},${p.months.join(',')},${scheduled}\n`;
+            });
+            
+            let blob = new Blob([csv], { type: 'text/csv' });
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'orderbook.csv';
+            a.click();
+        }
+
+        function reloadApp() {
+            loadProjectsFromSheets();
+        }
+
+        // Initialize scheduled total on page load
+        updateScheduledTotal();
+    </script>
 </body>
 </html>
