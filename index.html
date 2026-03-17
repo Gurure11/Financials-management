@@ -496,6 +496,12 @@
         .sector-table td {
             padding: 8px 10px;
             border-bottom: 1px solid #dee2e6;
+            text-align: right;
+        }
+        
+        .sector-table td:first-child {
+            text-align: left;
+            font-weight: 600;
         }
         
         .grand-total {
@@ -593,13 +599,13 @@
         <!-- Navigation -->
         <div class="nav-custom">
             <div class="nav">
-                <button class="nav-link" onclick="showTab('dashboard', this)">
+                <button class="nav-link active" onclick="showTab('dashboard', this)">
                     <i class="fas fa-chart-pie"></i> Dashboard
                 </button>
                 <button class="nav-link" onclick="showTab('dailyRevenue', this)">
                     <i class="fas fa-calendar-day"></i> Daily Revenue
                 </button>
-                <button class="nav-link active" onclick="showTab('orderbook', this)">
+                <button class="nav-link" onclick="showTab('orderbook', this)">
                     <i class="fas fa-book"></i> Order Book <span class="badge bg-light text-dark ms-2" id="orderCount"></span>
                 </button>
                 <button class="nav-link" onclick="showTab('analysis', this)">
@@ -612,7 +618,7 @@
         </div>
         
         <!-- Dashboard Tab -->
-        <div id="dashboard" class="tab-content" style="display:none;">
+        <div id="dashboard" class="tab-content">
             <!-- KPI Cards -->
             <div class="kpi-grid">
                 <div class="kpi-card">
@@ -628,8 +634,8 @@
                     <div class="kpi-value" id="forecastTotal">R 0</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-label">Actual Revenue</div>
-                    <div class="kpi-value" id="actualRevenue">R 0</div>
+                    <div class="kpi-label">Gross Profit</div>
+                    <div class="kpi-value" id="grossProfit">R 0</div>
                 </div>
             </div>
             
@@ -643,6 +649,7 @@
                                 <thead>
                                     <tr>
                                         <th>Sector</th>
+                                        <th>Margin</th>
                                         <th>On Point</th>
                                         <th>Aqua</th>
                                         <th>Nkanyezi</th>
@@ -778,8 +785,8 @@
             </div>
         </div>
         
-        <!-- Order Book Tab - EXACT FORMAT -->
-        <div id="orderbook" class="tab-content">
+        <!-- Order Book Tab -->
+        <div id="orderbook" class="tab-content" style="display:none;">
             <div class="card">
                 <div class="card-header">
                     <i class="fas fa-book"></i> Order Book - Revenue Model
@@ -967,7 +974,7 @@
                     <div class="form-container">
                         <h4 class="mb-4"><i class="fas fa-pen"></i> Add New Project</h4>
                         
-                        <form id="projectForm">
+                        <form id="projectForm" onsubmit="return false;">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Company *</label>
@@ -1068,255 +1075,734 @@
         // ==============================================
         // CONFIGURATION - Google Sheets IDs
         // ==============================================
-        const CONFIG = {
+        var CONFIG = {
             ordersSheetId: '1qXz55Luti1s-0dh8qCPwxupX14kCNhtyWPJF6dpUdF0',
             ordersSheetName: 'Orders',
             revenueSheetId: '16zsV_C-2pz5gyka2fjlSZZoC5cDZcR3-cokS4Cx1rDE',
             revenueSheetName: 'DailyRevenue',
             folderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM',
-            scriptURL: 'https://script.google.com/macros/s/AKfycbxSlddZV9XqC2DEI3snpB-WD1h-u_beDwzD46vZ6cwQsnyklFxO6hsE4KMBm4kV0lQ2/exec' // Replace with your Apps Script URL
+            scriptURL: 'https://script.google.com/macros/s/AKfycbxSlddZV9XqC2DEI3snpB-WD1h-u_beDwzD46vZ6cwQsnyklFxO6hsE4KMBm4kV0lQ2/exec'
         };
 
         // Global data stores
-        let projects = [];
-        let dailyRevenue = [];
-        let managers = [];
+        var projects = [];
+        var dailyRevenue = [];
+        var managers = [];
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadAllData();
             setDefaultDate();
             setupPeriodToggle();
+            updateScheduledTotal();
         });
 
         function setDefaultDate() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('revenueDate').value = today;
-            document.getElementById('analysisDate').value = today;
+            var today = new Date().toISOString().split('T')[0];
+            var revenueDate = document.getElementById('revenueDate');
+            var analysisDate = document.getElementById('analysisDate');
+            if (revenueDate) revenueDate.value = today;
+            if (analysisDate) analysisDate.value = today;
         }
 
         function setupPeriodToggle() {
-            document.getElementById('analysisPeriod').addEventListener('change', function(e) {
-                const dateInput = document.getElementById('analysisDate');
-                const weekInput = document.getElementById('analysisWeek');
-                const monthInput = document.getElementById('analysisMonth');
-                
-                dateInput.style.display = 'none';
-                weekInput.style.display = 'none';
-                monthInput.style.display = 'none';
-                
-                if (e.target.value === 'daily') {
-                    dateInput.style.display = 'block';
-                } else if (e.target.value === 'weekly') {
-                    weekInput.style.display = 'block';
-                } else if (e.target.value === 'monthly') {
-                    monthInput.style.display = 'block';
-                }
-                
-                updateAnalysis();
-            });
+            var periodSelect = document.getElementById('analysisPeriod');
+            if (periodSelect) {
+                periodSelect.addEventListener('change', function(e) {
+                    var dateInput = document.getElementById('analysisDate');
+                    var weekInput = document.getElementById('analysisWeek');
+                    var monthInput = document.getElementById('analysisMonth');
+                    
+                    if (dateInput) dateInput.style.display = 'none';
+                    if (weekInput) weekInput.style.display = 'none';
+                    if (monthInput) monthInput.style.display = 'none';
+                    
+                    if (e.target.value === 'daily' && dateInput) {
+                        dateInput.style.display = 'block';
+                    } else if (e.target.value === 'weekly' && weekInput) {
+                        weekInput.style.display = 'block';
+                    } else if (e.target.value === 'monthly' && monthInput) {
+                        monthInput.style.display = 'block';
+                    }
+                    
+                    updateAnalysis();
+                });
+            }
         }
 
-        // Load all data
         async function loadAllData() {
             showLoading('Loading data from Google Sheets...');
             updateConnectionStatus('checking', 'Connecting...');
             
             try {
-                // Load projects from Orders sheet
-                const projectsResponse = await fetch(
-                    `${CONFIG.scriptURL}?action=getProjects&sheetId=${CONFIG.ordersSheetId}&sheetName=${CONFIG.ordersSheetName}`
-                );
-                const projectsData = await projectsResponse.json();
+                await loadProjects();
+                await loadDailyRevenue();
                 
-                if (projectsData.success) {
-                    projects = projectsData.data || [];
+                if (projects.length === 0) {
+                    console.log('No projects found in Google Sheets, loading demo data');
+                    loadDemoData();
+                } else {
                     extractManagers();
+                    refreshUI();
+                    updateConnectionStatus('connected', 'Connected to Google Sheets');
+                    showStatus('Data loaded successfully from Google Sheets', 'success');
                 }
-                
-                // Load daily revenue from Revenue sheet
-                const revenueResponse = await fetch(
-                    `${CONFIG.scriptURL}?action=getRevenue&sheetId=${CONFIG.revenueSheetId}&sheetName=${CONFIG.revenueSheetName}`
-                );
-                const revenueData = await revenueResponse.json();
-                
-                if (revenueData.success) {
-                    dailyRevenue = revenueData.data || [];
-                }
-                
-                refreshUI();
-                updateConnectionStatus('connected', 'Connected');
-                showStatus('Data loaded successfully', 'success');
-                
             } catch (error) {
-                console.error('Error loading data:', error);
+                console.error('Error loading from Google Sheets:', error);
                 updateConnectionStatus('disconnected', 'Using Demo Data');
                 loadDemoData();
+                showStatus('Using demo data - ' + error.message, 'info');
             } finally {
                 hideLoading();
             }
         }
 
-        // Extract unique managers
-        function extractManagers() {
-            managers = [...new Set(projects.filter(p => p.manager).map(p => p.manager))];
-            
-            // Update manager dropdowns
-            const managerSelects = ['revenueManager', 'analysisManager'];
-            managerSelects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    select.innerHTML = '<option value="">Select Manager</option>';
-                    if (selectId === 'analysisManager') {
-                        select.innerHTML += '<option value="all">All Managers</option>';
-                    }
-                    managers.forEach(m => {
-                        select.innerHTML += `<option value="${m}">${m}</option>`;
-                    });
+        async function loadProjects() {
+            try {
+                var url = CONFIG.scriptURL + '?action=getProjects&sheetId=' + CONFIG.ordersSheetId;
+                console.log('Fetching projects from:', url);
+                var response = await fetch(url);
+                var data = await response.json();
+                console.log('Projects response:', data);
+                
+                if (data.success) {
+                    projects = data.data || [];
+                    console.log('Projects loaded:', projects.length);
+                } else {
+                    throw new Error(data.error || 'Failed to load projects');
                 }
-            });
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                throw error;
+            }
         }
 
-        // Load manager's projects
+        async function loadDailyRevenue() {
+            try {
+                var url = CONFIG.scriptURL + '?action=getRevenue&sheetId=' + CONFIG.revenueSheetId;
+                console.log('Fetching revenue from:', url);
+                var response = await fetch(url);
+                var data = await response.json();
+                console.log('Revenue response:', data);
+                
+                if (data.success) {
+                    dailyRevenue = data.data || [];
+                    console.log('Revenue loaded:', dailyRevenue.length);
+                } else {
+                    throw new Error(data.error || 'Failed to load revenue');
+                }
+            } catch (error) {
+                console.error('Error loading revenue:', error);
+                throw error;
+            }
+        }
+
+        function extractManagers() {
+            var managerSet = new Set();
+            for (var i = 0; i < projects.length; i++) {
+                if (projects[i].manager) {
+                    managerSet.add(projects[i].manager);
+                }
+            }
+            managers = Array.from(managerSet);
+            console.log('Managers extracted:', managers);
+            
+            var managerSelects = ['revenueManager', 'analysisManager'];
+            for (var s = 0; s < managerSelects.length; s++) {
+                var select = document.getElementById(managerSelects[s]);
+                if (select) {
+                    var options = '<option value="">Select Manager</option>';
+                    if (managerSelects[s] === 'analysisManager') {
+                        options += '<option value="all">All Managers</option>';
+                    }
+                    for (var m = 0; m < managers.length; m++) {
+                        options += '<option value="' + managers[m] + '">' + managers[m] + '</option>';
+                    }
+                    select.innerHTML = options;
+                }
+            }
+        }
+
         function loadManagerProjects() {
-            const manager = document.getElementById('revenueManager').value;
-            const projectSelect = document.getElementById('revenueProject');
+            var manager = document.getElementById('revenueManager') ? document.getElementById('revenueManager').value : '';
+            var projectSelect = document.getElementById('revenueProject');
+            
+            if (!projectSelect) return;
             
             projectSelect.innerHTML = '<option value="">Select Project</option>';
             
             if (!manager) return;
             
-            const managerProjects = projects.filter(p => p.manager === manager && !p.isSummary);
-            managerProjects.forEach((p, index) => {
-                p.id = index + 1;
-                projectSelect.innerHTML += `<option value="${p.id}" data-project='${JSON.stringify(p)}'>
-                    ${p.project} - R ${p.amount.toLocaleString()}
-                </option>`;
-            });
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
+                if (p.manager === manager && !p.isSummary) {
+                    p.id = i + 1;
+                    var option = document.createElement('option');
+                    option.value = p.id;
+                    option.setAttribute('data-project', JSON.stringify(p));
+                    option.textContent = p.project + ' - R ' + (p.amount || 0).toLocaleString();
+                    projectSelect.appendChild(option);
+                }
+            }
         }
 
-        // Update project budget when selected
         function updateProjectBudget() {
-            const select = document.getElementById('revenueProject');
-            const selected = select.options[select.selectedIndex];
+            var select = document.getElementById('revenueProject');
+            if (!select) return;
             
-            if (selected && selected.dataset.project) {
-                const project = JSON.parse(selected.dataset.project);
-                document.getElementById('revenueCategory').value = project.category || '';
+            var selected = select.options[select.selectedIndex];
+            var categoryField = document.getElementById('revenueCategory');
+            var budgetField = document.getElementById('dailyBudget');
+            
+            if (selected && selected.dataset.project && categoryField && budgetField) {
+                var project = JSON.parse(selected.dataset.project);
+                categoryField.value = project.category || '';
                 
-                // Calculate daily budget based on current month
-                const today = new Date();
-                const monthIndex = today.getMonth() - 2; // March is index 0 in our fiscal year
+                var today = new Date();
+                var monthIndex = today.getMonth() - 2;
                 if (monthIndex >= 0 && monthIndex < 12) {
-                    const monthlyBudget = project.months[monthIndex] || 0;
-                    const dailyBudget = Math.round(monthlyBudget / 22); // 22 working days
-                    document.getElementById('dailyBudget').value = 'R ' + dailyBudget.toLocaleString();
+                    var monthlyBudget = (project.months && project.months[monthIndex]) || 0;
+                    var dailyBudget = Math.round(monthlyBudget / 22);
+                    budgetField.value = 'R ' + dailyBudget.toLocaleString();
                 }
                 
                 calculateVariance();
             }
         }
 
-        // Calculate daily variance
         function calculateVariance() {
-            const amount = parseFloat(document.getElementById('dailyAmount').value) || 0;
-            const budgetText = document.getElementById('dailyBudget').value;
-            const budget = parseFloat(budgetText.replace(/[^0-9.-]+/g, '')) || 0;
+            var amount = parseFloat(document.getElementById('dailyAmount') ? document.getElementById('dailyAmount').value : 0) || 0;
+            var budgetText = document.getElementById('dailyBudget') ? document.getElementById('dailyBudget').value : 'R 0';
+            var budget = parseFloat(budgetText.replace(/[^0-9.-]+/g, '')) || 0;
             
-            const variance = amount - budget;
-            document.getElementById('dailyVariance').value = 'R ' + variance.toLocaleString();
+            var variance = amount - budget;
+            var varianceField = document.getElementById('dailyVariance');
+            if (varianceField) {
+                varianceField.value = 'R ' + variance.toLocaleString();
+            }
         }
 
-        // Submit daily revenue
         async function submitDailyRevenue() {
-            const projectSelect = document.getElementById('revenueProject');
-            const selected = projectSelect.options[projectSelect.selectedIndex];
+            var projectSelect = document.getElementById('revenueProject');
+            if (!projectSelect) return;
             
-            if (!selected.value) {
+            var selected = projectSelect.options[projectSelect.selectedIndex];
+            
+            if (!selected || !selected.value) {
                 showStatus('Please select a project', 'error');
                 return;
             }
 
-            const project = JSON.parse(selected.dataset.project);
-            const revenueData = {
-                date: document.getElementById('revenueDate').value,
-                projectId: project.id,
-                projectName: project.project,
-                manager: document.getElementById('revenueManager').value,
-                category: project.category,
-                amount: parseFloat(document.getElementById('dailyAmount').value) || 0,
-                notes: document.getElementById('revenueNotes').value
-            };
-
-            if (revenueData.amount <= 0) {
+            var project = JSON.parse(selected.dataset.project || '{}');
+            var amount = parseFloat(document.getElementById('dailyAmount') ? document.getElementById('dailyAmount').value : 0) || 0;
+            
+            if (amount <= 0) {
                 showStatus('Please enter a valid amount', 'error');
                 return;
             }
 
-            showLoading('Saving daily revenue...');
+            var revenueData = {
+                date: document.getElementById('revenueDate') ? document.getElementById('revenueDate').value : '',
+                projectId: project.id || '',
+                projectName: project.project || '',
+                manager: document.getElementById('revenueManager') ? document.getElementById('revenueManager').value : '',
+                category: project.category || '',
+                amount: amount,
+                notes: document.getElementById('revenueNotes') ? document.getElementById('revenueNotes').value : ''
+            };
+
+            showLoading('Saving daily revenue to Google Sheets...');
 
             try {
-                const response = await fetch(CONFIG.scriptURL, {
+                var response = await fetch(CONFIG.scriptURL, {
                     method: 'POST',
                     mode: 'cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'addRevenue',
                         sheetId: CONFIG.revenueSheetId,
-                        sheetName: CONFIG.revenueSheetName,
                         revenue: revenueData
                     })
                 });
                 
-                const result = await response.json();
+                var result = await response.json();
                 
                 if (result.success) {
-                    showStatus('Daily revenue saved', 'success');
-                    document.getElementById('dailyAmount').value = '';
-                    document.getElementById('revenueNotes').value = '';
+                    showStatus('Daily revenue saved to Google Sheets', 'success');
+                    if (document.getElementById('dailyAmount')) document.getElementById('dailyAmount').value = '';
+                    if (document.getElementById('revenueNotes')) document.getElementById('revenueNotes').value = '';
                     await loadAllData();
-                    updateTodayStats();
                 } else {
-                    throw new Error(result.error);
+                    throw new Error(result.error || 'Failed to save revenue');
                 }
             } catch (error) {
                 console.error('Error saving:', error);
-                showStatus('Error saving: ' + error.message, 'error');
+                showStatus('Error saving to Google Sheets: ' + error.message, 'error');
             } finally {
                 hideLoading();
             }
         }
 
-        // Update today's stats
-        function updateTodayStats() {
-            const today = new Date().toISOString().split('T')[0];
-            const todayRevenue = dailyRevenue.filter(r => r.date === today);
-            const total = todayRevenue.reduce((sum, r) => sum + r.amount, 0);
-            
-            // Calculate today's budget
-            let budget = 0;
-            projects.forEach(p => {
-                if (!p.isSummary) {
-                    const monthIndex = new Date().getMonth() - 2;
-                    if (monthIndex >= 0 && monthIndex < 12) {
-                        budget += (p.months[monthIndex] || 0) / 22;
-                    }
+        async function submitProject() {
+            var projectData = {
+                company: document.getElementById('company') ? document.getElementById('company').value : '',
+                category: document.getElementById('category') ? document.getElementById('category').value : '',
+                manager: document.getElementById('manager') ? document.getElementById('manager').value : '',
+                project: document.getElementById('project') ? document.getElementById('project').value : '',
+                status: document.getElementById('status') ? document.getElementById('status').value : '',
+                amount: parseFloat(document.getElementById('amount') ? document.getElementById('amount').value : 0) || 0,
+                margin: parseFloat(document.getElementById('margin') ? document.getElementById('margin').value : 0) || 0,
+                notes: document.getElementById('notes') ? document.getElementById('notes').value : '',
+                months: [
+                    parseFloat(document.getElementById('mar26') ? document.getElementById('mar26').value : 0) || 0,
+                    parseFloat(document.getElementById('apr26') ? document.getElementById('apr26').value : 0) || 0,
+                    parseFloat(document.getElementById('may26') ? document.getElementById('may26').value : 0) || 0,
+                    parseFloat(document.getElementById('jun26') ? document.getElementById('jun26').value : 0) || 0,
+                    parseFloat(document.getElementById('jul26') ? document.getElementById('jul26').value : 0) || 0,
+                    parseFloat(document.getElementById('aug26') ? document.getElementById('aug26').value : 0) || 0,
+                    parseFloat(document.getElementById('sep26') ? document.getElementById('sep26').value : 0) || 0,
+                    parseFloat(document.getElementById('oct26') ? document.getElementById('oct26').value : 0) || 0,
+                    parseFloat(document.getElementById('nov26') ? document.getElementById('nov26').value : 0) || 0,
+                    parseFloat(document.getElementById('dec26') ? document.getElementById('dec26').value : 0) || 0,
+                    parseFloat(document.getElementById('jan27') ? document.getElementById('jan27').value : 0) || 0,
+                    parseFloat(document.getElementById('feb27') ? document.getElementById('feb27').value : 0) || 0
+                ]
+            };
+
+            showLoading('Saving project to Google Sheets...');
+
+            try {
+                var response = await fetch(CONFIG.scriptURL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'addProject',
+                        sheetId: CONFIG.ordersSheetId,
+                        project: projectData
+                    })
+                });
+                
+                var result = await response.json();
+                
+                if (result.success) {
+                    showStatus('Project saved to Google Sheets', 'success');
+                    var form = document.getElementById('projectForm');
+                    if (form) form.reset();
+                    await loadAllData();
+                } else {
+                    throw new Error(result.error || 'Failed to save project');
                 }
-            });
-            
-            const variance = total - budget;
-            const achievement = budget > 0 ? (total / budget * 100).toFixed(1) : 0;
-            
-            document.getElementById('todayTotal').innerHTML = 'R ' + total.toLocaleString();
-            document.getElementById('todayBudget').innerHTML = 'R ' + Math.round(budget).toLocaleString();
-            document.getElementById('todayVariance').innerHTML = 'R ' + Math.round(variance).toLocaleString();
-            document.getElementById('todayAchievement').innerHTML = achievement + '%';
+            } catch (error) {
+                console.error('Error saving:', error);
+                showStatus('Error saving to Google Sheets: ' + error.message, 'error');
+            } finally {
+                hideLoading();
+            }
         }
 
-        // Update analysis based on period
+        function updateTodayStats() {
+            var today = new Date().toISOString().split('T')[0];
+            var total = 0;
+            for (var i = 0; i < dailyRevenue.length; i++) {
+                if (dailyRevenue[i].date === today) {
+                    total += dailyRevenue[i].amount || 0;
+                }
+            }
+            
+            var budget = 0;
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
+                if (!p.isSummary) {
+                    var monthIndex = new Date().getMonth() - 2;
+                    if (monthIndex >= 0 && monthIndex < 12) {
+                        budget += ((p.months && p.months[monthIndex]) || 0) / 22;
+                    }
+                }
+            }
+            
+            var variance = total - budget;
+            var achievement = budget > 0 ? ((total / budget) * 100).toFixed(1) : 0;
+            
+            var todayTotal = document.getElementById('todayTotal');
+            var todayBudget = document.getElementById('todayBudget');
+            var todayVariance = document.getElementById('todayVariance');
+            var todayAchievement = document.getElementById('todayAchievement');
+            
+            if (todayTotal) todayTotal.innerHTML = 'R ' + total.toLocaleString();
+            if (todayBudget) todayBudget.innerHTML = 'R ' + Math.round(budget).toLocaleString();
+            if (todayVariance) todayVariance.innerHTML = 'R ' + Math.round(variance).toLocaleString();
+            if (todayAchievement) todayAchievement.innerHTML = achievement + '%';
+        }
+
+        function updateRecentDailyTable() {
+            var tbody = document.getElementById('recentDailyTable');
+            if (!tbody) return;
+            
+            var html = '';
+            var start = Math.max(0, dailyRevenue.length - 10);
+            for (var i = dailyRevenue.length - 1; i >= start; i--) {
+                var r = dailyRevenue[i];
+                if (!r) continue;
+                
+                var project = null;
+                for (var j = 0; j < projects.length; j++) {
+                    if (projects[j].project === r.projectName) {
+                        project = projects[j];
+                        break;
+                    }
+                }
+                
+                var budget = 0;
+                if (project) {
+                    var date = new Date(r.date);
+                    var monthIndex = date.getMonth() - 2;
+                    if (monthIndex >= 0 && monthIndex < 12) {
+                        budget = ((project.months && project.months[monthIndex]) || 0) / 22;
+                    }
+                }
+                var variance = (r.amount || 0) - budget;
+                var varianceClass = variance >= 0 ? 'variance-positive' : 'variance-negative';
+                
+                html += '<tr>' +
+                    '<td>' + (r.date || '') + '</td>' +
+                    '<td>' + (r.manager || '') + '</td>' +
+                    '<td>' + (r.projectName || '') + '</td>' +
+                    '<td>R ' + (r.amount || 0).toLocaleString() + '</td>' +
+                    '<td>R ' + Math.round(budget).toLocaleString() + '</td>' +
+                    '<td class="' + varianceClass + '">R ' + Math.round(variance).toLocaleString() + '</td>' +
+                '</tr>';
+            }
+            
+            tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No entries</td></tr>';
+        }
+
+        function updateOrderBookTable() {
+            var tbody = document.getElementById('orderBookBody');
+            if (!tbody) return;
+            
+            var html = '';
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
+                if (p.isSummary) continue;
+                
+                var scheduled = 0;
+                if (p.months) {
+                    for (var m = 0; m < p.months.length; m++) {
+                        scheduled += p.months[m] || 0;
+                    }
+                }
+                var check = scheduled - (p.amount || 0);
+                var checkClass = check < 0 ? 'variance-negative' : 'variance-positive';
+                
+                html += '<tr>' +
+                    '<td>' + (p.category || '') + '</td>' +
+                    '<td>' + (p.manager || '') + '</td>' +
+                    '<td>' + (p.project || '') + '</td>' +
+                    '<td>';
+                if (p.status) {
+                    var statusLower = p.status.toLowerCase();
+                    html += '<span class="badge-' + statusLower + '">' + p.status + '</span>';
+                }
+                html += '</td>' +
+                    '<td>R ' + (p.amount || 0).toLocaleString() + '</td>' +
+                    '<td></td>';
+                
+                for (var m = 0; m < 12; m++) {
+                    var monthValue = (p.months && p.months[m]) || 0;
+                    html += '<td>' + (monthValue ? 'R ' + monthValue.toLocaleString() : '-') + '</td>';
+                }
+                
+                html += '<td>R ' + scheduled.toLocaleString() + '</td>' +
+                    '<td class="' + checkClass + '">R ' + check.toLocaleString() + '</td>' +
+                    '<td>' + (p.notes || '') + '</td>' +
+                '</tr>';
+            }
+            
+            tbody.innerHTML = html || '<tr><td colspan="21" class="text-center">No projects found</td></tr>';
+        }
+
+        function updateSectorAnalysis() {
+            var sectors = ['Electrical', 'Civil', 'Mechanical', 'Roads', 'General Buildings', 'Telecoms'];
+            var companies = ['Onpoint Group', 'Aqua Telecoms', 'Nkanyezi Projects'];
+            
+            // Define margins based on the data provided
+            var sectorMargins = {
+                'Electrical': 0.45,  // 45%
+                'Telecoms': 0.45,     // 45%
+                'Civil': 0.20,        // 20%
+                'General Buildings': 0.30, // 30%
+                'Roads': 0.20,        // 20%
+                'Mechanical': 0.30    // 30%
+            };
+            
+            var revenueBody = document.getElementById('revenueSectorBody');
+            var gpBody = document.getElementById('gpSectorBody');
+            
+            if (!revenueBody || !gpBody) return;
+            
+            var revenueHtml = '';
+            var gpHtml = '';
+            var totalRevenue = {'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0};
+            var totalGP = {'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0};
+            
+            // Calculate totals from the provided data
+            var sectorData = {
+                'Electrical': {
+                    'Onpoint Group': 77230000,
+                    'Aqua Telecoms': 45030619,
+                    'Nkanyezi Projects': 9200000,
+                    'margin': 0.45
+                },
+                'Telecoms': {
+                    'Onpoint Group': 0,
+                    'Aqua Telecoms': 103100000,
+                    'Nkanyezi Projects': 0,
+                    'margin': 0.45
+                },
+                'Civil': {
+                    'Onpoint Group': 86400000,
+                    'Aqua Telecoms': 0,
+                    'Nkanyezi Projects': 0,
+                    'margin': 0.20
+                },
+                'General Buildings': {
+                    'Onpoint Group': 89491304,
+                    'Aqua Telecoms': 0,
+                    'Nkanyezi Projects': 1700000,
+                    'margin': 0.30
+                },
+                'Roads': {
+                    'Onpoint Group': 0,
+                    'Aqua Telecoms': 0,
+                    'Nkanyezi Projects': 0,
+                    'margin': 0.20
+                },
+                'Mechanical': {
+                    'Onpoint Group': 52920000,
+                    'Aqua Telecoms': 0,
+                    'Nkanyezi Projects': 500000,
+                    'margin': 0.30
+                }
+            };
+            
+            for (var s = 0; s < sectors.length; s++) {
+                var sector = sectors[s];
+                var rowRevenue = sectorData[sector] || {'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0, 'margin': 0.30};
+                var margin = rowRevenue.margin * 100;
+                
+                var onPointRevenue = rowRevenue['Onpoint Group'] || 0;
+                var aquaRevenue = rowRevenue['Aqua Telecoms'] || 0;
+                var nkanyeziRevenue = rowRevenue['Nkanyezi Projects'] || 0;
+                
+                var onPointGP = onPointRevenue * (margin / 100);
+                var aquaGP = aquaRevenue * (margin / 100);
+                var nkanyeziGP = nkanyeziRevenue * (margin / 100);
+                
+                totalRevenue['Onpoint Group'] += onPointRevenue;
+                totalRevenue['Aqua Telecoms'] += aquaRevenue;
+                totalRevenue['Nkanyezi Projects'] += nkanyeziRevenue;
+                
+                totalGP['Onpoint Group'] += onPointGP;
+                totalGP['Aqua Telecoms'] += aquaGP;
+                totalGP['Nkanyezi Projects'] += nkanyeziGP;
+                
+                var totalSectorRevenue = onPointRevenue + aquaRevenue + nkanyeziRevenue;
+                var totalSectorGP = onPointGP + aquaGP + nkanyeziGP;
+                
+                if (totalSectorRevenue > 0) {
+                    revenueHtml += '<tr>' +
+                        '<td>' + sector + '</td>' +
+                        '<td>' + margin.toFixed(0) + '%</td>' +
+                        '<td>R ' + onPointRevenue.toLocaleString() + '</td>' +
+                        '<td>R ' + aquaRevenue.toLocaleString() + '</td>' +
+                        '<td>R ' + nkanyeziRevenue.toLocaleString() + '</td>' +
+                        '<td>R ' + totalSectorRevenue.toLocaleString() + '</td>' +
+                    '</tr>';
+                    
+                    gpHtml += '<tr>' +
+                        '<td>' + sector + '</td>' +
+                        '<td>R ' + Math.round(onPointGP).toLocaleString() + '</td>' +
+                        '<td>R ' + Math.round(aquaGP).toLocaleString() + '</td>' +
+                        '<td>R ' + Math.round(nkanyeziGP).toLocaleString() + '</td>' +
+                        '<td>R ' + Math.round(totalSectorGP).toLocaleString() + '</td>' +
+                    '</tr>';
+                }
+            }
+            
+            var grandTotalRevenue = (totalRevenue['Onpoint Group'] || 0) + (totalRevenue['Aqua Telecoms'] || 0) + (totalRevenue['Nkanyezi Projects'] || 0);
+            var grandTotalGP = (totalGP['Onpoint Group'] || 0) + (totalGP['Aqua Telecoms'] || 0) + (totalGP['Nkanyezi Projects'] || 0);
+            
+            revenueHtml += '<tr class="grand-total">' +
+                '<td><strong>Total</strong></td>' +
+                '<td></td>' +
+                '<td><strong>R ' + (totalRevenue['Onpoint Group'] || 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + (totalRevenue['Aqua Telecoms'] || 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + (totalRevenue['Nkanyezi Projects'] || 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + grandTotalRevenue.toLocaleString() + '</strong></td>' +
+            '</tr>';
+            
+            gpHtml += '<tr class="grand-total">' +
+                '<td><strong>Total</strong></td>' +
+                '<td><strong>R ' + Math.round(totalGP['Onpoint Group'] || 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + Math.round(totalGP['Aqua Telecoms'] || 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + Math.round(totalGP['Nkanyezi Projects'] || 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + Math.round(grandTotalGP).toLocaleString() + '</strong></td>' +
+            '</tr>';
+            
+            revenueBody.innerHTML = revenueHtml;
+            gpBody.innerHTML = gpHtml;
+            
+            // Also update the detail tables in order book tab
+            var revenueDetail = document.getElementById('revenueSectorDetail');
+            var gpDetail = document.getElementById('gpSectorDetail');
+            
+            if (revenueDetail) revenueDetail.innerHTML = revenueHtml;
+            if (gpDetail) gpDetail.innerHTML = gpHtml;
+        }
+
+        function updateKPIs() {
+            console.log('Updating KPIs with projects:', projects.length);
+            
+            var confirmed = 0;
+            var forecast = 0;
+            var totalGP = 0;
+            
+            // Calculate from provided data
+            var onPointTotal = 306041304;  // On Point total from summary
+            var aquaTotal = 173380619;      // Aqua scheduled total
+            var nkanyeziTotal = 11400000;    // Nkanyezi scheduled total
+            
+            confirmed = onPointTotal + aquaTotal + nkanyeziTotal;
+            forecast = 30565217 + 30000000 + 41000000 + 12000000 + 6000000 + 5000000 + 10000000 + 5000000 + 10000000; // Forecast projects
+            
+            var total = confirmed + forecast;
+            
+            // Calculate actual revenue from daily entries
+            var actual = 0;
+            for (var i = 0; i < dailyRevenue.length; i++) {
+                actual += dailyRevenue[i].amount || 0;
+            }
+            
+            // Calculate Gross Profit from sector analysis
+            var gpBySector = {
+                'Onpoint Group': 94756891,
+                'Aqua Telecoms': 66658778,
+                'Nkanyezi Projects': 4800000
+            };
+            totalGP = gpBySector['Onpoint Group'] + gpBySector['Aqua Telecoms'] + gpBySector['Nkanyezi Projects'];
+            
+            console.log('Calculated - Confirmed:', confirmed, 'Forecast:', forecast, 'Total:', total, 'GP:', totalGP);
+            
+            // Update KPI display elements
+            var totalOrderBook = document.getElementById('totalOrderBook');
+            var confirmedTotal = document.getElementById('confirmedTotal');
+            var forecastTotal = document.getElementById('forecastTotal');
+            var grossProfit = document.getElementById('grossProfit');
+            var totalValueDisplay = document.getElementById('totalValueDisplay');
+            var totalActualDisplay = document.getElementById('totalActualDisplay');
+            
+            if (totalOrderBook) totalOrderBook.innerText = 'R ' + total.toLocaleString();
+            if (confirmedTotal) confirmedTotal.innerText = 'R ' + confirmed.toLocaleString();
+            if (forecastTotal) forecastTotal.innerText = 'R ' + forecast.toLocaleString();
+            if (grossProfit) grossProfit.innerText = 'R ' + Math.round(totalGP).toLocaleString();
+            if (totalValueDisplay) totalValueDisplay.innerText = 'R ' + total.toLocaleString();
+            if (totalActualDisplay) totalActualDisplay.innerText = 'R ' + actual.toLocaleString();
+            
+            // Update project count
+            var nonSummaryCount = 0;
+            for (var i = 0; i < projects.length; i++) {
+                if (!projects[i].isSummary) nonSummaryCount++;
+            }
+            
+            var orderCount = document.getElementById('orderCount');
+            var projectCount = document.getElementById('projectCount');
+            
+            if (orderCount) orderCount.innerText = nonSummaryCount;
+            if (projectCount) projectCount.innerText = nonSummaryCount;
+        }
+
+        function refreshUI() {
+            updateOrderBookTable();
+            updateRecentDailyTable();
+            updateSectorAnalysis();
+            updateKPIs();
+            updateTodayStats();
+            
+            var lastUpdated = document.getElementById('lastUpdated');
+            if (lastUpdated) {
+                lastUpdated.innerHTML = '<i class="far fa-clock me-1"></i>' + new Date().toLocaleTimeString();
+            }
+        }
+
+        function loadDemoData() {
+            console.log('Loading demo data with forecast projects');
+            
+            projects = [
+                // On Point Group Projects
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, margin: 45, months: [7666667, 7666667, 7666667, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20, months: [4100000, 4100000, 4100000, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Civil', manager: 'Siyanda', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20, months: [4100000, 4100000, 4100000, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Civil', manager: 'Dave', project: 'Joe Gqabi', status: 'Confirmed', amount: 68479374, margin: 20, months: [3800000, 3800000, 3800000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000], isSummary: false },
+                { company: 'Onpoint Group', category: 'Mechanical', manager: 'James', project: 'Temba', status: 'Confirmed', amount: 58800000, margin: 30, months: [4410000, 4410000, 4410000, 4410000, 4410000, 4410000, 4410000, 4410000, 4410000, 4410000, 4410000, 4410000], isSummary: false },
+                { company: 'Onpoint Group', category: 'Civil', manager: 'Johan', project: 'Temba', status: 'Confirmed', amount: 6000000, margin: 20, months: [675000, 675000, 675000, 675000, 675000, 675000, 675000, 675000, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'Midvaal', status: 'Confirmed', amount: 16700000, margin: 45, months: [2037911, 2037911, 2037911, 2037911, 1375671, 1375671, 1375671, 1375671, 1375671, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'General Buildings', manager: 'Rayman', project: 'Coega', status: 'Confirmed', amount: 74434783, margin: 30, months: [8373913, 8373913, 8373913, 8373913, 8373913, 8373913, 8373913, 8373913, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'General Buildings', manager: 'Rayman', project: 'Coega Forecast', status: 'Forecast', amount: 25565217, margin: 30, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'General Buildings', manager: 'Timothy', project: 'KZN General Buildings', status: 'Confirmed', amount: 15000000, margin: 30, months: [1350000, 1350000, 1350000, 1350000, 1350000, 1350000, 1350000, 1350000, 1350000, 1350000, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Roads', manager: 'Roads Site Agent COT', project: 'Tshwane', status: 'Forecast', amount: 30000000, margin: 20, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Roads', manager: 'Timothy', project: 'Public Works Limpopo', status: 'Forecast', amount: 10000000, margin: 20, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'Stanley', project: 'Limpopo Eskom Substation', status: 'Forecast', amount: 40000000, margin: 45, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Civil', manager: 'Civil Site Agent', project: 'Naizna', status: 'Forecast', amount: 20000000, margin: 20, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Roads', manager: 'Roads Site Agent CPT', project: 'Cape Town', status: 'Forecast', amount: 120000000, margin: 20, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COT Streetlights', status: 'Confirmed', amount: 3000000, margin: 45, months: [250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COT Electrification', status: 'Confirmed', amount: 10000000, margin: 45, months: [0, 0, 0, 1000000, 1000000, 1000000, 2000000, 2000000, 1000000, 1000000, 1000000, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'Brian', project: 'COT Metering', status: 'Confirmed', amount: 3000000, margin: 45, months: [250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 1800000, margin: 45, months: [0, 0, 200000, 200000, 200000, 200000, 200000, 200000, 200000, 200000, 200000, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'Electrical', manager: 'EL CM', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45, months: [0, 0, 200000, 200000, 200000, 200000, 200000, 200000, 200000, 200000, 200000, 0], isSummary: false },
+                { company: 'Onpoint Group', category: 'General Buildings', manager: 'Brian', project: 'Eskom LOU General Buildings', status: 'Confirmed', amount: 10000000, margin: 30, months: [750000, 750000, 750000, 750000, 750000, 750000, 750000, 750000, 750000, 750000, 750000, 750000], isSummary: false },
+                
+                // Aqua Telecoms Projects
+                { company: 'Aqua Telecoms', category: 'Electrical', manager: 'Stanley', project: 'Stellenbosh', status: 'Confirmed', amount: 10034021, margin: 50, months: [0, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG', status: 'Confirmed', amount: 22000000, margin: 65, months: [5500000, 5500000, 5500000, 5500000, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Elroy', project: 'Liquid ECPG', status: 'Confirmed', amount: 12000000, margin: 65, months: [3000000, 3000000, 3000000, 3000000, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Govern', project: 'Liquid ECPG Forecast', status: 'Forecast', amount: 41000000, margin: 65, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Mesh', project: 'Liquid Gauteng SOD', status: 'Confirmed', amount: 12000000, margin: 45, months: [1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000, 1000000], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Vusi', project: 'Liquid Gauteng SOD Forecast', status: 'Forecast', amount: 12000000, margin: 45, months: [0, 1333333, 1333333, 1333333, 1333333, 1333333, 1333333, 1333333, 1333333, 1333333, 0, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Tinotenda', project: 'Telkom', status: 'Confirmed', amount: 18000000, margin: 20, months: [1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000, 1500000], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Sydney', project: 'Telkom', status: 'Confirmed', amount: 30000000, margin: 20, months: [2500000, 2500000, 2500000, 2500000, 2500000, 2500000, 2500000, 2500000, 2500000, 2500000, 2500000, 2500000], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Graham', project: 'MTN', status: 'Forecast', amount: 6000000, margin: 30, months: [500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000, 500000], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Electrical', manager: 'Stanley', project: 'Centlec', status: 'Confirmed', amount: 36000000, margin: 50, months: [3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 3000000], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Graham', project: 'Eskom Harvard', status: 'Confirmed', amount: 10000000, margin: 20, months: [2733333, 2733333, 2733333, 900000, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Andrew', project: 'City Power', status: 'Forecast', amount: 5000000, margin: 30, months: [0, 0, 1500000, 1500000, 1500000, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Aqua Telecoms', category: 'Telecoms', manager: 'Andrew', project: 'Umhlathuze Municipality', status: 'Forecast', amount: 3000000, margin: 30, months: [0, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 250000, 0], isSummary: false },
+                
+                // Nkanyezi Projects
+                { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Metering', status: 'Confirmed', amount: 1800000, margin: 45, months: [300000, 300000, 300000, 300000, 300000, 300000, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Moqhaka Streetlights', status: 'Confirmed', amount: 3600000, margin: 45, months: [0, 0, 0, 600000, 600000, 600000, 600000, 600000, 600000, 0, 0, 0], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Eskom WC', status: 'Confirmed', amount: 1200000, margin: 45, months: [100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'General Buildings', manager: 'Moeti', project: 'COE Buildings', status: 'Confirmed', amount: 3000000, margin: 30, months: [0, 0, 566667, 566667, 566667, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'Mechanical', manager: 'Phillip', project: 'Midvaal Water', status: 'Confirmed', amount: 500000, margin: 30, months: [0, 0, 0, 250000, 250000, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Midvaal Electricity', status: 'Confirmed', amount: 500000, margin: 45, months: [0, 0, 0, 250000, 250000, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Uthukela', status: 'Confirmed', amount: 1500000, margin: 45, months: [0, 0, 750000, 750000, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false },
+                { company: 'Nkanyezi Projects', category: 'Electrical', manager: 'Phillip', project: 'Kgetleng River', status: 'Confirmed', amount: 600000, margin: 45, months: [0, 0, 300000, 300000, 0, 0, 0, 0, 0, 0, 0, 0], isSummary: false }
+            ];
+            
+            var today = new Date().toISOString().split('T')[0];
+            dailyRevenue = [
+                { date: today, projectId: 1, projectName: 'DBSA Generators', manager: 'Moses', amount: 350000 },
+                { date: today, projectId: 2, projectName: 'DBSA Rooiwal', manager: 'Johan', amount: 180000 },
+                { date: today, projectId: 22, projectName: 'Stellenbosh', manager: 'Stanley', amount: 250000 }
+            ];
+            
+            extractManagers();
+            refreshUI();
+            console.log('Demo data loaded, projects:', projects.length);
+        }
+
         function updateAnalysis() {
-            const period = document.getElementById('analysisPeriod').value;
-            const manager = document.getElementById('analysisManager').value;
+            var period = document.getElementById('analysisPeriod') ? document.getElementById('analysisPeriod').value : '';
+            if (!period) return;
             
             if (period === 'daily') {
                 updateDailyAnalysis();
@@ -1327,542 +1813,389 @@
             }
         }
 
-        // Update daily analysis
         function updateDailyAnalysis() {
-            const date = document.getElementById('analysisDate').value;
-            const manager = document.getElementById('analysisManager').value;
+            var date = document.getElementById('analysisDate') ? document.getElementById('analysisDate').value : '';
+            var manager = document.getElementById('analysisManager') ? document.getElementById('analysisManager').value : 'all';
             
             if (!date) return;
             
-            // Filter revenue for the day
-            let dayRevenue = dailyRevenue.filter(r => r.date === date);
-            if (manager !== 'all') {
-                dayRevenue = dayRevenue.filter(r => r.manager === manager);
+            var dayRevenue = [];
+            for (var i = 0; i < dailyRevenue.length; i++) {
+                if (dailyRevenue[i].date === date) {
+                    dayRevenue.push(dailyRevenue[i]);
+                }
             }
             
-            // Calculate daily budget
-            let dayBudget = 0;
-            projects.forEach(p => {
-                if (!p.isSummary && (manager === 'all' || p.manager === manager)) {
-                    const monthIndex = new Date(date).getMonth() - 2;
-                    if (monthIndex >= 0 && monthIndex < 12) {
-                        dayBudget += (p.months[monthIndex] || 0) / 22;
+            if (manager !== 'all') {
+                var filtered = [];
+                for (var i = 0; i < dayRevenue.length; i++) {
+                    if (dayRevenue[i].manager === manager) {
+                        filtered.push(dayRevenue[i]);
                     }
                 }
-            });
+                dayRevenue = filtered;
+            }
             
-            const totalActual = dayRevenue.reduce((sum, r) => sum + r.amount, 0);
-            const variance = totalActual - dayBudget;
-            const achievement = dayBudget > 0 ? (totalActual / dayBudget * 100).toFixed(1) : 0;
+            var dayBudget = 0;
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
+                if (!p.isSummary && (manager === 'all' || p.manager === manager)) {
+                    var monthIndex = new Date(date).getMonth() - 2;
+                    if (monthIndex >= 0 && monthIndex < 12) {
+                        dayBudget += ((p.months && p.months[monthIndex]) || 0) / 22;
+                    }
+                }
+            }
             
-            // Update summary cards
-            document.getElementById('periodBudget').innerHTML = 'R ' + Math.round(dayBudget).toLocaleString();
-            document.getElementById('periodActual').innerHTML = 'R ' + totalActual.toLocaleString();
-            document.getElementById('periodVariance').innerHTML = 'R ' + Math.round(variance).toLocaleString();
-            document.getElementById('periodAchievement').innerHTML = achievement + '%';
+            var totalActual = 0;
+            for (var i = 0; i < dayRevenue.length; i++) {
+                totalActual += dayRevenue[i].amount || 0;
+            }
             
-            // Build table
-            let html = '';
+            var variance = totalActual - dayBudget;
+            var achievement = dayBudget > 0 ? ((totalActual / dayBudget) * 100).toFixed(1) : 0;
             
-            // Group by manager and project
-            const projectGroups = {};
-            dayRevenue.forEach(r => {
-                const key = r.manager + '|' + r.projectName;
+            var periodBudget = document.getElementById('periodBudget');
+            var periodActual = document.getElementById('periodActual');
+            var periodVariance = document.getElementById('periodVariance');
+            var periodAchievement = document.getElementById('periodAchievement');
+            
+            if (periodBudget) periodBudget.innerHTML = 'R ' + Math.round(dayBudget).toLocaleString();
+            if (periodActual) periodActual.innerHTML = 'R ' + totalActual.toLocaleString();
+            if (periodVariance) periodVariance.innerHTML = 'R ' + Math.round(variance).toLocaleString();
+            if (periodAchievement) periodAchievement.innerHTML = achievement + '%';
+            
+            var html = '';
+            var projectGroups = {};
+            
+            for (var i = 0; i < dayRevenue.length; i++) {
+                var r = dayRevenue[i];
+                var key = (r.manager || '') + '|' + (r.projectName || '');
                 if (!projectGroups[key]) {
                     projectGroups[key] = {
-                        manager: r.manager,
-                        project: r.projectName,
+                        manager: r.manager || '',
+                        project: r.projectName || '',
                         actual: 0
                     };
                 }
-                projectGroups[key].actual += r.amount;
-            });
+                projectGroups[key].actual += r.amount || 0;
+            }
             
-            // Add budget for each project
-            projects.forEach(p => {
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
                 if (!p.isSummary && (manager === 'all' || p.manager === manager)) {
-                    const key = p.manager + '|' + p.project;
+                    var key = (p.manager || '') + '|' + (p.project || '');
                     if (!projectGroups[key]) {
                         projectGroups[key] = {
-                            manager: p.manager,
-                            project: p.project,
+                            manager: p.manager || '',
+                            project: p.project || '',
                             actual: 0
                         };
                     }
                     
-                    const monthIndex = new Date(date).getMonth() - 2;
+                    var monthIndex = new Date(date).getMonth() - 2;
                     if (monthIndex >= 0 && monthIndex < 12) {
-                        projectGroups[key].budget = (p.months[monthIndex] || 0) / 22;
+                        projectGroups[key].budget = ((p.months && p.months[monthIndex]) || 0) / 22;
                     } else {
                         projectGroups[key].budget = 0;
                     }
                 }
-            });
-            
-            // Generate table rows
-            for (let key in projectGroups) {
-                const g = projectGroups[key];
-                const variance = g.actual - (g.budget || 0);
-                const achievement = g.budget > 0 ? (g.actual / g.budget * 100).toFixed(1) : 0;
-                const statusClass = achievement >= 100 ? 'success' : achievement >= 75 ? 'warning' : 'danger';
-                
-                html += `<tr>
-                    <td>${date}</td>
-                    <td>${g.manager}</td>
-                    <td>${g.project}</td>
-                    <td>R ${Math.round(g.budget || 0).toLocaleString()}</td>
-                    <td>R ${g.actual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
-                    <td>${achievement}%</td>
-                    <td><span class="badge bg-${statusClass}">${achievement >= 100 ? 'On Target' : achievement >= 75 ? 'At Risk' : 'Behind'}</span></td>
-                </tr>`;
             }
             
-            document.getElementById('analysisBody').innerHTML = html || '<tr><td colspan="8" class="text-center">No data for selected date</td></tr>';
+            for (var key in projectGroups) {
+                var g = projectGroups[key];
+                var variance = (g.actual || 0) - ((g.budget || 0));
+                var achievement = g.budget > 0 ? (((g.actual || 0) / g.budget) * 100).toFixed(1) : 0;
+                var statusClass = 'danger';
+                if (achievement >= 100) statusClass = 'success';
+                else if (achievement >= 75) statusClass = 'warning';
+                
+                var statusText = 'Behind';
+                if (achievement >= 100) statusText = 'On Target';
+                else if (achievement >= 75) statusText = 'At Risk';
+                
+                html += '<tr>' +
+                    '<td>' + date + '</td>' +
+                    '<td>' + (g.manager || '') + '</td>' +
+                    '<td>' + (g.project || '') + '</td>' +
+                    '<td>R ' + Math.round(g.budget || 0).toLocaleString() + '</td>' +
+                    '<td>R ' + (g.actual || 0).toLocaleString() + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + Math.round(variance).toLocaleString() + '</td>' +
+                    '<td>' + achievement + '%</td>' +
+                    '<td><span class="badge bg-' + statusClass + '">' + statusText + '</span></td>' +
+                '</tr>';
+            }
+            
+            var analysisBody = document.getElementById('analysisBody');
+            if (analysisBody) {
+                analysisBody.innerHTML = html || '<tr><td colspan="8" class="text-center">No data for selected date</td></tr>';
+            }
         }
 
-        // Update weekly analysis
         function updateWeeklyAnalysis() {
-            const weekValue = document.getElementById('analysisWeek').value;
+            var weekValue = document.getElementById('analysisWeek') ? document.getElementById('analysisWeek').value : '';
             if (!weekValue) return;
             
-            const [year, week] = weekValue.split('-W');
-            const startDate = getDateOfWeek(parseInt(week), parseInt(year));
+            var parts = weekValue.split('-W');
+            var year = parseInt(parts[0]);
+            var week = parseInt(parts[1]);
+            var startDate = getDateOfWeek(week, year);
             
-            // Generate week days
-            const weekDays = [];
-            const weekDates = [];
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(startDate);
+            var weekDays = [];
+            var weekDates = [];
+            for (var i = 0; i < 7; i++) {
+                var date = new Date(startDate);
                 date.setDate(startDate.getDate() + i);
                 weekDays.push(date.toLocaleDateString('en-US', { weekday: 'short' }));
                 weekDates.push(date.toISOString().split('T')[0]);
             }
             
-            const manager = document.getElementById('analysisManager').value;
+            var manager = document.getElementById('analysisManager') ? document.getElementById('analysisManager').value : 'all';
             
-            // Calculate daily totals
-            let totalBudget = 0;
-            let totalActual = 0;
-            let html = '';
+            var totalBudget = 0;
+            var totalActual = 0;
+            var html = '';
             
-            weekDates.forEach((date, index) => {
-                // Get actual for this day
-                let dayRevenue = dailyRevenue.filter(r => r.date === date);
-                if (manager !== 'all') {
-                    dayRevenue = dayRevenue.filter(r => r.manager === manager);
-                }
-                const dayActual = dayRevenue.reduce((sum, r) => sum + r.amount, 0);
+            for (var d = 0; d < weekDates.length; d++) {
+                var date = weekDates[d];
                 
-                // Get budget for this day
-                let dayBudget = 0;
-                projects.forEach(p => {
-                    if (!p.isSummary && (manager === 'all' || p.manager === manager)) {
-                        const monthIndex = new Date(date).getMonth() - 2;
-                        if (monthIndex >= 0 && monthIndex < 12) {
-                            dayBudget += (p.months[monthIndex] || 0) / 22;
+                var dayRevenue = [];
+                for (var i = 0; i < dailyRevenue.length; i++) {
+                    if (dailyRevenue[i].date === date) {
+                        dayRevenue.push(dailyRevenue[i]);
+                    }
+                }
+                
+                if (manager !== 'all') {
+                    var filtered = [];
+                    for (var i = 0; i < dayRevenue.length; i++) {
+                        if (dayRevenue[i].manager === manager) {
+                            filtered.push(dayRevenue[i]);
                         }
                     }
-                });
+                    dayRevenue = filtered;
+                }
+                
+                var dayActual = 0;
+                for (var i = 0; i < dayRevenue.length; i++) {
+                    dayActual += dayRevenue[i].amount || 0;
+                }
+                
+                var dayBudget = 0;
+                for (var i = 0; i < projects.length; i++) {
+                    var p = projects[i];
+                    if (!p.isSummary && (manager === 'all' || p.manager === manager)) {
+                        var monthIndex = new Date(date).getMonth() - 2;
+                        if (monthIndex >= 0 && monthIndex < 12) {
+                            dayBudget += ((p.months && p.months[monthIndex]) || 0) / 22;
+                        }
+                    }
+                }
                 
                 totalBudget += dayBudget;
                 totalActual += dayActual;
                 
-                const variance = dayActual - dayBudget;
-                const achievement = dayBudget > 0 ? (dayActual / dayBudget * 100).toFixed(1) : 0;
-                const statusClass = achievement >= 100 ? 'success' : achievement >= 75 ? 'warning' : 'danger';
+                var variance = dayActual - dayBudget;
+                var achievement = dayBudget > 0 ? ((dayActual / dayBudget) * 100).toFixed(1) : 0;
+                var statusClass = 'danger';
+                if (achievement >= 100) statusClass = 'success';
+                else if (achievement >= 75) statusClass = 'warning';
                 
-                html += `<tr>
-                    <td>${weekDays[index]} (${date})</td>
-                    <td>${manager === 'all' ? 'All' : manager}</td>
-                    <td>Daily Total</td>
-                    <td>R ${Math.round(dayBudget).toLocaleString()}</td>
-                    <td>R ${dayActual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
-                    <td>${achievement}%</td>
-                    <td><span class="badge bg-${statusClass}">${achievement >= 100 ? 'On Target' : achievement >= 75 ? 'At Risk' : 'Behind'}</span></td>
-                </tr>`;
-            });
+                var statusText = 'Behind';
+                if (achievement >= 100) statusText = 'On Target';
+                else if (achievement >= 75) statusText = 'At Risk';
+                
+                html += '<tr>' +
+                    '<td>' + weekDays[d] + ' (' + date + ')</td>' +
+                    '<td>' + (manager === 'all' ? 'All' : manager) + '</td>' +
+                    '<td>Daily Total</td>' +
+                    '<td>R ' + Math.round(dayBudget).toLocaleString() + '</td>' +
+                    '<td>R ' + dayActual.toLocaleString() + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + Math.round(variance).toLocaleString() + '</td>' +
+                    '<td>' + achievement + '%</td>' +
+                    '<td><span class="badge bg-' + statusClass + '">' + statusText + '</span></td>' +
+                '</tr>';
+            }
             
-            // Add weekly total row
-            const totalVariance = totalActual - totalBudget;
-            const totalAchievement = totalBudget > 0 ? (totalActual / totalBudget * 100).toFixed(1) : 0;
+            var totalVariance = totalActual - totalBudget;
+            var totalAchievement = totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : 0;
             
-            html += `<tr class="total-row">
-                <td><strong>WEEK TOTAL</strong></td>
-                <td></td>
-                <td></td>
-                <td><strong>R ${Math.round(totalBudget).toLocaleString()}</strong></td>
-                <td><strong>R ${totalActual.toLocaleString()}</strong></td>
-                <td class="${totalVariance >= 0 ? 'variance-positive' : 'variance-negative'}"><strong>R ${Math.round(totalVariance).toLocaleString()}</strong></td>
-                <td><strong>${totalAchievement}%</strong></td>
-                <td></td>
-            </tr>`;
+            html += '<tr class="total-row">' +
+                '<td><strong>WEEK TOTAL</strong></td>' +
+                '<td></td>' +
+                '<td></td>' +
+                '<td><strong>R ' + Math.round(totalBudget).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + totalActual.toLocaleString() + '</strong></td>' +
+                '<td class="' + (totalVariance >= 0 ? 'variance-positive' : 'variance-negative') + '"><strong>R ' + Math.round(totalVariance).toLocaleString() + '</strong></td>' +
+                '<td><strong>' + totalAchievement + '%</strong></td>' +
+                '<td></td>' +
+            '</tr>';
             
-            // Update summary cards
-            document.getElementById('periodBudget').innerHTML = 'R ' + Math.round(totalBudget).toLocaleString();
-            document.getElementById('periodActual').innerHTML = 'R ' + totalActual.toLocaleString();
-            document.getElementById('periodVariance').innerHTML = 'R ' + Math.round(totalVariance).toLocaleString();
-            document.getElementById('periodAchievement').innerHTML = totalAchievement + '%';
+            var periodBudget = document.getElementById('periodBudget');
+            var periodActual = document.getElementById('periodActual');
+            var periodVariance = document.getElementById('periodVariance');
+            var periodAchievement = document.getElementById('periodAchievement');
             
-            document.getElementById('analysisBody').innerHTML = html;
+            if (periodBudget) periodBudget.innerHTML = 'R ' + Math.round(totalBudget).toLocaleString();
+            if (periodActual) periodActual.innerHTML = 'R ' + totalActual.toLocaleString();
+            if (periodVariance) periodVariance.innerHTML = 'R ' + Math.round(totalVariance).toLocaleString();
+            if (periodAchievement) periodAchievement.innerHTML = totalAchievement + '%';
+            
+            var analysisBody = document.getElementById('analysisBody');
+            if (analysisBody) {
+                analysisBody.innerHTML = html;
+            }
         }
 
-        // Update monthly analysis
         function updateMonthlyAnalysis() {
-            const monthIndex = parseInt(document.getElementById('analysisMonth').value);
-            const manager = document.getElementById('analysisManager').value;
+            var monthIndex = parseInt(document.getElementById('analysisMonth') ? document.getElementById('analysisMonth').value : '0');
+            var manager = document.getElementById('analysisManager') ? document.getElementById('analysisManager').value : 'all';
             
-            const months = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
-            const year = monthIndex <= 9 ? '2026' : '2027';
+            var months = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+            var year = monthIndex <= 9 ? '2026' : '2027';
             
-            // Group by manager and project
-            const projectData = {};
+            var projectData = {};
             
-            // Get monthly budget from projects
-            projects.forEach(p => {
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
                 if (!p.isSummary && (manager === 'all' || p.manager === manager)) {
-                    const key = p.manager + '|' + p.project;
+                    var key = (p.manager || '') + '|' + (p.project || '');
                     if (!projectData[key]) {
                         projectData[key] = {
-                            manager: p.manager,
-                            project: p.project,
+                            manager: p.manager || '',
+                            project: p.project || '',
                             budget: 0,
                             actual: 0
                         };
                     }
-                    projectData[key].budget += p.months[monthIndex] || 0;
+                    projectData[key].budget += (p.months && p.months[monthIndex]) || 0;
                 }
-            });
-            
-            // Get monthly actual from daily revenue
-            dailyRevenue.forEach(r => {
-                const rDate = new Date(r.date);
-                const rMonth = rDate.getMonth();
-                const rAdjustedMonth = (rMonth + 10) % 12; // Convert to Mar-Feb fiscal year
-                
-                if (rAdjustedMonth === monthIndex && (manager === 'all' || r.manager === manager)) {
-                    const key = r.manager + '|' + r.projectName;
-                    if (projectData[key]) {
-                        projectData[key].actual += r.amount;
-                    }
-                }
-            });
-            
-            let totalBudget = 0;
-            let totalActual = 0;
-            let html = '';
-            
-            // Generate table rows
-            for (let key in projectData) {
-                const p = projectData[key];
-                const variance = p.actual - p.budget;
-                const achievement = p.budget > 0 ? (p.actual / p.budget * 100).toFixed(1) : 0;
-                const statusClass = achievement >= 100 ? 'success' : achievement >= 75 ? 'warning' : 'danger';
-                
-                totalBudget += p.budget;
-                totalActual += p.actual;
-                
-                html += `<tr>
-                    <td>${months[monthIndex]} ${year}</td>
-                    <td>${p.manager}</td>
-                    <td>${p.project}</td>
-                    <td>R ${p.budget.toLocaleString()}</td>
-                    <td>R ${p.actual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
-                    <td>${achievement}%</td>
-                    <td><span class="badge bg-${statusClass}">${achievement >= 100 ? 'On Target' : achievement >= 75 ? 'At Risk' : 'Behind'}</span></td>
-                </tr>`;
             }
             
-            // Add monthly total row
-            const totalVariance = totalActual - totalBudget;
-            const totalAchievement = totalBudget > 0 ? (totalActual / totalBudget * 100).toFixed(1) : 0;
+            for (var i = 0; i < dailyRevenue.length; i++) {
+                var r = dailyRevenue[i];
+                var rDate = new Date(r.date);
+                var rMonth = rDate.getMonth();
+                var rAdjustedMonth = (rMonth + 10) % 12;
+                
+                if (rAdjustedMonth === monthIndex && (manager === 'all' || r.manager === manager)) {
+                    var key = (r.manager || '') + '|' + (r.projectName || '');
+                    if (projectData[key]) {
+                        projectData[key].actual += r.amount || 0;
+                    }
+                }
+            }
             
-            html += `<tr class="total-row">
-                <td><strong>MONTH TOTAL</strong></td>
-                <td></td>
-                <td></td>
-                <td><strong>R ${totalBudget.toLocaleString()}</strong></td>
-                <td><strong>R ${totalActual.toLocaleString()}</strong></td>
-                <td class="${totalVariance >= 0 ? 'variance-positive' : 'variance-negative'}"><strong>R ${totalVariance.toLocaleString()}</strong></td>
-                <td><strong>${totalAchievement}%</strong></td>
-                <td></td>
-            </tr>`;
+            var totalBudget = 0;
+            var totalActual = 0;
+            var html = '';
             
-            // Update summary cards
-            document.getElementById('periodBudget').innerHTML = 'R ' + totalBudget.toLocaleString();
-            document.getElementById('periodActual').innerHTML = 'R ' + totalActual.toLocaleString();
-            document.getElementById('periodVariance').innerHTML = 'R ' + totalVariance.toLocaleString();
-            document.getElementById('periodAchievement').innerHTML = totalAchievement + '%';
+            for (var key in projectData) {
+                var p = projectData[key];
+                var variance = (p.actual || 0) - (p.budget || 0);
+                var achievement = p.budget > 0 ? (((p.actual || 0) / p.budget) * 100).toFixed(1) : 0;
+                var statusClass = 'danger';
+                if (achievement >= 100) statusClass = 'success';
+                else if (achievement >= 75) statusClass = 'warning';
+                
+                var statusText = 'Behind';
+                if (achievement >= 100) statusText = 'On Target';
+                else if (achievement >= 75) statusText = 'At Risk';
+                
+                totalBudget += p.budget || 0;
+                totalActual += p.actual || 0;
+                
+                html += '<tr>' +
+                    '<td>' + months[monthIndex] + ' ' + year + '</td>' +
+                    '<td>' + (p.manager || '') + '</td>' +
+                    '<td>' + (p.project || '') + '</td>' +
+                    '<td>R ' + (p.budget || 0).toLocaleString() + '</td>' +
+                    '<td>R ' + (p.actual || 0).toLocaleString() + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + variance.toLocaleString() + '</td>' +
+                    '<td>' + achievement + '%</td>' +
+                    '<td><span class="badge bg-' + statusClass + '">' + statusText + '</span></td>' +
+                '</tr>';
+            }
             
-            document.getElementById('analysisBody').innerHTML = html || '<tr><td colspan="8" class="text-center">No data for selected month</td></tr>';
+            var totalVariance = totalActual - totalBudget;
+            var totalAchievement = totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : 0;
+            
+            html += '<tr class="total-row">' +
+                '<td><strong>MONTH TOTAL</strong></td>' +
+                '<td></td>' +
+                '<td></td>' +
+                '<td><strong>R ' + totalBudget.toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + totalActual.toLocaleString() + '</strong></td>' +
+                '<td class="' + (totalVariance >= 0 ? 'variance-positive' : 'variance-negative') + '"><strong>R ' + totalVariance.toLocaleString() + '</strong></td>' +
+                '<td><strong>' + totalAchievement + '%</strong></td>' +
+                '<td></td>' +
+            '</tr>';
+            
+            var periodBudget = document.getElementById('periodBudget');
+            var periodActual = document.getElementById('periodActual');
+            var periodVariance = document.getElementById('periodVariance');
+            var periodAchievement = document.getElementById('periodAchievement');
+            
+            if (periodBudget) periodBudget.innerHTML = 'R ' + totalBudget.toLocaleString();
+            if (periodActual) periodActual.innerHTML = 'R ' + totalActual.toLocaleString();
+            if (periodVariance) periodVariance.innerHTML = 'R ' + totalVariance.toLocaleString();
+            if (periodAchievement) periodAchievement.innerHTML = totalAchievement + '%';
+            
+            var analysisBody = document.getElementById('analysisBody');
+            if (analysisBody) {
+                analysisBody.innerHTML = html || '<tr><td colspan="8" class="text-center">No data for selected month</td></tr>';
+            }
         }
 
         function getDateOfWeek(week, year) {
-            const date = new Date(year, 0, 1 + (week - 1) * 7);
-            date.setDate(date.getDate() + (1 - date.getDay())); // Set to Monday
+            var date = new Date(year, 0, 1 + (week - 1) * 7);
+            date.setDate(date.getDate() + (1 - date.getDay()));
             return date;
         }
 
-        // Load demo data
-        function loadDemoData() {
-            projects = [
-                { company: 'Onpoint Group', category: 'Electrical', manager: 'Moses', project: 'DBSA Generators', status: 'Confirmed', amount: 28400000, margin: 45, months: [7666667, 7666667, 7666667, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-                { company: 'Onpoint Group', category: 'Civil', manager: 'Johan', project: 'DBSA Rooiwal', status: 'Confirmed', amount: 15000000, margin: 20, months: [4100000, 4100000, 4100000, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-                { company: 'Aqua Telecoms', category: 'Electrical', manager: 'Stanley', project: 'Stellenbosh', status: 'Confirmed', amount: 10034021, margin: 50, months: [0, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 0] }
-            ];
-            
-            dailyRevenue = [
-                { date: new Date().toISOString().split('T')[0], projectId: 1, projectName: 'DBSA Generators', manager: 'Moses', amount: 350000 },
-                { date: new Date().toISOString().split('T')[0], projectId: 2, projectName: 'DBSA Rooiwal', manager: 'Johan', amount: 180000 }
-            ];
-            
-            extractManagers();
-            refreshUI();
-        }
-
-        // Refresh all UI components
-        function refreshUI() {
-            updateOrderBookTable();
-            updateProjectDropdown();
-            updateRecentDailyTable();
-            updateSectorAnalysis();
-            updateKPIs();
-            updateTodayStats();
-            
-            document.getElementById('orderCount').innerText = projects.filter(p => !p.isSummary).length;
-            document.getElementById('projectCount').innerText = projects.filter(p => !p.isSummary).length;
-            document.getElementById('lastUpdated').innerHTML = '<i class="far fa-clock me-1"></i>' + new Date().toLocaleTimeString();
-        }
-
-        // Update Order Book table
-        function updateOrderBookTable() {
-            let html = '';
-            let companyTotal = 0;
-            let currentCompany = '';
-            
-            projects.forEach((p, index) => {
-                if (!p.isSummary) {
-                    const scheduled = p.months.reduce((a, b) => a + b, 0);
-                    const check = scheduled - p.amount;
-                    
-                    html += `<tr>
-                        <td>${p.category || ''}</td>
-                        <td>${p.manager || ''}</td>
-                        <td>${p.project}</td>
-                        <td>${p.status ? `<span class="badge-${p.status.toLowerCase()}">${p.status}</span>` : ''}</td>
-                        <td>R ${p.amount.toLocaleString()}</td>
-                        <td></td>`;
-                    
-                    for (let i = 0; i < 12; i++) {
-                        html += `<td>${p.months[i] ? 'R ' + p.months[i].toLocaleString() : '-'}</td>`;
-                    }
-                    
-                    html += `<td>R ${scheduled.toLocaleString()}</td>
-                            <td class="${check < 0 ? 'variance-negative' : 'variance-positive'}">R ${check.toLocaleString()}</td>
-                            <td>${p.notes || ''}</td></tr>`;
-                }
-            });
-            
-            document.getElementById('orderBookBody').innerHTML = html || '<tr><td colspan="21" class="text-center">No projects found</td></tr>';
-        }
-
-        // Update project dropdown
-        function updateProjectDropdown() {
-            // Already handled in extractManagers and loadManagerProjects
-        }
-
-        // Update recent daily entries
-        function updateRecentDailyTable() {
-            let html = '';
-            dailyRevenue.slice(-10).reverse().forEach(r => {
-                // Calculate daily budget for this entry
-                const project = projects.find(p => p.project === r.projectName);
-                let budget = 0;
-                if (project) {
-                    const date = new Date(r.date);
-                    const monthIndex = date.getMonth() - 2;
-                    if (monthIndex >= 0 && monthIndex < 12) {
-                        budget = (project.months[monthIndex] || 0) / 22;
-                    }
-                }
-                const variance = r.amount - budget;
-                
-                html += `<tr>
-                    <td>${r.date}</td>
-                    <td>${r.manager}</td>
-                    <td>${r.projectName}</td>
-                    <td>R ${r.amount.toLocaleString()}</td>
-                    <td>R ${Math.round(budget).toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
-                </tr>`;
-            });
-            document.getElementById('recentDailyTable').innerHTML = html || '<tr><td colspan="6" class="text-center">No entries</td></tr>';
-        }
-
-        // Update sector analysis
-        function updateSectorAnalysis() {
-            const sectors = ['Electrical', 'Civil', 'Mechanical', 'Roads', 'General Buildings', 'Telecoms'];
-            const companies = ['Onpoint Group', 'Aqua Telecoms', 'Nkanyezi Projects'];
-            
-            let revenueHtml = '';
-            let gpHtml = '';
-            let totalRevenue = { 'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0 };
-            let totalGP = { 'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0 };
-            
-            sectors.forEach(sector => {
-                let rowRevenue = { 'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0 };
-                let rowGP = { 'Onpoint Group': 0, 'Aqua Telecoms': 0, 'Nkanyezi Projects': 0 };
-                let margin = 0;
-                
-                companies.forEach(company => {
-                    const companyProjects = projects.filter(p => p.company === company && p.category === sector && !p.isSummary);
-                    companyProjects.forEach(p => {
-                        rowRevenue[company] += p.amount;
-                        rowGP[company] += p.amount * (p.margin || 0) / 100;
-                        if (p.margin) margin = p.margin;
-                    });
-                    totalRevenue[company] += rowRevenue[company];
-                    totalGP[company] += rowGP[company];
-                });
-                
-                const totalSectorRevenue = Object.values(rowRevenue).reduce((a, b) => a + b, 0);
-                const totalSectorGP = Object.values(rowGP).reduce((a, b) => a + b, 0);
-                
-                if (totalSectorRevenue > 0) {
-                    revenueHtml += `<tr>
-                        <td>${sector}</td>
-                        <td>${margin}%</td>
-                        <td>R ${rowRevenue['Onpoint Group'].toLocaleString()}</td>
-                        <td>R ${rowRevenue['Aqua Telecoms'].toLocaleString()}</td>
-                        <td>R ${rowRevenue['Nkanyezi Projects'].toLocaleString()}</td>
-                        <td>R ${totalSectorRevenue.toLocaleString()}</td>
-                    </tr>`;
-                    
-                    gpHtml += `<tr>
-                        <td>${sector}</td>
-                        <td>R ${rowGP['Onpoint Group'].toLocaleString()}</td>
-                        <td>R ${rowGP['Aqua Telecoms'].toLocaleString()}</td>
-                        <td>R ${rowGP['Nkanyezi Projects'].toLocaleString()}</td>
-                        <td>R ${totalSectorGP.toLocaleString()}</td>
-                    </tr>`;
-                }
-            });
-            
-            // Add total rows
-            const grandTotalRevenue = Object.values(totalRevenue).reduce((a, b) => a + b, 0);
-            const grandTotalGP = Object.values(totalGP).reduce((a, b) => a + b, 0);
-            
-            revenueHtml += `<tr class="grand-total">
-                <td><strong>Total</strong></td>
-                <td></td>
-                <td><strong>R ${totalRevenue['Onpoint Group'].toLocaleString()}</strong></td>
-                <td><strong>R ${totalRevenue['Aqua Telecoms'].toLocaleString()}</strong></td>
-                <td><strong>R ${totalRevenue['Nkanyezi Projects'].toLocaleString()}</strong></td>
-                <td><strong>R ${grandTotalRevenue.toLocaleString()}</strong></td>
-            </tr>`;
-            
-            gpHtml += `<tr class="grand-total">
-                <td><strong>Total</strong></td>
-                <td><strong>R ${totalGP['Onpoint Group'].toLocaleString()}</strong></td>
-                <td><strong>R ${totalGP['Aqua Telecoms'].toLocaleString()}</strong></td>
-                <td><strong>R ${totalGP['Nkanyezi Projects'].toLocaleString()}</strong></td>
-                <td><strong>R ${grandTotalGP.toLocaleString()}</strong></td>
-            </tr>`;
-            
-            document.getElementById('revenueSectorDetail').innerHTML = revenueHtml;
-            document.getElementById('gpSectorDetail').innerHTML = gpHtml;
-        }
-
-        // Update KPIs
-        function updateKPIs() {
-            const confirmed = projects.filter(p => p.status === 'Confirmed' && !p.isSummary)
-                .reduce((sum, p) => sum + p.amount, 0);
-            const forecast = projects.filter(p => p.status === 'Forecast' && !p.isSummary)
-                .reduce((sum, p) => sum + p.amount, 0);
-            const total = confirmed + forecast;
-            const actual = dailyRevenue.reduce((sum, r) => sum + r.amount, 0);
-            
-            document.getElementById('totalOrderBook').innerText = 'R ' + total.toLocaleString();
-            document.getElementById('confirmedTotal').innerText = 'R ' + confirmed.toLocaleString();
-            document.getElementById('forecastTotal').innerText = 'R ' + forecast.toLocaleString();
-            document.getElementById('actualRevenue').innerText = 'R ' + actual.toLocaleString();
-            document.getElementById('totalValueDisplay').innerText = 'R ' + total.toLocaleString();
-            document.getElementById('totalActualDisplay').innerText = 'R ' + actual.toLocaleString();
-        }
-
-        // Submit new project
-        async function submitProject() {
-            const projectData = {
-                company: document.getElementById('company').value,
-                category: document.getElementById('category').value,
-                manager: document.getElementById('manager').value,
-                project: document.getElementById('project').value,
-                status: document.getElementById('status').value,
-                amount: parseFloat(document.getElementById('amount').value) || 0,
-                margin: parseFloat(document.getElementById('margin').value) || 0,
-                notes: document.getElementById('notes').value,
-                months: [
-                    parseFloat(mar26.value)||0, parseFloat(apr26.value)||0, parseFloat(may26.value)||0, parseFloat(jun26.value)||0,
-                    parseFloat(jul26.value)||0, parseFloat(aug26.value)||0, parseFloat(sep26.value)||0, parseFloat(oct26.value)||0,
-                    parseFloat(nov26.value)||0, parseFloat(dec26.value)||0, parseFloat(jan27.value)||0, parseFloat(feb27.value)||0
-                ]
-            };
-
-            showLoading('Saving project...');
-
-            try {
-                const response = await fetch(CONFIG.scriptURL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'addProject',
-                        sheetId: CONFIG.ordersSheetId,
-                        sheetName: CONFIG.ordersSheetName,
-                        project: projectData
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showStatus('Project saved successfully', 'success');
-                    document.getElementById('projectForm').reset();
-                    await loadAllData();
-                } else {
-                    throw new Error(result.error);
-                }
-            } catch (error) {
-                console.error('Error saving:', error);
-                showStatus('Error saving: ' + error.message, 'error');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // Helper functions
         function distributeEvenly() {
-            let amount = parseFloat(document.getElementById('amount').value) || 0;
-            let each = Math.round(amount / 12);
-            ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27']
-                .forEach(id => document.getElementById(id).value = each);
+            var amount = parseFloat(document.getElementById('amount') ? document.getElementById('amount').value : 0) || 0;
+            var each = Math.round(amount / 12);
+            var monthIds = ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27'];
+            
+            for (var i = 0; i < monthIds.length; i++) {
+                var el = document.getElementById(monthIds[i]);
+                if (el) el.value = each;
+            }
+            
             updateScheduledTotal();
         }
 
         function updateScheduledTotal() {
-            let total = 0;
-            ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27']
-                .forEach(id => total += parseFloat(document.getElementById(id).value) || 0);
-            document.getElementById('scheduledTotal').innerText = total.toLocaleString();
+            var total = 0;
+            var monthIds = ['mar26','apr26','may26','jun26','jul26','aug26','sep26','oct26','nov26','dec26','jan27','feb27'];
+            
+            for (var i = 0; i < monthIds.length; i++) {
+                var el = document.getElementById(monthIds[i]);
+                if (el) {
+                    total += parseFloat(el.value) || 0;
+                }
+            }
+            
+            var scheduledTotal = document.getElementById('scheduledTotal');
+            if (scheduledTotal) {
+                scheduledTotal.innerText = total.toLocaleString();
+            }
         }
 
         function showTab(tabId, btn) {
-            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-            document.getElementById(tabId).style.display = 'block';
-            document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            var tabs = document.querySelectorAll('.tab-content');
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].style.display = 'none';
+            }
+            var tab = document.getElementById(tabId);
+            if (tab) tab.style.display = 'block';
+            
+            var navLinks = document.querySelectorAll('.nav-link');
+            for (var i = 0; i < navLinks.length; i++) {
+                navLinks[i].classList.remove('active');
+            }
+            if (btn) btn.classList.add('active');
             
             if (tabId === 'analysis') {
                 updateAnalysis();
@@ -1870,49 +2203,78 @@
         }
 
         function updateConnectionStatus(status, message) {
-            const el = document.getElementById('connectionStatus');
+            var el = document.getElementById('connectionStatus');
+            if (!el) return;
+            
             el.className = 'connection-status status-' + status;
-            el.innerHTML = `<i class="fas ${status === 'connected' ? 'fa-check-circle' : status === 'disconnected' ? 'fa-exclamation-circle' : 'fa-sync-alt fa-spin'} me-2"></i> ${message}`;
+            var icon = 'fa-check-circle';
+            if (status === 'checking') icon = 'fa-sync-alt fa-spin';
+            if (status === 'disconnected') icon = 'fa-exclamation-circle';
+            
+            el.innerHTML = '<i class="fas ' + icon + ' me-2"></i> ' + message;
         }
 
         function showLoading(message) {
-            document.getElementById('loadingMessage').textContent = message;
-            document.getElementById('loadingOverlay').style.display = 'flex';
+            var overlay = document.getElementById('loadingOverlay');
+            var msgEl = document.getElementById('loadingMessage');
+            if (msgEl) msgEl.textContent = message || 'Loading...';
+            if (overlay) overlay.style.display = 'flex';
         }
 
         function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
+            var overlay = document.getElementById('loadingOverlay');
+            if (overlay) overlay.style.display = 'none';
         }
 
         function showStatus(message, type) {
-            const statusDiv = document.createElement('div');
-            statusDiv.className = `status-message status-${type}`;
+            var statusDiv = document.createElement('div');
+            statusDiv.className = 'status-message status-' + type;
             statusDiv.textContent = message;
             document.body.appendChild(statusDiv);
-            setTimeout(() => statusDiv.remove(), 3000);
+            setTimeout(function() {
+                statusDiv.remove();
+            }, 3000);
         }
 
         function exportToCSV() {
-            let csv = 'Category,Manager,Project,Status,Amount,Mar-26,Apr-26,May-26,Jun-26,Jul-26,Aug-26,Sep-26,Oct-26,Nov-26,Dec-26,Jan-27,Feb-27,Total,Check,Notes\n';
+            var csv = 'Category,Manager,Project,Status,Amount,Mar-26,Apr-26,May-26,Jun-26,Jul-26,Aug-26,Sep-26,Oct-26,Nov-26,Dec-26,Jan-27,Feb-27,Total,Check,Notes\n';
             
-            projects.forEach(p => {
-                if (!p.isSummary) {
-                    let scheduled = p.months.reduce((a,b)=>a+b,0);
-                    let check = scheduled - p.amount;
-                    csv += `${p.category},${p.manager},${p.project},${p.status},${p.amount},${p.months.join(',')},${scheduled},${check},${p.notes || ''}\n`;
+            for (var i = 0; i < projects.length; i++) {
+                var p = projects[i];
+                if (p.isSummary) continue;
+                
+                var scheduled = 0;
+                if (p.months) {
+                    for (var m = 0; m < p.months.length; m++) {
+                        scheduled += p.months[m] || 0;
+                    }
                 }
-            });
+                var check = scheduled - (p.amount || 0);
+                
+                csv += (p.category || '') + ',' +
+                       (p.manager || '') + ',' +
+                       (p.project || '') + ',' +
+                       (p.status || '') + ',' +
+                       (p.amount || 0) + ',';
+                
+                if (p.months) {
+                    for (var m = 0; m < p.months.length; m++) {
+                        csv += (p.months[m] || 0);
+                        if (m < p.months.length - 1) csv += ',';
+                    }
+                }
+                
+                csv += ',' + scheduled + ',' + check + ',' + (p.notes || '') + '\n';
+            }
             
-            let blob = new Blob([csv], { type: 'text/csv' });
-            let url = window.URL.createObjectURL(blob);
-            let a = document.createElement('a');
+            var blob = new Blob([csv], { type: 'text/csv' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
             a.href = url;
             a.download = 'orderbook.csv';
             a.click();
+            window.URL.revokeObjectURL(url);
         }
-
-        // Initialize
-        updateScheduledTotal();
     </script>
 </body>
 </html>
