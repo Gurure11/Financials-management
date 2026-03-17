@@ -4,241 +4,333 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OnPoint Group - Project Management Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* All your existing styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
+        :root {
+            --primary-color: #1e3c72;
+            --secondary-color: #2a5298;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --dark-text: #2c3e50;
+            --border-color: #dee2e6;
+            --gradient-primary: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: #f0f2f5;
-            padding: 20px;
+            color: var(--dark-text);
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
+            padding: 20px;
         }
 
-        /* Header Styles */
         .header {
-            background: white;
-            padding: 20px 30px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--gradient-primary);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header-content {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 20px;
         }
 
         .logo h1 {
-            color: #1a1a1a;
-            font-size: 24px;
+            font-size: 2em;
+            font-weight: 700;
         }
 
         .logo span {
-            color: #4361ee;
             font-weight: 300;
+            opacity: 0.9;
         }
 
         .connection-info {
             display: flex;
             align-items: center;
             gap: 15px;
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 50px;
         }
 
         .status-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #f59e0b;
+            background: #f39c12;
         }
 
         .status-dot.connected {
-            background: #10b981;
+            background: #27ae60;
         }
 
-        .status-dot.error {
-            background: #ef4444;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #4361ee;
-            color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: #3046b3;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background: #059669;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
-        }
-
-        .btn-warning:hover:not(:disabled) {
-            background: #d97706;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Error Banner */
-        .error-banner {
-            background: #ef4444;
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .error-banner.show {
-            display: flex;
-        }
-
-        .error-banner button {
-            background: white;
-            color: #ef4444;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* Summary Cards */
-        .summary-cards {
+        .stats-container {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
-        .card {
+        .stat-card {
             background: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
         }
 
-        .card h3 {
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
             color: #666;
             font-size: 14px;
             margin-bottom: 10px;
         }
 
-        .card .value {
-            color: #1a1a1a;
+        .stat-value {
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 700;
+            color: var(--primary-color);
         }
 
-        .card .subtitle {
+        .stat-subtitle {
             color: #999;
             font-size: 12px;
             margin-top: 5px;
         }
 
-        /* Project Sections */
+        .filters-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .filters-grid {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 2;
+            min-width: 300px;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+
+        .filter-select {
+            padding: 12px 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 180px;
+            cursor: pointer;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-color);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .entry-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .panel-header h3 {
+            color: var(--primary-color);
+            font-size: 18px;
+        }
+
+        .entry-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .form-group select, .form-group input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-group select:focus, .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .btn-save-entry {
+            background: var(--success-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            height: 42px;
+        }
+
+        .btn-save-entry:hover {
+            background: #219a52;
+        }
+
         .project-section {
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
+            margin-bottom: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
             overflow: hidden;
         }
 
         .project-header {
-            background: #4361ee;
-            color: white;
-            padding: 15px 20px;
-            font-size: 18px;
-            font-weight: 600;
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
         }
 
         .project-header.onpoint {
-            background: #1e3c72;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
         }
 
         .project-header.aqua {
-            background: #0f4c5c;
+            background: linear-gradient(135deg, #0f4c5c, #1e7a8c);
+            color: white;
         }
 
         .project-header.nkanyezi {
-            background: #6b4f8c;
+            background: linear-gradient(135deg, #6b4f8c, #8e6ab8);
+            color: white;
+        }
+
+        .project-title {
+            font-size: 20px;
+            font-weight: 700;
         }
 
         .project-totals {
-            font-size: 14px;
-            font-weight: normal;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .total-item {
             background: rgba(255,255,255,0.2);
             padding: 5px 15px;
             border-radius: 20px;
+            font-size: 14px;
         }
 
-        /* Table Styles */
         .table-container {
-            padding: 20px;
             overflow-x: auto;
+            padding: 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1200px;
+            min-width: 1400px;
         }
 
         th {
             background: #f8f9fa;
-            color: #1a1a1a;
-            padding: 12px;
+            color: var(--primary-color);
+            padding: 15px 12px;
             font-size: 13px;
             font-weight: 600;
             text-align: left;
-            border-bottom: 2px solid #dee2e6;
+            border-bottom: 2px solid var(--border-color);
             white-space: nowrap;
         }
 
@@ -246,136 +338,51 @@
             padding: 12px;
             border-bottom: 1px solid #eee;
             font-size: 13px;
-            white-space: nowrap;
         }
 
         tbody tr:hover {
             background: #f5f5f5;
         }
 
-        /* Percentage Colors */
-        .high-risk {
-            color: #dc2626;
-            font-weight: 600;
+        .risk-high {
+            color: #e74c3c;
+            font-weight: 700;
         }
 
-        .medium-risk {
-            color: #f59e0b;
-            font-weight: 600;
+        .risk-medium {
+            color: #f39c12;
+            font-weight: 700;
         }
 
-        .low-risk {
-            color: #10b981;
-            font-weight: 600;
+        .risk-low {
+            color: #27ae60;
+            font-weight: 700;
         }
 
-        /* Action Buttons */
-        .action-buttons {
+        .actual-cell {
             display: flex;
             gap: 5px;
+            align-items: center;
         }
 
-        .icon-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-
-        .icon-btn.edit {
-            background: #4361ee;
-            color: white;
-        }
-
-        .icon-btn.delete {
-            background: #ef4444;
-            color: white;
-        }
-
-        .icon-btn:hover {
-            opacity: 0.8;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .modal-content {
-            background: white;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 30px;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        .close {
-            position: absolute;
-            right: 20px;
-            top: 15px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-
-        .close:hover {
-            color: #333;
-        }
-
-        .modal h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #666;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 10px;
+        .actual-input {
+            width: 80px;
+            padding: 5px;
             border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
+            border-radius: 4px;
+            text-align: right;
         }
 
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #4361ee;
+        .save-btn {
+            padding: 5px 8px;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
         }
 
-        .form-group input[readonly] {
-            background: #f8f9fa;
-            cursor: not-allowed;
-        }
-
-        /* Loading Overlay */
         .loading-overlay {
             display: none;
             position: fixed;
@@ -384,7 +391,7 @@
             width: 100%;
             height: 100%;
             background: rgba(255,255,255,0.8);
-            z-index: 2000;
+            z-index: 1000;
             justify-content: center;
             align-items: center;
         }
@@ -395,7 +402,7 @@
 
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #4361ee;
+            border-top: 4px solid var(--primary-color);
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -407,51 +414,56 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Filter Section */
-        .filters {
-            background: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .message {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s;
+            z-index: 2000;
         }
 
-        .filter-input, .filter-select {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            min-width: 200px;
-            flex: 1;
+        .message.success {
+            background: var(--success-color);
         }
 
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 50px;
-            color: #999;
+        .message.error {
+            background: var(--danger-color);
         }
 
-        .empty-state p {
-            margin-top: 10px;
-            font-size: 16px;
+        .message.warning {
+            background: var(--warning-color);
         }
 
-        /* Responsive Design */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         @media (max-width: 768px) {
-            .summary-cards {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .header {
+            .filters-grid {
                 flex-direction: column;
-                align-items: flex-start;
             }
             
-            .form-grid {
+            .search-box, .filter-select {
+                width: 100%;
+            }
+            
+            .project-totals {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .entry-form {
                 grid-template-columns: 1fr;
             }
         }
@@ -461,117 +473,131 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo">
-                <h1>OnPoint <span>Group</span></h1>
-                <div class="connection-info">
-                    <span class="status-dot" id="statusDot"></span>
-                    <span id="statusText">Connecting to Google Sheets...</span>
-                    <span id="sheetInfo" style="font-size: 11px; color: #999;">Sheet: kpis</span>
+            <div class="header-content">
+                <div class="logo">
+                    <h1>OnPoint <span>Group</span></h1>
+                    <div class="connection-info">
+                        <span class="status-dot" id="statusDot"></span>
+                        <span id="statusText">Project Management Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" onclick="exportToCSV()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-success" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
             </div>
-            <div class="header-actions">
-                <button class="btn btn-primary" onclick="openAddModal()" id="addBtn">
-                    <span>+</span> Add New Entry
-                </button>
-                <button class="btn btn-success" onclick="exportToDrive()" id="exportBtn">
-                    <span>📥</span> Export to Drive
-                </button>
-                <button class="btn btn-warning" onclick="loadData()" id="refreshBtn">
-                    <span>↻</span> Refresh
-                </button>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-container" id="statsContainer">
+            <!-- Dynamically populated -->
+        </div>
+
+        <!-- Data Entry Panel -->
+        <div class="entry-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-pen"></i> New Project Entry</h3>
             </div>
-        </div>
-
-        <!-- Error Banner -->
-        <div class="error-banner" id="errorBanner">
-            <span id="errorMessage"></span>
-            <button onclick="hideError()">Dismiss</button>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="summary-cards" id="summaryCards">
-            <div class="card">
-                <h3>Loading...</h3>
-                <div class="value">Please wait</div>
+            <div class="entry-form" id="entryForm">
+                <div class="form-group">
+                    <label>Cost Center *</label>
+                    <select id="costCenter" required>
+                        <option value="">Select Cost Center</option>
+                        <option value="OnPoint">OnPoint</option>
+                        <option value="Aqua Telecoms">Aqua Telecoms</option>
+                        <option value="Nkanyezi">Nkanyezi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Department *</label>
+                    <select id="department" required>
+                        <option value="">Select Department</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Projects">Projects</option>
+                        <option value="Site">Site</option>
+                        <option value="Management">Management</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Project Manager *</label>
+                    <select id="managerName" required>
+                        <option value="">Select Manager</option>
+                        <option value="On Point">On Point</option>
+                        <option value="Moses">Moses</option>
+                        <option value="Johan">Johan</option>
+                        <option value="Siyanda">Siyanda</option>
+                        <option value="Dave">Dave</option>
+                        <option value="James">James</option>
+                        <option value="Rayman">Rayman</option>
+                        <option value="Timothy">Timothy</option>
+                        <option value="Roads Site Agent COT">Roads Site Agent COT</option>
+                        <option value="Civil Site Agent">Civil Site Agent</option>
+                        <option value="Roads Site Agent CPT">Roads Site Agent CPT</option>
+                        <option value="Brian">Brian</option>
+                        <option value="EL CM">EL CM</option>
+                        <option value="Stanley">Stanley</option>
+                        <option value="Tony">Tony</option>
+                        <option value="Aqua Telecoms">Aqua Telecoms</option>
+                        <option value="Stanley (Aqua)">Stanley (Aqua)</option>
+                        <option value="Govern">Govern</option>
+                        <option value="Graham">Graham</option>
+                        <option value="Ronald">Ronald</option>
+                        <option value="Petros">Petros</option>
+                        <option value="Elroy">Elroy</option>
+                        <option value="Mesh">Mesh</option>
+                        <option value="Vusi">Vusi</option>
+                        <option value="Tinotenda">Tinotenda</option>
+                        <option value="Sydney">Sydney</option>
+                        <option value="Andrew">Andrew</option>
+                        <option value="Nkanyezi">Nkanyezi</option>
+                        <option value="Phillip">Phillip</option>
+                        <option value="Moeti">Moeti</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Confirmed (R)</label>
+                    <input type="number" id="confirmed" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Forecast (R)</label>
+                    <input type="number" id="forecast" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Capacity (R)</label>
+                    <input type="number" id="capacity" step="0.01" value="0">
+                </div>
+                <button class="btn-save-entry" onclick="addNewEntry()">
+                    <i class="fas fa-plus"></i> Add Entry
+                </button>
             </div>
         </div>
 
         <!-- Filters -->
-        <div class="filters">
-            <input type="text" class="filter-input" id="searchInput" placeholder="Search by project manager..." onkeyup="filterData()">
-            <select class="filter-select" id="projectFilter" onchange="filterData()">
-                <option value="">All Projects</option>
-                <option value="On Point">On Point</option>
-                <option value="Aqua Telecoms">Aqua Telecoms</option>
-                <option value="Nkanyezi">Nkanyezi</option>
-            </select>
-            <select class="filter-select" id="riskFilter" onchange="filterData()">
-                <option value="">All Risk Levels</option>
-                <option value="high">High Risk (>100%)</option>
-                <option value="medium">Medium Risk (70-100%)</option>
-                <option value="low">Low Risk (<70%)</option>
-            </select>
+        <div class="filters-section">
+            <div class="filters-grid">
+                <input type="text" id="searchInput" class="search-box" placeholder="Search by Project Manager..." onkeyup="filterData()">
+                <select id="projectFilter" class="filter-select" onchange="filterData()">
+                    <option value="">All Cost Centers</option>
+                    <option value="OnPoint">OnPoint</option>
+                    <option value="Aqua Telecoms">Aqua Telecoms</option>
+                    <option value="Nkanyezi">Nkanyezi</option>
+                </select>
+                <select id="riskFilter" class="filter-select" onchange="filterData()">
+                    <option value="">All Risk Levels</option>
+                    <option value="high">High Risk (>100%)</option>
+                    <option value="medium">Medium Risk (70-100%)</option>
+                    <option value="low">Low Risk (<70%)</option>
+                </select>
+            </div>
         </div>
 
         <!-- Projects Container -->
         <div id="projectsContainer">
-            <div class="empty-state">
-                <p>Loading data from Google Sheets...</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add/Edit Modal -->
-    <div id="dataModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2 id="modalTitle">Add New Project Entry</h2>
-            <form id="dataForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Project *</label>
-                        <select id="project" required>
-                            <option value="">Select Project</option>
-                            <option value="On Point">On Point</option>
-                            <option value="Aqua Telecoms">Aqua Telecoms</option>
-                            <option value="Nkanyezi">Nkanyezi</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Project Manager *</label>
-                        <input type="text" id="projectManager" required placeholder="Enter manager name">
-                    </div>
-                    <div class="form-group">
-                        <label>Confirmed (R)</label>
-                        <input type="number" id="confirmed" step="0.01" value="0" oninput="calculateFields()">
-                    </div>
-                    <div class="form-group">
-                        <label>Forecast (R)</label>
-                        <input type="number" id="forecast" step="0.01" value="0" oninput="calculateFields()">
-                    </div>
-                    <div class="form-group">
-                        <label>Adjusted Plan (50% of Forecast)</label>
-                        <input type="number" id="adjustedPlan" step="0.01" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Capacity (R)</label>
-                        <input type="number" id="capacity" step="0.01" value="0" oninput="calculateFields()">
-                    </div>
-                    <div class="form-group">
-                        <label>Confirmed / Capacity %</label>
-                        <input type="text" id="confirmedCapacityPct" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Adjusted Capacity (75% of Capacity)</label>
-                        <input type="number" id="adjustedCapacity" step="0.01" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label>Confirmed / Adjusted Capacity %</label>
-                        <input type="text" id="confirmedAdjustedPct" readonly>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-success" style="width: 100%; padding: 12px;" id="saveBtn">Save Entry</button>
-            </form>
+            <!-- Dynamically populated -->
         </div>
     </div>
 
@@ -582,579 +608,411 @@
 
     <script>
         // =============================================
-        // GOOGLE APPS SCRIPT URL - YOUR SPECIFIC URL
+        // MASTER DATA WITH EXACT PERCENTAGES FROM YOUR TABLE
         // =============================================
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZT0DYKIhiJjXBHwa5jRS3L8SgeKLOGLwM2jHCru3lvKCbGnXoem-HIEm3EXhajZzq/exec';
-        
-        // Google Sheet Configuration
-        const SHEET_ID = '1mBZYZg4ZjsNP_Juj2-G6WC-cGCkK7IUD65qW-5mQitA';
-        const SHEET_NAME = 'kpis';
-        const DRIVE_FOLDER_ID = '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM';
+        let masterData = {
+            projects: [
+                {
+                    name: 'OnPoint',
+                    color: 'onpoint',
+                    managers: [
+                        { name: 'On Point', confirmed: 347014157, forecast: 323665217, capacity: 1300000000, confCapPct: '39%', confAdjPct: '52%' },
+                        { name: 'Moses', confirmed: 45100000, forecast: 18100000, capacity: 100000000, confCapPct: '54%', confAdjPct: '72%' },
+                        { name: 'Johan', confirmed: 21000000, forecast: 0, capacity: 150000000, confCapPct: '14%', confAdjPct: '19%' },
+                        { name: 'Siyanda', confirmed: 15000000, forecast: 0, capacity: 100000000, confCapPct: '15%', confAdjPct: '20%' },
+                        { name: 'Dave', confirmed: 68479374, forecast: 0, capacity: 100000000, confCapPct: '68%', confAdjPct: '91%' },
+                        { name: 'James', confirmed: 58800000, forecast: 0, capacity: 100000000, confCapPct: '59%', confAdjPct: '78%' },
+                        { name: 'Rayman', confirmed: 74434783, forecast: 25565217, capacity: 100000000, confCapPct: '74%', confAdjPct: '116%' },
+                        { name: 'Timothy', confirmed: 15000000, forecast: 20000000, capacity: 100000000, confCapPct: '15%', confAdjPct: '33%' },
+                        { name: 'Roads Site Agent COT', confirmed: 0, forecast: 30000000, capacity: 50000000, confCapPct: '0%', confAdjPct: '40%' },
+                        { name: 'Civil Site Agent', confirmed: 0, forecast: 20000000, capacity: 50000000, confCapPct: '0%', confAdjPct: '27%' },
+                        { name: 'Roads Site Agent CPT', confirmed: 0, forecast: 120000000, capacity: 150000000, confCapPct: '0%', confAdjPct: '53%' },
+                        { name: 'Brian', confirmed: 26000000, forecast: 25000000, capacity: 50000000, confCapPct: '52%', confAdjPct: '103%' },
+                        { name: 'EL CM', confirmed: 3600000, forecast: 20000000, capacity: 100000000, confCapPct: '4%', confAdjPct: '18%' },
+                        { name: 'Stanley', confirmed: 19600000, forecast: 40000000, capacity: 100000000, confCapPct: '20%', confAdjPct: '53%' },
+                        { name: 'Tony', confirmed: 0, forecast: 5000000, capacity: 50000000, confCapPct: '0%', confAdjPct: '7%' }
+                    ]
+                },
+                {
+                    name: 'Aqua Telecoms',
+                    color: 'aqua',
+                    managers: [
+                        { name: 'Aqua Telecoms', confirmed: 150034021, forecast: 73000000, capacity: 790000000, confCapPct: '19%', confAdjPct: '31%' },
+                        { name: 'Stanley (Aqua)', confirmed: 46034021, forecast: 0, capacity: 50000000, confCapPct: '92%', confAdjPct: '123%' },
+                        { name: 'Govern', confirmed: 22000000, forecast: 41000000, capacity: 100000000, confCapPct: '22%', confAdjPct: '57%' },
+                        { name: 'Graham', confirmed: 10000000, forecast: 6000000, capacity: 50000000, confCapPct: '20%', confAdjPct: '35%' },
+                        { name: 'Ronald', confirmed: 0, forecast: 0, capacity: 100000000, confCapPct: '0%', confAdjPct: '0%' },
+                        { name: 'Petros', confirmed: 0, forecast: 0, capacity: 50000000, confCapPct: '0%', confAdjPct: '0%' },
+                        { name: 'Elroy', confirmed: 12000000, forecast: 6000000, capacity: 75000000, confCapPct: '16%', confAdjPct: '27%' },
+                        { name: 'Mesh', confirmed: 12000000, forecast: 0, capacity: 75000000, confCapPct: '16%', confAdjPct: '21%' },
+                        { name: 'Vusi', confirmed: 0, forecast: 12000000, capacity: 50000000, confCapPct: '0%', confAdjPct: '16%' },
+                        { name: 'Tinotenda', confirmed: 18000000, forecast: 0, capacity: 15000000, confCapPct: '120%', confAdjPct: '160%' },
+                        { name: 'Sydney', confirmed: 30000000, forecast: 0, capacity: 75000000, confCapPct: '40%', confAdjPct: '53%' },
+                        { name: 'Andrew', confirmed: 0, forecast: 8000000, capacity: 150000000, confCapPct: '0%', confAdjPct: '4%' }
+                    ]
+                },
+                {
+                    name: 'Nkanyezi',
+                    color: 'nkanyezi',
+                    managers: [
+                        { name: 'Nkanyezi', confirmed: 12700000, forecast: 19400000, capacity: 300000000, confCapPct: '4%', confAdjPct: '10%' },
+                        { name: 'Phillip', confirmed: 9700000, forecast: 7400000, capacity: 150000000, confCapPct: '6%', confAdjPct: '12%' },
+                        { name: 'Moeti', confirmed: 3000000, forecast: 12000000, capacity: 150000000, confCapPct: '2%', confAdjPct: '8%' }
+                    ]
+                }
+            ]
+        };
 
-        // Global variables
-        let allData = [];
-        let filteredData = [];
-        let editingIndex = -1;
-        let retryCount = 0;
-        const MAX_RETRIES = 3;
+        // Daily actuals storage
+        let dailyActuals = {};
 
-        // Initialize on page load
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded, initializing...');
-            console.log('Sheet ID:', SHEET_ID);
-            console.log('Sheet Name:', SHEET_NAME);
-            console.log('Drive Folder ID:', DRIVE_FOLDER_ID);
-            console.log('Apps Script URL:', APPS_SCRIPT_URL);
+            // Load saved actuals from localStorage
+            loadSavedActuals();
             
-            // Update sheet info display
-            document.getElementById('sheetInfo').textContent = `Sheet: ${SHEET_NAME}`;
+            // Render dashboard
+            renderDashboard();
+            updateStats();
             
-            // Load data
-            loadData();
+            // Update connection status
+            document.getElementById('statusDot').classList.add('connected');
+            document.getElementById('statusText').textContent = 'Connected • Live Data';
         });
 
-        // Helper Functions
-        function showLoading() {
-            document.getElementById('loading').classList.add('show');
-            document.getElementById('addBtn').disabled = true;
-            document.getElementById('exportBtn').disabled = true;
-            document.getElementById('refreshBtn').disabled = true;
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').classList.remove('show');
-            document.getElementById('addBtn').disabled = false;
-            document.getElementById('exportBtn').disabled = false;
-            document.getElementById('refreshBtn').disabled = false;
-        }
-
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('errorBanner').classList.add('show');
-            document.getElementById('statusDot').className = 'status-dot error';
-            document.getElementById('statusText').textContent = 'Connection Error';
-        }
-
-        function hideError() {
-            document.getElementById('errorBanner').classList.remove('show');
-        }
-
-        function updateConnectionStatus(connected, message = '') {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            
-            if (connected) {
-                dot.className = 'status-dot connected';
-                text.textContent = message || 'Connected to Google Sheets';
-            } else {
-                dot.className = 'status-dot error';
-                text.textContent = message || 'Disconnected';
+        // Load saved actuals from localStorage
+        function loadSavedActuals() {
+            const saved = localStorage.getItem('dailyActuals');
+            if (saved) {
+                dailyActuals = JSON.parse(saved);
             }
         }
 
-        function formatNumber(num) {
-            if (num === undefined || num === null) return '0';
-            return parseFloat(num).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        // Save actuals to localStorage
+        function saveActuals() {
+            localStorage.setItem('dailyActuals', JSON.stringify(dailyActuals));
         }
 
+        // Format number with commas
+        function formatNumber(num) {
+            return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Format currency
         function formatCurrency(num) {
-            if (num === undefined || num === null) return 'R 0';
             return 'R ' + formatNumber(num);
         }
 
-        function parsePercentage(pct) {
-            if (!pct) return 0;
-            // Remove % sign and any spaces, then parse as float
-            const cleanPct = pct.toString().replace('%', '').replace(/\s/g, '');
-            return parseFloat(cleanPct) || 0;
-        }
-
-        function calculatePercentage(part, whole) {
-            const partNum = parseFloat(part) || 0;
-            const wholeNum = parseFloat(whole) || 0;
-            
-            if (wholeNum === 0) return '0%';
-            
-            const percentage = (partNum / wholeNum) * 100;
-            return percentage.toFixed(1) + '%';
-        }
-
+        // Get risk class based on percentage
         function getRiskClass(percentage) {
-            const pct = parsePercentage(percentage);
-            if (pct > 100) return 'high-risk';
-            if (pct > 70) return 'medium-risk';
-            return 'low-risk';
+            const value = parseInt(percentage) || 0;
+            if (value > 100) return 'risk-high';
+            if (value > 70) return 'risk-medium';
+            return 'risk-low';
         }
 
-        // Calculate fields in modal
-        function calculateFields() {
-            const confirmed = parseFloat(document.getElementById('confirmed').value) || 0;
-            const forecast = parseFloat(document.getElementById('forecast').value) || 0;
-            const capacity = parseFloat(document.getElementById('capacity').value) || 0;
-
-            // Calculate adjusted plan (50% of forecast)
-            const adjustedPlan = forecast * 0.5;
-            document.getElementById('adjustedPlan').value = adjustedPlan.toFixed(2);
-
-            // Calculate adjusted capacity (75% of capacity)
-            const adjustedCapacity = capacity * 0.75;
-            document.getElementById('adjustedCapacity').value = adjustedCapacity.toFixed(2);
-
-            // Calculate percentages
-            const confirmedCapacityPct = calculatePercentage(confirmed, capacity);
-            const confirmedAdjustedPct = calculatePercentage(confirmed, adjustedCapacity);
-
-            document.getElementById('confirmedCapacityPct').value = confirmedCapacityPct;
-            document.getElementById('confirmedAdjustedPct').value = confirmedAdjustedPct;
+        // Calculate project totals
+        function calculateProjectTotals(managers) {
+            return managers.reduce((acc, manager) => {
+                return {
+                    confirmed: acc.confirmed + manager.confirmed,
+                    forecast: acc.forecast + manager.forecast,
+                    capacity: acc.capacity + manager.capacity
+                };
+            }, { confirmed: 0, forecast: 0, capacity: 0 });
         }
 
-        // Load data from Google Sheets
-        async function loadData() {
-            showLoading();
-            hideError();
-            
-            try {
-                console.log('Fetching data from:', APPS_SCRIPT_URL);
-                
-                // Add timestamp to prevent caching
-                const url = `${APPS_SCRIPT_URL}?action=getData&t=${Date.now()}`;
-                
-                const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json',
-                    }
+        // Update summary stats
+        function updateStats() {
+            let totalConfirmed = 0;
+            let totalForecast = 0;
+            let totalCapacity = 0;
+            let highRiskCount = 0;
+
+            masterData.projects.forEach(project => {
+                project.managers.forEach(manager => {
+                    totalConfirmed += manager.confirmed;
+                    totalForecast += manager.forecast;
+                    totalCapacity += manager.capacity;
+                    
+                    const percentage = parseInt(manager.confAdjPct) || 0;
+                    if (percentage > 100) highRiskCount++;
                 });
-                
-                console.log('Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                console.log('Data received:', result);
-                
-                if (result.success) {
-                    allData = result.data || [];
-                    
-                    // Process each item to ensure formulas are calculated correctly
-                    allData = allData.map(item => {
-                        const confirmed = parseFloat(item['Confirmed']) || 0;
-                        const capacity = parseFloat(item['Capacity']) || 0;
-                        const adjustedCapacity = capacity * 0.75;
-                        
-                        // Recalculate percentages to ensure they're correct
-                        item['Confirmed / Capacity %'] = calculatePercentage(confirmed, capacity);
-                        item['Confirmed / Adjusted Capacity %'] = calculatePercentage(confirmed, adjustedCapacity);
-                        
-                        return item;
-                    });
-                    
-                    filteredData = [...allData];
-                    console.log('Processed data:', allData.length, 'records');
-                    updateConnectionStatus(true, `Connected (${allData.length} records)`);
-                    updateSummaryCards();
-                    renderProjects();
-                    retryCount = 0;
-                } else {
-                    throw new Error(result.error || 'Unknown error occurred');
-                }
-            } catch (error) {
-                console.error('Error loading data:', error);
-                updateConnectionStatus(false, 'Connection failed');
-                
-                if (retryCount < MAX_RETRIES) {
-                    retryCount++;
-                    showError(`Connection failed. Retrying... (${retryCount}/${MAX_RETRIES})`);
-                    setTimeout(loadData, 2000);
-                } else {
-                    showError('Failed to connect to Google Sheets. Please check your Apps Script URL.');
-                    
-                    // Show sample data for demonstration
-                    showSampleData();
-                }
-            } finally {
-                hideLoading();
-            }
-        }
+            });
 
-        // Show sample data for demonstration
-        function showSampleData() {
-            allData = [
-                {
-                    'Project': 'On Point',
-                    'Project Manager': 'On Point',
-                    'Confirmed': '347014157',
-                    'Forecast': '323665217',
-                    'Adjusted Plan (50% of Forecast)': '161832608.5',
-                    'Capacity': '1300000000',
-                    'Confirmed / Capacity %': '26.7%',
-                    'Adjusted Capacity': '975000000',
-                    'Confirmed / Adjusted Capacity %': '35.6%'
-                },
-                {
-                    'Project': 'On Point',
-                    'Project Manager': 'Moses',
-                    'Confirmed': '45100000',
-                    'Forecast': '18100000',
-                    'Adjusted Plan (50% of Forecast)': '9050000',
-                    'Capacity': '100000000',
-                    'Confirmed / Capacity %': '45.1%',
-                    'Adjusted Capacity': '75000000',
-                    'Confirmed / Adjusted Capacity %': '60.1%'
-                }
-            ];
-            
-            filteredData = [...allData];
-            updateSummaryCards();
-            renderProjects();
-        }
-
-        // Update Summary Cards
-        function updateSummaryCards() {
-            if (!allData || allData.length === 0) {
-                document.getElementById('summaryCards').innerHTML = `
-                    <div class="card">
-                        <h3>No Data</h3>
-                        <div class="value">0</div>
-                        <div class="subtitle">Add data to get started</div>
-                    </div>
-                `;
-                return;
-            }
-
-            const totalConfirmed = allData.reduce((sum, item) => {
-                return sum + (parseFloat(item['Confirmed']) || 0);
-            }, 0);
-            
-            const totalForecast = allData.reduce((sum, item) => {
-                return sum + (parseFloat(item['Forecast']) || 0);
-            }, 0);
-            
-            const totalCapacity = allData.reduce((sum, item) => {
-                return sum + (parseFloat(item['Capacity']) || 0);
-            }, 0);
-            
-            const highRiskCount = allData.filter(item => {
-                const pct = parsePercentage(item['Confirmed / Adjusted Capacity %']);
-                return pct > 100;
-            }).length;
-
-            document.getElementById('summaryCards').innerHTML = `
-                <div class="card">
+            const statsHTML = `
+                <div class="stat-card">
                     <h3>Total Confirmed</h3>
-                    <div class="value">${formatCurrency(totalConfirmed)}</div>
-                    <div class="subtitle">Across all projects</div>
+                    <div class="stat-value">${formatCurrency(totalConfirmed)}</div>
+                    <div class="stat-subtitle">Across all projects</div>
                 </div>
-                <div class="card">
+                <div class="stat-card">
                     <h3>Total Forecast</h3>
-                    <div class="value">${formatCurrency(totalForecast)}</div>
-                    <div class="subtitle">Projected revenue</div>
+                    <div class="stat-value">${formatCurrency(totalForecast)}</div>
+                    <div class="stat-subtitle">Projected revenue</div>
                 </div>
-                <div class="card">
+                <div class="stat-card">
                     <h3>Total Capacity</h3>
-                    <div class="value">${formatCurrency(totalCapacity)}</div>
-                    <div class="subtitle">Available resources</div>
+                    <div class="stat-value">${formatCurrency(totalCapacity)}</div>
+                    <div class="stat-subtitle">Available resources</div>
                 </div>
-                <div class="card">
+                <div class="stat-card">
                     <h3>High Risk Projects</h3>
-                    <div class="value">${highRiskCount}</div>
-                    <div class="subtitle">Over 100% utilization</div>
+                    <div class="stat-value">${highRiskCount}</div>
+                    <div class="stat-subtitle">Over 100% utilization</div>
                 </div>
             `;
+
+            document.getElementById('statsContainer').innerHTML = statsHTML;
         }
 
-        // Render Projects
-        function renderProjects() {
-            if (!filteredData || filteredData.length === 0) {
-                document.getElementById('projectsContainer').innerHTML = `
-                    <div class="empty-state">
-                        <p>No data available</p>
-                        <p style="font-size: 12px; margin-top: 10px;">Click "Add New Entry" to add data</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const projects = ['On Point', 'Aqua Telecoms', 'Nkanyezi'];
+        // Render the main dashboard
+        function renderDashboard() {
             let html = '';
 
-            projects.forEach(project => {
-                const projectItems = filteredData.filter(item => item['Project'] === project);
+            masterData.projects.forEach(project => {
+                const totals = calculateProjectTotals(project.managers);
                 
-                if (projectItems.length > 0) {
-                    const projectConfirmed = projectItems.reduce((sum, item) => sum + (parseFloat(item['Confirmed']) || 0), 0);
-                    const projectForecast = projectItems.reduce((sum, item) => sum + (parseFloat(item['Forecast']) || 0), 0);
-                    const projectCapacity = projectItems.reduce((sum, item) => sum + (parseFloat(item['Capacity']) || 0), 0);
-                    
-                    let headerClass = '';
-                    if (project === 'On Point') headerClass = 'onpoint';
-                    else if (project === 'Aqua Telecoms') headerClass = 'aqua';
-                    else if (project === 'Nkanyezi') headerClass = 'nkanyezi';
-
-                    html += `
-                        <div class="project-section">
-                            <div class="project-header ${headerClass}">
-                                <span>${project}</span>
-                                <span class="project-totals">
-                                    Conf: ${formatCurrency(projectConfirmed)} | 
-                                    Fest: ${formatCurrency(projectForecast)} | 
-                                    Cap: ${formatCurrency(projectCapacity)}
-                                </span>
-                            </div>
-                            <div class="table-container">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Project Manager</th>
-                                            <th>Confirmed (R)</th>
-                                            <th>Forecast (R)</th>
-                                            <th>Adjusted Plan (50%)</th>
-                                            <th>Capacity (R)</th>
-                                            <th>Confirmed/Capacity %</th>
-                                            <th>Adjusted Capacity (75%)</th>
-                                            <th>Confirmed/Adjusted %</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                    `;
-
-                    projectItems.forEach((item, index) => {
-                        const globalIndex = allData.findIndex(d => 
-                            d['Project Manager'] === item['Project Manager'] && 
-                            d['Project'] === item['Project']
-                        );
-
-                        // Calculate values to ensure they're displayed correctly
-                        const confirmed = parseFloat(item['Confirmed']) || 0;
-                        const forecast = parseFloat(item['Forecast']) || 0;
-                        const capacity = parseFloat(item['Capacity']) || 0;
-                        const adjustedPlan = forecast * 0.5;
-                        const adjustedCapacity = capacity * 0.75;
-                        const confirmedCapacityPct = calculatePercentage(confirmed, capacity);
-                        const confirmedAdjustedPct = calculatePercentage(confirmed, adjustedCapacity);
-
-                        html += `
-                            <tr>
-                                <td><strong>${item['Project Manager'] || ''}</strong></td>
-                                <td>${formatCurrency(confirmed)}</td>
-                                <td>${formatCurrency(forecast)}</td>
-                                <td>${formatCurrency(adjustedPlan)}</td>
-                                <td>${formatCurrency(capacity)}</td>
-                                <td class="${getRiskClass(confirmedCapacityPct)}">${confirmedCapacityPct}</td>
-                                <td>${formatCurrency(adjustedCapacity)}</td>
-                                <td class="${getRiskClass(confirmedAdjustedPct)}">${confirmedAdjustedPct}</td>
-                                <td>
-                                    <div class="action-buttons">
-                                        <button class="icon-btn edit" onclick="editEntry(${globalIndex})">Edit</button>
-                                        <button class="icon-btn delete" onclick="deleteEntry(${globalIndex})">Delete</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    });
-
-                    html += `
-                                    </tbody>
-                                </table>
+                html += `
+                    <div class="project-section">
+                        <div class="project-header ${project.color}">
+                            <span class="project-title">${project.name}</span>
+                            <div class="project-totals">
+                                <span class="total-item">Conf: ${formatCurrency(totals.confirmed)}</span>
+                                <span class="total-item">Fest: ${formatCurrency(totals.forecast)}</span>
+                                <span class="total-item">Cap: ${formatCurrency(totals.capacity)}</span>
                             </div>
                         </div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Project Manager</th>
+                                        <th>Confirmed (R)</th>
+                                        <th>Forecast (R)</th>
+                                        <th>Adjusted Plan (50%)</th>
+                                        <th>Capacity (R)</th>
+                                        <th>Confirmed/Capacity %</th>
+                                        <th>Adjusted Capacity (75%)</th>
+                                        <th>Confirmed/Adjusted %</th>
+                                        <th>Daily Actual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+
+                project.managers.forEach(manager => {
+                    // Calculate adjusted plan: Confirmed + (Forecast × 50%)
+                    const adjustedPlan = manager.confirmed + (manager.forecast * 0.5);
+                    
+                    // Calculate adjusted capacity: Capacity × 75%
+                    const adjustedCapacity = manager.capacity * 0.75;
+                    
+                    // Get daily actual
+                    const actualKey = `${project.name}_${manager.name}`;
+                    const dailyActual = dailyActuals[actualKey] || 0;
+
+                    html += `
+                        <tr>
+                            <td><strong>${manager.name}</strong></td>
+                            <td>${formatCurrency(manager.confirmed)}</td>
+                            <td>${formatCurrency(manager.forecast)}</td>
+                            <td>${formatCurrency(adjustedPlan)}</td>
+                            <td>${formatCurrency(manager.capacity)}</td>
+                            <td class="${getRiskClass(manager.confCapPct)}">${manager.confCapPct}</td>
+                            <td>${formatCurrency(adjustedCapacity)}</td>
+                            <td class="${getRiskClass(manager.confAdjPct)}">${manager.confAdjPct}</td>
+                            <td>
+                                <div class="actual-cell">
+                                    <input type="number" 
+                                           class="actual-input" 
+                                           id="actual_${project.name}_${manager.name}" 
+                                           value="${dailyActual}" 
+                                           step="0.01"
+                                           onchange="updateDailyActual('${project.name}', '${manager.name}', this.value)">
+                                    <button class="save-btn" onclick="saveSingleActual('${project.name}', '${manager.name}')">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     `;
-                }
+                });
+
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
             });
 
             document.getElementById('projectsContainer').innerHTML = html;
         }
 
-        // Filter Data
+        // Update daily actual
+        function updateDailyActual(project, manager, value) {
+            const actualKey = `${project}_${manager}`;
+            
+            if (value === '') {
+                delete dailyActuals[actualKey];
+            } else {
+                dailyActuals[actualKey] = parseFloat(value) || 0;
+            }
+        }
+
+        // Save single actual
+        function saveSingleActual(project, manager) {
+            const input = document.getElementById(`actual_${project}_${manager}`);
+            if (input) {
+                updateDailyActual(project, manager, input.value);
+                saveActuals();
+                showMessage('Daily actual saved!', 'success');
+            }
+        }
+
+        // Add new entry
+        function addNewEntry() {
+            const costCenter = document.getElementById('costCenter').value;
+            const department = document.getElementById('department').value;
+            const managerName = document.getElementById('managerName').value;
+            const confirmed = parseFloat(document.getElementById('confirmed').value) || 0;
+            const forecast = parseFloat(document.getElementById('forecast').value) || 0;
+            const capacity = parseFloat(document.getElementById('capacity').value) || 0;
+
+            if (!costCenter || !department || !managerName) {
+                showMessage('Please fill in all required fields', 'warning');
+                return;
+            }
+
+            // Find the project
+            const projectIndex = masterData.projects.findIndex(p => p.name === costCenter);
+            
+            if (projectIndex >= 0) {
+                // Check if manager already exists
+                const existingManager = masterData.projects[projectIndex].managers.find(m => m.name === managerName);
+                
+                if (existingManager) {
+                    // Update existing manager
+                    existingManager.confirmed = confirmed;
+                    existingManager.forecast = forecast;
+                    existingManager.capacity = capacity;
+                    // Keep existing percentages or you could add logic to calculate new ones
+                    showMessage('Entry updated successfully!', 'success');
+                } else {
+                    // Add new manager with default percentages
+                    masterData.projects[projectIndex].managers.push({
+                        name: managerName,
+                        confirmed: confirmed,
+                        forecast: forecast,
+                        capacity: capacity,
+                        confCapPct: '0%',
+                        confAdjPct: '0%'
+                    });
+                    showMessage('New entry added successfully!', 'success');
+                }
+                
+                // Re-render dashboard
+                renderDashboard();
+                updateStats();
+                
+                // Clear form
+                document.getElementById('entryForm').reset();
+            }
+        }
+
+        // Filter data based on search and filters
         function filterData() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const projectFilter = document.getElementById('projectFilter').value;
             const riskFilter = document.getElementById('riskFilter').value;
 
-            filteredData = allData.filter(item => {
-                let matchesSearch = true;
-                let matchesProject = true;
-                let matchesRisk = true;
-
-                if (searchTerm) {
-                    const manager = (item['Project Manager'] || '').toLowerCase();
-                    matchesSearch = manager.includes(searchTerm);
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const manager = row.cells[0].textContent.toLowerCase();
+                const project = row.closest('.project-section').querySelector('.project-title').textContent;
+                const riskCell = row.cells[7]; // Confirmed/Adjusted % cell
+                const riskValue = parseInt(riskCell.textContent) || 0;
+                
+                let show = true;
+                
+                if (searchTerm && !manager.includes(searchTerm)) {
+                    show = false;
                 }
-
-                if (projectFilter) {
-                    matchesProject = item['Project'] === projectFilter;
+                
+                if (projectFilter && !project.includes(projectFilter)) {
+                    show = false;
                 }
-
+                
                 if (riskFilter) {
-                    const confirmed = parseFloat(item['Confirmed']) || 0;
-                    const capacity = parseFloat(item['Capacity']) || 0;
-                    const adjustedCapacity = capacity * 0.75;
-                    const pct = capacity > 0 ? (confirmed / adjustedCapacity) * 100 : 0;
-                    
-                    if (riskFilter === 'high') matchesRisk = pct > 100;
-                    else if (riskFilter === 'medium') matchesRisk = pct > 70 && pct <= 100;
-                    else if (riskFilter === 'low') matchesRisk = pct <= 70;
+                    if (riskFilter === 'high' && riskValue <= 100) show = false;
+                    if (riskFilter === 'medium' && (riskValue <= 70 || riskValue > 100)) show = false;
+                    if (riskFilter === 'low' && riskValue > 70) show = false;
                 }
-
-                return matchesSearch && matchesProject && matchesRisk;
+                
+                row.style.display = show ? '' : 'none';
             });
-
-            renderProjects();
         }
 
-        // Modal Functions
-        function openAddModal() {
-            editingIndex = -1;
-            document.getElementById('modalTitle').textContent = 'Add New Project Entry';
-            document.getElementById('dataForm').reset();
-            document.getElementById('adjustedPlan').value = '0';
-            document.getElementById('adjustedCapacity').value = '0';
-            document.getElementById('confirmedCapacityPct').value = '0%';
-            document.getElementById('confirmedAdjustedPct').value = '0%';
-            document.getElementById('dataModal').style.display = 'block';
-        }
-
-        function editEntry(index) {
-            editingIndex = index;
-            const item = allData[index];
-            
-            document.getElementById('modalTitle').textContent = 'Edit Project Entry';
-            document.getElementById('project').value = item['Project'] || '';
-            document.getElementById('projectManager').value = item['Project Manager'] || '';
-            document.getElementById('confirmed').value = parseFloat(item['Confirmed']) || 0;
-            document.getElementById('forecast').value = parseFloat(item['Forecast']) || 0;
-            document.getElementById('capacity').value = parseFloat(item['Capacity']) || 0;
-            
-            calculateFields();
-            document.getElementById('dataModal').style.display = 'block';
-        }
-
-        async function deleteEntry(index) {
-            if (!confirm('Are you sure you want to delete this entry?')) return;
-            
+        // Refresh data
+        function refreshData() {
             showLoading();
             
-            try {
-                const item = allData[index];
-                
-                const formData = new URLSearchParams();
-                formData.append('action', 'deleteData');
-                formData.append('project', item['Project']);
-                formData.append('projectManager', item['Project Manager']);
-
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Entry deleted successfully!');
-                    loadData();
-                } else {
-                    throw new Error(result.message || 'Failed to delete');
-                }
-            } catch (error) {
-                console.error('Error deleting data:', error);
-                alert('Error deleting data: ' + error.message);
-            } finally {
+            setTimeout(() => {
+                renderDashboard();
+                updateStats();
                 hideLoading();
-            }
+                showMessage('Data refreshed successfully!', 'success');
+            }, 500);
         }
 
-        function closeModal() {
-            document.getElementById('dataModal').style.display = 'none';
+        // Export to CSV
+        function exportToCSV() {
+            let csv = 'Cost Center,Project Manager,Confirmed,Forecast,Adjusted Plan,Capacity,Confirmed/Capacity %,Adjusted Capacity,Confirmed/Adjusted %,Daily Actual\n';
+            
+            masterData.projects.forEach(project => {
+                project.managers.forEach(manager => {
+                    const adjustedPlan = manager.confirmed + (manager.forecast * 0.5);
+                    const adjustedCapacity = manager.capacity * 0.75;
+                    
+                    const actualKey = `${project.name}_${manager.name}`;
+                    const dailyActual = dailyActuals[actualKey] || 0;
+                    
+                    csv += `"${project.name}","${manager.name}",${manager.confirmed},${manager.forecast},${adjustedPlan},${manager.capacity},"${manager.confCapPct}",${adjustedCapacity},"${manager.confAdjPct}",${dailyActual}\n`;
+                });
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `project_dashboard_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            
+            showMessage('Data exported successfully!', 'success');
         }
 
-        // Save Data
-        document.getElementById('dataForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.disabled = true;
-            showLoading();
-
-            try {
-                const formData = new URLSearchParams();
-                formData.append('action', editingIndex >= 0 ? 'updateData' : 'addData');
-                formData.append('project', document.getElementById('project').value);
-                formData.append('projectManager', document.getElementById('projectManager').value);
-                formData.append('confirmed', document.getElementById('confirmed').value);
-                formData.append('forecast', document.getElementById('forecast').value);
-                formData.append('capacity', document.getElementById('capacity').value);
-
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(editingIndex >= 0 ? 'Entry updated successfully!' : 'Entry added successfully!');
-                    closeModal();
-                    loadData();
-                } else {
-                    throw new Error(result.error || 'Failed to save');
-                }
-            } catch (error) {
-                console.error('Error saving data:', error);
-                alert('Error saving data: ' + error.message);
-            } finally {
-                saveBtn.disabled = false;
-                hideLoading();
-            }
-        });
-
-        // Export to Drive
-        async function exportToDrive() {
-            if (!confirm('Export all data to Google Drive?')) return;
-            
-            showLoading();
-            
-            try {
-                const response = await fetch(`${APPS_SCRIPT_URL}?action=exportToDrive&t=${Date.now()}`, {
-                    method: 'GET',
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/json',
-                    }
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(`Data exported successfully!\nFile: ${result.fileName}\nURL: ${result.fileUrl}`);
-                } else {
-                    throw new Error(result.error || 'Export failed');
-                }
-            } catch (error) {
-                console.error('Error exporting data:', error);
-                alert('Error exporting data: ' + error.message);
-            } finally {
-                hideLoading();
-            }
+        // Show loading overlay
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
         }
 
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('dataModal');
-            if (event.target === modal) {
-                closeModal();
-            }
+        // Hide loading overlay
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            msgDiv.innerHTML = message;
+            document.body.appendChild(msgDiv);
+            
+            setTimeout(() => {
+                msgDiv.remove();
+            }, 3000);
         }
     </script>
 </body>
