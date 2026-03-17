@@ -664,7 +664,19 @@
 
         function parsePercentage(pct) {
             if (!pct) return 0;
-            return parseFloat(pct.toString().replace('%', '')) || 0;
+            // Remove % sign and any spaces, then parse as float
+            const cleanPct = pct.toString().replace('%', '').replace(/\s/g, '');
+            return parseFloat(cleanPct) || 0;
+        }
+
+        function calculatePercentage(part, whole) {
+            const partNum = parseFloat(part) || 0;
+            const wholeNum = parseFloat(whole) || 0;
+            
+            if (wholeNum === 0) return '0%';
+            
+            const percentage = (partNum / wholeNum) * 100;
+            return percentage.toFixed(1) + '%';
         }
 
         function getRiskClass(percentage) {
@@ -689,8 +701,8 @@
             document.getElementById('adjustedCapacity').value = adjustedCapacity.toFixed(2);
 
             // Calculate percentages
-            const confirmedCapacityPct = capacity > 0 ? ((confirmed / capacity) * 100).toFixed(1) + '%' : '0%';
-            const confirmedAdjustedPct = adjustedCapacity > 0 ? ((confirmed / adjustedCapacity) * 100).toFixed(1) + '%' : '0%';
+            const confirmedCapacityPct = calculatePercentage(confirmed, capacity);
+            const confirmedAdjustedPct = calculatePercentage(confirmed, adjustedCapacity);
 
             document.getElementById('confirmedCapacityPct').value = confirmedCapacityPct;
             document.getElementById('confirmedAdjustedPct').value = confirmedAdjustedPct;
@@ -726,6 +738,20 @@
                 
                 if (result.success) {
                     allData = result.data || [];
+                    
+                    // Process each item to ensure formulas are calculated correctly
+                    allData = allData.map(item => {
+                        const confirmed = parseFloat(item['Confirmed']) || 0;
+                        const capacity = parseFloat(item['Capacity']) || 0;
+                        const adjustedCapacity = capacity * 0.75;
+                        
+                        // Recalculate percentages to ensure they're correct
+                        item['Confirmed / Capacity %'] = calculatePercentage(confirmed, capacity);
+                        item['Confirmed / Adjusted Capacity %'] = calculatePercentage(confirmed, adjustedCapacity);
+                        
+                        return item;
+                    });
+                    
                     filteredData = [...allData];
                     console.log('Processed data:', allData.length, 'records');
                     updateConnectionStatus(true, `Connected (${allData.length} records)`);
@@ -746,17 +772,44 @@
                 } else {
                     showError('Failed to connect to Google Sheets. Please check your Apps Script URL.');
                     
-                    document.getElementById('projectsContainer').innerHTML = `
-                        <div class="empty-state">
-                            <p>❌ Failed to load data from Google Sheets</p>
-                            <p style="font-size: 12px; margin-top: 10px;">${error.message}</p>
-                            <button onclick="loadData()" style="margin-top: 15px; padding: 8px 20px; background: #4361ee; color: white; border: none; border-radius: 5px; cursor: pointer;">Retry</button>
-                        </div>
-                    `;
+                    // Show sample data for demonstration
+                    showSampleData();
                 }
             } finally {
                 hideLoading();
             }
+        }
+
+        // Show sample data for demonstration
+        function showSampleData() {
+            allData = [
+                {
+                    'Project': 'On Point',
+                    'Project Manager': 'On Point',
+                    'Confirmed': '347014157',
+                    'Forecast': '323665217',
+                    'Adjusted Plan (50% of Forecast)': '161832608.5',
+                    'Capacity': '1300000000',
+                    'Confirmed / Capacity %': '26.7%',
+                    'Adjusted Capacity': '975000000',
+                    'Confirmed / Adjusted Capacity %': '35.6%'
+                },
+                {
+                    'Project': 'On Point',
+                    'Project Manager': 'Moses',
+                    'Confirmed': '45100000',
+                    'Forecast': '18100000',
+                    'Adjusted Plan (50% of Forecast)': '9050000',
+                    'Capacity': '100000000',
+                    'Confirmed / Capacity %': '45.1%',
+                    'Adjusted Capacity': '75000000',
+                    'Confirmed / Adjusted Capacity %': '60.1%'
+                }
+            ];
+            
+            filteredData = [...allData];
+            updateSummaryCards();
+            renderProjects();
         }
 
         // Update Summary Cards
@@ -858,10 +911,10 @@
                                             <th>Project Manager</th>
                                             <th>Confirmed (R)</th>
                                             <th>Forecast (R)</th>
-                                            <th>Adjusted Plan</th>
+                                            <th>Adjusted Plan (50%)</th>
                                             <th>Capacity (R)</th>
                                             <th>Confirmed/Capacity %</th>
-                                            <th>Adjusted Capacity</th>
+                                            <th>Adjusted Capacity (75%)</th>
                                             <th>Confirmed/Adjusted %</th>
                                             <th>Actions</th>
                                         </tr>
@@ -875,16 +928,25 @@
                             d['Project'] === item['Project']
                         );
 
+                        // Calculate values to ensure they're displayed correctly
+                        const confirmed = parseFloat(item['Confirmed']) || 0;
+                        const forecast = parseFloat(item['Forecast']) || 0;
+                        const capacity = parseFloat(item['Capacity']) || 0;
+                        const adjustedPlan = forecast * 0.5;
+                        const adjustedCapacity = capacity * 0.75;
+                        const confirmedCapacityPct = calculatePercentage(confirmed, capacity);
+                        const confirmedAdjustedPct = calculatePercentage(confirmed, adjustedCapacity);
+
                         html += `
                             <tr>
                                 <td><strong>${item['Project Manager'] || ''}</strong></td>
-                                <td>${formatCurrency(item['Confirmed'])}</td>
-                                <td>${formatCurrency(item['Forecast'])}</td>
-                                <td>${formatCurrency(item['Adjusted Plan (50% of Forecast)'])}</td>
-                                <td>${formatCurrency(item['Capacity'])}</td>
-                                <td class="${getRiskClass(item['Confirmed / Capacity %'])}">${item['Confirmed / Capacity %'] || '0%'}</td>
-                                <td>${formatCurrency(item['Adjusted Capacity'])}</td>
-                                <td class="${getRiskClass(item['Confirmed / Adjusted Capacity %'])}">${item['Confirmed / Adjusted Capacity %'] || '0%'}</td>
+                                <td>${formatCurrency(confirmed)}</td>
+                                <td>${formatCurrency(forecast)}</td>
+                                <td>${formatCurrency(adjustedPlan)}</td>
+                                <td>${formatCurrency(capacity)}</td>
+                                <td class="${getRiskClass(confirmedCapacityPct)}">${confirmedCapacityPct}</td>
+                                <td>${formatCurrency(adjustedCapacity)}</td>
+                                <td class="${getRiskClass(confirmedAdjustedPct)}">${confirmedAdjustedPct}</td>
                                 <td>
                                     <div class="action-buttons">
                                         <button class="icon-btn edit" onclick="editEntry(${globalIndex})">Edit</button>
@@ -928,7 +990,11 @@
                 }
 
                 if (riskFilter) {
-                    const pct = parsePercentage(item['Confirmed / Adjusted Capacity %']);
+                    const confirmed = parseFloat(item['Confirmed']) || 0;
+                    const capacity = parseFloat(item['Capacity']) || 0;
+                    const adjustedCapacity = capacity * 0.75;
+                    const pct = capacity > 0 ? (confirmed / adjustedCapacity) * 100 : 0;
+                    
                     if (riskFilter === 'high') matchesRisk = pct > 100;
                     else if (riskFilter === 'medium') matchesRisk = pct > 70 && pct <= 100;
                     else if (riskFilter === 'low') matchesRisk = pct <= 70;
@@ -959,9 +1025,9 @@
             document.getElementById('modalTitle').textContent = 'Edit Project Entry';
             document.getElementById('project').value = item['Project'] || '';
             document.getElementById('projectManager').value = item['Project Manager'] || '';
-            document.getElementById('confirmed').value = item['Confirmed'] || 0;
-            document.getElementById('forecast').value = item['Forecast'] || 0;
-            document.getElementById('capacity').value = item['Capacity'] || 0;
+            document.getElementById('confirmed').value = parseFloat(item['Confirmed']) || 0;
+            document.getElementById('forecast').value = parseFloat(item['Forecast']) || 0;
+            document.getElementById('capacity').value = parseFloat(item['Capacity']) || 0;
             
             calculateFields();
             document.getElementById('dataModal').style.display = 'block';
