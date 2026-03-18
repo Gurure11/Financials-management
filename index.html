@@ -428,6 +428,24 @@
             border-color: transparent;
         }
         
+        /* KPI Button */
+        .kpi-nav-btn {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+            transition: all 0.3s;
+            margin-left: 15px;
+        }
+        
+        .kpi-nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255,193,7,0.4);
+        }
+        
         /* Status Messages */
         .status-message {
             position: fixed;
@@ -610,6 +628,11 @@
                     <div class="company-subtitle">
                         Project Management System
                     </div>
+                </div>
+                <div>
+                    <button class="kpi-nav-btn" onclick="window.location.href='kpi.html'">
+                        <i class="fas fa-chart-line me-2"></i>View KPI Dashboard
+                    </button>
                 </div>
             </div>
             
@@ -1409,14 +1432,15 @@
 
     <script>
         // ==============================================
-        // CONFIGURATION - Google Sheets (FIXED)
+        // CONFIGURATION - Google Sheets with Revenue Sheet ID
         // ==============================================
         var CONFIG = {
             spreadsheetId: '1_t7JqItYFEy0cGcA927M-rM6jOZDO8Dh8X8vJlALSq0',
+            revenueSheetId: '16zsV_C-2pz5gyka2fjlSZZoC5cDZcR3-cokS4Cx1rDE', // Added Revenue Sheet ID
             sheetName: 'Bothwell',
-            revenueSheetName: 'Bothwell_Revenue', // Updated to Bothwell_Revenue
+            revenueSheetName: 'Bothwell_Revenue',
             folderId: '1al8guXtgk-PJWwdNvd2umUXYv4AvwXSM',
-            scriptURL: 'https://script.google.com/macros/s/AKfycbw8BrdH94Upe5xpxvChH0gHq1p67ZRyryMDA-lZzNiDtIonn8SjE0kZ7tFhM8QODInv/exec'
+            scriptURL: 'https://script.google.com/macros/s/AKfycbzExmDVmvP6LV1g83eYbnxaTInlxP2r8O7Ml7FgreoNn9LGwp04xlkknNNK4ZsAzn9G/exec'
         };
 
         // Global data stores
@@ -1639,13 +1663,27 @@
             updateConnectionStatus('checking', 'Connecting...');
             
             try {
+                // Try to load from Google Sheets with proper parameters
                 await loadProjects();
                 await loadDailyRevenue();
                 
                 if (projects.length === 0) {
-                    console.log('No projects found, loading demo data');
-                    loadDemoData();
-                    updateConnectionStatus('disconnected', 'Using Demo Data');
+                    console.log('No projects found, checking if sheets exist...');
+                    // Try to initialize sheets if they don't exist
+                    await initializeSheets();
+                    // Try loading again
+                    await loadProjects();
+                    await loadDailyRevenue();
+                    
+                    if (projects.length === 0) {
+                        console.log('Still no projects, loading demo data');
+                        loadDemoData();
+                        updateConnectionStatus('disconnected', 'Using Demo Data');
+                    } else {
+                        refreshAllUI();
+                        updateConnectionStatus('connected', 'Connected to Google Sheets');
+                        showStatus('Data loaded successfully', 'success');
+                    }
                 } else {
                     refreshAllUI();
                     updateConnectionStatus('connected', 'Connected to Google Sheets');
@@ -1653,17 +1691,17 @@
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
-                updateConnectionStatus('disconnected', 'Using Demo Data');
-                showStatus('Could not connect to Google Sheets. Using demo data.', 'info');
+                updateConnectionStatus('disconnected', 'Connection Failed - Using Demo Data');
+                showStatus('Could not connect to Google Sheets. Using demo data. Error: ' + error.message, 'info');
                 loadDemoData();
             } finally {
                 hideLoading();
             }
         }
 
-        async function loadProjects() {
+        async function initializeSheets() {
             try {
-                const response = await fetch(CONFIG.scriptURL + '?action=getProjects', {
+                const response = await fetch(CONFIG.scriptURL + '?action=initializeSheets', {
                     method: 'GET',
                     mode: 'cors',
                     headers: {
@@ -1671,7 +1709,34 @@
                     }
                 });
                 
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Sheets initialized:', data);
+                }
+            } catch (error) {
+                console.error('Error initializing sheets:', error);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const url = CONFIG.scriptURL + '?action=getProjects&spreadsheetId=' + CONFIG.spreadsheetId + '&sheet=' + CONFIG.sheetName;
+                console.log('Fetching projects from:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
                 const data = await response.json();
+                console.log('Projects response:', data);
                 
                 if (data.success) {
                     projects = data.data || [];
@@ -1687,7 +1752,10 @@
 
         async function loadDailyRevenue() {
             try {
-                const response = await fetch(CONFIG.scriptURL + '?action=getRevenue', {
+                const url = CONFIG.scriptURL + '?action=getRevenue&spreadsheetId=' + CONFIG.revenueSheetId + '&sheet=' + CONFIG.revenueSheetName;
+                console.log('Fetching revenue from:', url);
+                
+                const response = await fetch(url, {
                     method: 'GET',
                     mode: 'cors',
                     headers: {
@@ -1695,7 +1763,12 @@
                     }
                 });
                 
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
                 const data = await response.json();
+                console.log('Revenue response:', data);
                 
                 if (data.success) {
                     dailyRevenue = data.data || [];
@@ -1829,11 +1902,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'addProject',
+                        spreadsheetId: CONFIG.spreadsheetId,
+                        sheet: CONFIG.sheetName,
                         project: projectData
                     })
                 });
                 
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
                 const result = await response.json();
+                console.log('Submit project result:', result);
                 
                 if (result.success) {
                     showStatus('Project saved successfully', 'success');
@@ -1845,7 +1925,13 @@
                 }
             } catch (error) {
                 console.error('Error saving:', error);
-                showStatus('Error saving: ' + error.message, 'error');
+                showStatus('Error saving: ' + error.message + '. Saving locally instead.', 'error');
+                // Save locally as fallback
+                projectData.id = Date.now();
+                projectData.isSummary = false;
+                projects.push(projectData);
+                refreshAllUI();
+                showStatus('Project saved locally', 'info');
             } finally {
                 hideLoading();
             }
@@ -1909,11 +1995,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'addRevenue',
+                        spreadsheetId: CONFIG.revenueSheetId,
+                        sheet: CONFIG.revenueSheetName,
                         revenue: revenueData
                     })
                 });
                 
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                
                 const result = await response.json();
+                console.log('Submit revenue result:', result);
                 
                 if (result.success) {
                     showStatus('Daily revenue saved', 'success');
@@ -1931,7 +2024,22 @@
                 }
             } catch (error) {
                 console.error('Error saving:', error);
-                showStatus('Error saving: ' + error.message, 'error');
+                showStatus('Error saving: ' + error.message + '. Saving locally instead.', 'error');
+                // Save locally as fallback
+                revenueData.id = Date.now();
+                dailyRevenue.push(revenueData);
+                refreshAllUI();
+                showStatus('Revenue saved locally', 'info');
+                
+                // Clear form
+                document.getElementById('revAmount').value = '';
+                document.getElementById('revNotes').value = '';
+                document.getElementById('revProjectName').value = '';
+                document.getElementById('revManager').value = '';
+                document.getElementById('revCostCentre').value = '';
+                document.getElementById('revMonthlyTarget').value = '';
+                document.getElementById('revDailyBudget').value = 'R 0';
+                document.getElementById('revVariance').value = 'R 0';
             } finally {
                 hideLoading();
             }
