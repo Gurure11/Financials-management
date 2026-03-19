@@ -751,7 +751,15 @@
                     YTD Actual: <strong id="ytdActualDisplay">R 0</strong>
                 </div>
                 <div>
-                    <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                    <i class="fas fa-calendar-check me-2 text-primary"></i>
+                    Group BTYE: <strong id="btyeDisplay">R 0</strong>
+                </div>
+                <div>
+                    <i class="fas fa-calendar-alt me-2 text-success"></i>
+                    MTD: <strong id="mtdDisplay">R 0</strong>
+                </div>
+                <div>
+                    <i class="fas fa-clock me-2 text-primary"></i>
                     <span id="lastUpdated"><i class="far fa-clock me-1"></i>Loading...</span>
                 </div>
             </div>
@@ -831,6 +839,15 @@
                 </div>
                 
                 <div class="kpi-card">
+                    <div class="kpi-icon"><i class="fas fa-calendar-alt text-success"></i></div>
+                    <div class="kpi-label">MTD Actual</div>
+                    <div class="kpi-value" id="kpiMTD">R 0</div>
+                    <div class="kpi-trend">
+                        <span class="text-muted">Month to Date Revenue</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card">
                     <div class="kpi-icon"><i class="fas fa-chart-bar text-success"></i></div>
                     <div class="kpi-label">Gross Profit</div>
                     <div class="kpi-value" id="kpiGP">R 0</div>
@@ -859,6 +876,20 @@
                         </div>
                         <div class="card-body">
                             <div id="costCentreChart" class="chart-container" style="height: 350px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MTD Chart Row -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-calendar-alt"></i> Budget Monthly vs MTD Actual
+                        </div>
+                        <div class="card-body">
+                            <div id="mtdChart" class="chart-container" style="height: 300px;"></div>
                         </div>
                     </div>
                 </div>
@@ -1781,6 +1812,50 @@
                 var analysisChart = new ApexCharts(document.querySelector("#analysisChart"), analysisOptions);
                 analysisChart.render();
                 window.analysisChart = analysisChart;
+                
+                // MTD Chart
+                var mtdOptions = {
+                    chart: { 
+                        type: 'bar', 
+                        height: 300, 
+                        toolbar: { show: true },
+                        animations: { enabled: true }
+                    },
+                    series: [
+                        { name: 'Monthly Budget', data: [0] },
+                        { name: 'MTD Actual', data: [0] }
+                    ],
+                    xaxis: { 
+                        categories: ['Current Month'],
+                        title: { text: 'Period' }
+                    },
+                    yaxis: {
+                        title: { text: 'Amount (R)' },
+                        labels: {
+                            formatter: function(val) {
+                                return 'R ' + (val/1000).toFixed(0) + 'k';
+                            }
+                        }
+                    },
+                    colors: ['#1e3c72', '#28a745'],
+                    plotOptions: {
+                        bar: {
+                            columnWidth: '50%',
+                            distributed: false
+                        }
+                    },
+                    tooltip: { 
+                        y: { 
+                            formatter: function(val) {
+                                return 'R ' + val.toLocaleString();
+                            } 
+                        } 
+                    }
+                };
+                
+                var mtdChart = new ApexCharts(document.querySelector("#mtdChart"), mtdOptions);
+                mtdChart.render();
+                window.mtdChart = mtdChart;
             }
         }
 
@@ -3480,22 +3555,64 @@
             var totalActual = dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0);
             var totalGP = projects.reduce((sum, p) => sum + ((p.totalIncome || 0) * ((p.margin || 0) / 100)), 0);
             
+            // Calculate MTD (Month to Date)
+            var today = new Date();
+            var currentMonth = today.getMonth();
+            var currentYear = today.getFullYear();
+            
+            var mtdActual = 0;
+            dailyRevenue.forEach(r => {
+                var date = new Date(r.date);
+                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                    mtdActual += r.amount || 0;
+                }
+            });
+            
+            // Calculate current month budget
+            var currentMonthBudget = 0;
+            projects.forEach(p => {
+                if (p.months && p.months[currentMonth]) {
+                    currentMonthBudget += p.months[currentMonth] || 0;
+                }
+            });
+            
             // Update KPI cards
             document.getElementById('kpiTotalOrderBook').innerText = 'R ' + totalIncome.toLocaleString();
             document.getElementById('kpiConfirmed').innerText = 'R ' + confirmedIncome.toLocaleString();
             document.getElementById('kpiForecast').innerText = 'R ' + forecastIncome.toLocaleString();
             document.getElementById('kpiYTD').innerText = 'R ' + totalActual.toLocaleString();
             document.getElementById('kpiBTYE').innerText = 'R ' + (totalIncome - totalActual).toLocaleString();
+            document.getElementById('kpiMTD').innerText = 'R ' + mtdActual.toLocaleString();
             document.getElementById('kpiGP').innerText = 'R ' + Math.round(totalGP).toLocaleString();
             
+            // Update header displays
             document.getElementById('totalConfirmedDisplay').innerText = 'R ' + confirmedIncome.toLocaleString();
             document.getElementById('totalForecastDisplay').innerText = 'R ' + forecastIncome.toLocaleString();
             document.getElementById('ytdActualDisplay').innerText = 'R ' + totalActual.toLocaleString();
+            document.getElementById('btyeDisplay').innerText = 'R ' + (totalIncome - totalActual).toLocaleString();
+            document.getElementById('mtdDisplay').innerText = 'R ' + mtdActual.toLocaleString();
             document.getElementById('totalProjects').innerText = projects.length.toString();
             
             var lastUpdated = document.getElementById('lastUpdated');
             if (lastUpdated) {
                 lastUpdated.innerHTML = '<i class="far fa-clock me-1"></i>' + new Date().toLocaleTimeString();
+            }
+            
+            // Update MTD chart
+            if (window.mtdChart) {
+                var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                var currentMonthName = monthNames[currentMonth];
+                
+                window.mtdChart.updateOptions({
+                    xaxis: {
+                        categories: [currentMonthName + ' ' + currentYear]
+                    }
+                });
+                
+                window.mtdChart.updateSeries([
+                    { name: 'Monthly Budget', data: [currentMonthBudget] },
+                    { name: 'MTD Actual', data: [mtdActual] }
+                ]);
             }
             
             // Populate all tables
