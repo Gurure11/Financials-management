@@ -1398,6 +1398,55 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- NEW: Daily Performance Tables by Manager and Cost Centre -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    Daily Performance by Project Manager (%)
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-container">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Manager</th>
+                                                    <th>Actual</th>
+                                                    <th>Budget</th>
+                                                    <th>Achievement %</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dailyManagerTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    Daily Performance by Cost Centre (%)
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-container">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Cost Centre</th>
+                                                    <th>Actual</th>
+                                                    <th>Budget</th>
+                                                    <th>Achievement %</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="dailyCostCentreTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2194,6 +2243,16 @@
                 return;
             }
 
+            // Get calculated values from the form
+            var monthlyTargetText = document.getElementById('revMonthlyTarget')?.value || 'R 0';
+            var dailyBudgetText = document.getElementById('revDailyBudget')?.value || 'R 0';
+            var varianceText = document.getElementById('revVariance')?.value || 'R 0';
+            
+            // Extract numeric values from text (remove 'R ' and commas)
+            var monthlyTarget = parseFloat(monthlyTargetText.replace(/[^0-9.-]+/g, '')) || 0;
+            var dailyBudget = parseFloat(dailyBudgetText.replace(/[^0-9.-]+/g, '')) || 0;
+            var variance = parseFloat(varianceText.replace(/[^0-9.-]+/g, '')) || 0;
+
             var projectId = '';
             for (var i = 0; i < projects.length; i++) {
                 if (projects[i].projectName?.toLowerCase() === projectName.toLowerCase() && 
@@ -2210,10 +2269,13 @@
                 projectName: projectName,
                 manager: manager,
                 amount: amount,
+                monthlyTarget: monthlyTarget,
+                dailyBudget: dailyBudget,
+                variance: variance,
                 notes: document.getElementById('revNotes')?.value || ''
             };
 
-            showLoading('Saving daily revenue...');
+            showLoading('Saving daily revenue to Google Sheets...');
 
             try {
                 const formData = new FormData();
@@ -2233,8 +2295,9 @@
                     const data = JSON.parse(text);
                     
                     if (data.success) {
-                        showStatus('Daily revenue saved', 'success');
+                        showStatus('Daily revenue saved successfully to Google Sheets', 'success');
                         
+                        // Clear the form
                         document.getElementById('revAmount').value = '';
                         document.getElementById('revNotes').value = '';
                         document.getElementById('revProjectName').value = '';
@@ -2244,19 +2307,22 @@
                         document.getElementById('revDailyBudget').value = 'R 0';
                         document.getElementById('revVariance').value = 'R 0';
                         
+                        // Reload data to refresh the UI
                         await loadAllData();
                     } else {
-                        throw new Error(data.error || 'Failed to save revenue');
+                        throw new Error(data.error || 'Failed to save revenue to Google Sheets');
                     }
                 } catch (e) {
                     console.error('Failed to parse response:', e);
+                    // Save locally as fallback
                     revenueData.id = Date.now();
                     dailyRevenue.push(revenueData);
                     refreshAllUI();
-                    showStatus('Saved locally - Google Sheets connection issue', 'info');
+                    showStatus('Saved locally - Google Sheets connection issue: ' + e.message, 'info');
                 }
             } catch (error) {
                 console.error('Error saving:', error);
+                // Save locally as fallback
                 revenueData.id = Date.now();
                 dailyRevenue.push(revenueData);
                 refreshAllUI();
@@ -2354,7 +2420,7 @@
             
             if (project) {
                 var monthlyTarget = project.totalIncome || 0;
-                var dailyBudget = monthlyTarget / 30; // Approximate daily budget
+                var dailyBudget = monthlyTarget / 30; // Daily budget calculation
                 
                 document.getElementById('revMonthlyTarget').value = 'R ' + monthlyTarget.toLocaleString();
                 document.getElementById('revDailyBudget').value = 'R ' + Math.round(dailyBudget).toLocaleString();
@@ -2366,6 +2432,123 @@
                 document.getElementById('revDailyBudget').value = 'R 0';
                 document.getElementById('revVariance').value = 'R 0';
             }
+        }
+
+        // ==============================================
+        // TODAY'S STATS FUNCTIONS - FIXED
+        // ==============================================
+        
+        function updateTodayStats() {
+            var today = new Date().toISOString().split('T')[0];
+            
+            var todayActual = 0;
+            var todayBudget = 0;
+
+            dailyRevenue.forEach(r => {
+                if (r.date === today) {
+                    todayActual += r.amount || 0;
+
+                    // Find matching project to get budget
+                    var project = projects.find(p =>
+                        p.projectName === r.projectName &&
+                        p.manager === r.manager
+                    );
+
+                    if (project && project.totalIncome) {
+                        todayBudget += (project.totalIncome / 30); // daily budget
+                    }
+                }
+            });
+
+            var variance = todayActual - todayBudget;
+            var achievement = todayBudget > 0 ? (todayActual / todayBudget) * 100 : 0;
+
+            document.getElementById('todayTotal').innerText = 'R ' + todayActual.toLocaleString();
+            document.getElementById('todayBudget').innerText = 'R ' + Math.round(todayBudget).toLocaleString();
+            document.getElementById('todayVariance').innerText = 'R ' + Math.round(variance).toLocaleString();
+            document.getElementById('todayAchievement').innerText = achievement.toFixed(1) + '%';
+        }
+
+        // ==============================================
+        // NEW: DAILY PERFORMANCE TABLES FUNCTIONS
+        // ==============================================
+        
+        function updateDailyManagerTable() {
+            var today = new Date().toISOString().split('T')[0];
+            var data = {};
+
+            dailyRevenue.forEach(r => {
+                if (r.date === today) {
+                    if (!data[r.manager]) {
+                        data[r.manager] = { actual: 0, budget: 0 };
+                    }
+
+                    data[r.manager].actual += r.amount || 0;
+
+                    var project = projects.find(p =>
+                        p.projectName === r.projectName &&
+                        p.manager === r.manager
+                    );
+
+                    if (project && project.totalIncome) {
+                        data[r.manager].budget += (project.totalIncome / 30);
+                    }
+                }
+            });
+
+            var html = '';
+
+            for (var m in data) {
+                var ach = data[m].budget > 0 ? (data[m].actual / data[m].budget) * 100 : 0;
+
+                html += `<tr>
+                    <td>${m}</td>
+                    <td>R ${Math.round(data[m].actual).toLocaleString()}</td>
+                    <td>R ${Math.round(data[m].budget).toLocaleString()}</td>
+                    <td>${ach.toFixed(1)}%</td>
+                </tr>`;
+            }
+
+            document.getElementById('dailyManagerTable').innerHTML = html;
+        }
+
+        function updateDailyCostCentreTable() {
+            var today = new Date().toISOString().split('T')[0];
+            var data = {};
+
+            dailyRevenue.forEach(r => {
+                if (r.date === today) {
+                    if (!data[r.costCentre]) {
+                        data[r.costCentre] = { actual: 0, budget: 0 };
+                    }
+
+                    data[r.costCentre].actual += r.amount || 0;
+
+                    var project = projects.find(p =>
+                        p.projectName === r.projectName &&
+                        p.manager === r.manager
+                    );
+
+                    if (project && project.totalIncome) {
+                        data[r.costCentre].budget += (project.totalIncome / 30);
+                    }
+                }
+            });
+
+            var html = '';
+
+            for (var cc in data) {
+                var ach = data[cc].budget > 0 ? (data[cc].actual / data[cc].budget) * 100 : 0;
+
+                html += `<tr>
+                    <td>${cc}</td>
+                    <td>R ${Math.round(data[cc].actual).toLocaleString()}</td>
+                    <td>R ${Math.round(data[cc].budget).toLocaleString()}</td>
+                    <td>${ach.toFixed(1)}%</td>
+                </tr>`;
+            }
+
+            document.getElementById('dailyCostCentreTable').innerHTML = html;
         }
 
         // ==============================================
@@ -2483,7 +2666,7 @@
                 
                 // Daily progress
                 var todayRevenue = projectRevenue.filter(r => r.date === todayStr).reduce((sum, r) => sum + (r.amount || 0), 0);
-                var dailyBudget = p.totalIncome / 30; // Approximate daily budget
+                var dailyBudget = p.totalIncome / 30; // Daily budget calculation
                 var dailyAchv = dailyBudget > 0 ? ((todayRevenue / dailyBudget) * 100).toFixed(1) : 0;
                 
                 // Weekly progress
@@ -3839,6 +4022,9 @@
             if (tabId === 'dailyRevenue') {
                 setTimeout(function() {
                     updateManagerRankingTable();
+                    updateTodayStats();
+                    updateDailyManagerTable();
+                    updateDailyCostCentreTable();
                     if (selectedManager) {
                         selectManager(selectedManager);
                     }
@@ -3925,37 +4111,17 @@
             updateCostCentreSummaryTable();
             updateGpCostCentreTable();
             updateManagerSummaryTable();
-            updateRecentRevenueTable();
             updateTopProjectsTable();
             updateManagerPerformanceTable();
             updateManagerRankingTable();
+            updateTodayStats();
+            updateDailyManagerTable();
+            updateDailyCostCentreTable();
             
             // Update selected manager view if any
             if (selectedManager) {
                 selectManager(selectedManager);
             }
-        }
-
-        function updateRecentRevenueTable() {
-            var tbody = document.getElementById('recentRevenueTable');
-            if (!tbody) return;
-            
-            var recentHtml = '';
-            var sortedRevenue = [...dailyRevenue].sort((a, b) => new Date(b.date) - new Date(a.date));
-            sortedRevenue.slice(0, 20).forEach(r => {
-                recentHtml += '<tr>' +
-                    '<td>' + (r.date || '') + '</td>' +
-                    '<td>' + (r.costCentre || '') + '</td>' +
-                    '<td>' + (r.manager || '') + '</td>' +
-                    '<td>' + (r.projectName || '') + '</td>' +
-                    '<td>R ' + (r.amount || 0).toLocaleString() + '</td>' +
-                    '<td>-</td>' +
-                    '<td>-</td>' +
-                    '<td>-</td>' +
-                '</tr>';
-            });
-            
-            document.getElementById('recentRevenueTable').innerHTML = recentHtml || '<tr><td colspan="8" class="text-center">No entries found</td></tr>';
         }
 
         function updateCharts() {
@@ -4181,6 +4347,9 @@
             if (tabId === 'dailyRevenue') {
                 setTimeout(function() {
                     updateManagerRankingTable();
+                    updateTodayStats();
+                    updateDailyManagerTable();
+                    updateDailyCostCentreTable();
                     if (selectedManager) {
                         selectManager(selectedManager);
                     }
