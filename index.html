@@ -1315,7 +1315,7 @@
                     <div class="card mb-4">
                         <div class="card-header">
                             <i class="fas fa-trophy"></i> Project Managers Performance Ranking
-                            <small class="text-white-50 ms-2">(From Lowest to Highest Performer)</small>
+                            <small class="text-white-50 ms-2">(From Lowest to Highest Performer - Daily View)</small>
                         </div>
                         <div class="card-body">
                             <div class="table-container">
@@ -1325,10 +1325,10 @@
                                             <th>Rank</th>
                                             <th>Project Manager</th>
                                             <th>Projects</th>
-                                            <th>Total Budget</th>
-                                            <th>Actual Revenue</th>
-                                            <th>Variance (R)</th>
-                                            <th>Variance (%)</th>
+                                            <th>Daily Budget</th>
+                                            <th>Daily Actual</th>
+                                            <th>Daily Variance (R)</th>
+                                            <th>Daily Achievement %</th>
                                             <th>Status</th>
                                             <th>Trend</th>
                                         </tr>
@@ -1346,7 +1346,7 @@
                     <!-- Individual Project Performance -->
                     <div class="card">
                         <div class="card-header">
-                            <i class="fas fa-chart-line"></i> Project Performance Details
+                            <i class="fas fa-chart-line"></i> Project Performance Details (Daily/Weekly/Monthly)
                             <small class="text-white-50 ms-2" id="selectedManagerDisplay">(Click on a manager above to view)</small>
                         </div>
                         <div class="card-body">
@@ -1357,15 +1357,15 @@
                                     <div class="stat-value" id="managerProjectCount">0</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-label">Total Budget</div>
+                                    <div class="stat-label">Total Monthly Budget</div>
                                     <div class="stat-value" id="managerTotalBudget">R 0</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-label">Actual Revenue</div>
+                                    <div class="stat-label">MTD Actual</div>
                                     <div class="stat-value" id="managerActualRevenue">R 0</div>
                                 </div>
                                 <div class="stat-card">
-                                    <div class="stat-label">Achievement</div>
+                                    <div class="stat-label">MTD Achievement</div>
                                     <div class="stat-value" id="managerAchievement">0%</div>
                                 </div>
                             </div>
@@ -1377,15 +1377,15 @@
                                         <tr>
                                             <th>Project Name</th>
                                             <th>Cost Centre</th>
-                                            <th>Daily Progress</th>
+                                            <th>Daily Actual</th>
                                             <th>Daily Budget</th>
                                             <th>Daily Achv</th>
-                                            <th>Weekly Progress</th>
+                                            <th>Weekly Actual</th>
                                             <th>Weekly Budget</th>
                                             <th>Weekly Achv</th>
-                                            <th>Monthly Progress</th>
+                                            <th>MTD Actual</th>
                                             <th>Monthly Budget</th>
-                                            <th>Monthly Achv</th>
+                                            <th>MTD Achv</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
@@ -1399,12 +1399,12 @@
                         </div>
                     </div>
 
-                    <!-- NEW: Daily Performance Tables by Manager and Cost Centre -->
+                    <!-- Daily Performance Tables by Manager and Cost Centre -->
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    Daily Performance by Project Manager (%)
+                                    Daily Performance by Project Manager
                                 </div>
                                 <div class="card-body">
                                     <div class="table-container">
@@ -1427,7 +1427,7 @@
                         <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header">
-                                    Daily Performance by Cost Centre (%)
+                                    Daily Performance by Cost Centre
                                 </div>
                                 <div class="card-body">
                                     <div class="table-container">
@@ -1792,6 +1792,13 @@
             "Stellenbosh",
             "Liquid ECPG"
         ];
+
+        // ==============================================
+        // SAFE DEFAULTS (PREVENT ERRORS)
+        // ==============================================
+        projects = projects || [];
+        dailyRevenue = dailyRevenue || [];
+        selectedManager = selectedManager || null;
 
         document.addEventListener('DOMContentLoaded', function () {
             loadAllData();
@@ -2404,184 +2411,203 @@
             updateMonthlyTotal();
         }
 
+        // ==============================================
+        // DAILY REVENUE FUNCTIONS - FIXED
+        // ==============================================
+
         function updateDailyTarget() {
-            var projectName = document.getElementById('revProjectName').value;
-            var manager = document.getElementById('revManager').value;
-            
+            var projectName = document.getElementById('revProjectName')?.value;
+            var manager = document.getElementById('revManager')?.value;
+            var selectedDate = document.getElementById('revDate')?.value || new Date().toISOString().split('T')[0];
+
             if (!projectName || !manager) {
-                document.getElementById('revMonthlyTarget').value = '';
-                document.getElementById('revDailyBudget').value = 'R 0';
-                document.getElementById('revVariance').value = 'R 0';
+                setValue('revMonthlyTarget', '');
+                setValue('revDailyBudget', 'R 0');
+                setValue('revVariance', 'R 0');
                 return;
             }
-            
-            // Find project matching name and manager
+
             var project = projects.find(p => p.projectName === projectName && p.manager === manager);
-            
+
             if (project) {
-                var monthlyTarget = project.totalIncome || 0;
-                var dailyBudget = monthlyTarget / 30; // Daily budget calculation
-                
-                document.getElementById('revMonthlyTarget').value = 'R ' + monthlyTarget.toLocaleString();
-                document.getElementById('revDailyBudget').value = 'R ' + Math.round(dailyBudget).toLocaleString();
-                
-                // Recalculate variance with new budget
+                var monthlyTarget = Number(project.totalIncome) || 0;
+                var date = new Date(selectedDate);
+                var monthIndex = date.getMonth();
+
+                var monthlyBudget = 0;
+
+                if (project.months && project.months.length > monthIndex) {
+                    monthlyBudget = Number(project.months[monthIndex]) || 0;
+                }
+
+                if (monthlyBudget === 0 && monthlyTarget > 0) {
+                    var activeMonths = (project.months || []).filter(m => m > 0).length;
+                    monthlyBudget = activeMonths > 0 ? monthlyTarget / activeMonths : monthlyTarget / 12;
+                }
+
+                var workingDaysInMonth = 22;
+                var dailyBudget = monthlyBudget / workingDaysInMonth;
+
+                setValue('revMonthlyTarget', formatCurrency(monthlyBudget));
+                setValue('revDailyBudget', formatCurrency(dailyBudget));
+
                 calculateDailyVariance();
             } else {
-                document.getElementById('revMonthlyTarget').value = '';
-                document.getElementById('revDailyBudget').value = 'R 0';
-                document.getElementById('revVariance').value = 'R 0';
+                setValue('revMonthlyTarget', '');
+                setValue('revDailyBudget', 'R 0');
+                setValue('revVariance', 'R 0');
             }
         }
 
-        // ==============================================
-        // TODAY'S STATS FUNCTIONS - FIXED
-        // ==============================================
-        
+        function calculateDailyVariance() {
+            var amount = Number(document.getElementById('revAmount')?.value) || 0;
+
+            var budgetText = document.getElementById('revDailyBudget')?.value || 'R 0';
+            var budget = parseCurrency(budgetText);
+
+            var variance = amount - budget;
+
+            var el = document.getElementById('revVariance');
+            if (!el) return;
+
+            el.value = formatCurrency(variance);
+
+            if (variance > 0) el.style.color = '#28a745';
+            else if (variance < 0) el.style.color = '#dc3545';
+            else el.style.color = '';
+        }
+
         function updateTodayStats() {
-            var today = new Date().toISOString().split('T')[0];
-            
+            var todayStr = new Date().toISOString().split('T')[0];
+            var todayDate = new Date();
+            var monthIndex = todayDate.getMonth();
+
             var todayActual = 0;
             var todayBudget = 0;
+            var workingDaysInMonth = 22;
 
             dailyRevenue.forEach(r => {
-                if (r.date === today) {
-                    todayActual += r.amount || 0;
+                if (r.date === todayStr) {
+                    todayActual += Number(r.amount) || 0;
+                }
+            });
 
-                    // Find matching project to get budget
-                    var project = projects.find(p =>
-                        p.projectName === r.projectName &&
-                        p.manager === r.manager
-                    );
-
-                    if (project && project.totalIncome) {
-                        todayBudget += (project.totalIncome / 30); // daily budget
-                    }
+            projects.forEach(p => {
+                if (p.months && p.months[monthIndex]) {
+                    todayBudget += (Number(p.months[monthIndex]) || 0) / workingDaysInMonth;
                 }
             });
 
             var variance = todayActual - todayBudget;
             var achievement = todayBudget > 0 ? (todayActual / todayBudget) * 100 : 0;
 
-            document.getElementById('todayTotal').innerText = 'R ' + todayActual.toLocaleString();
-            document.getElementById('todayBudget').innerText = 'R ' + Math.round(todayBudget).toLocaleString();
-            document.getElementById('todayVariance').innerText = 'R ' + Math.round(variance).toLocaleString();
-            document.getElementById('todayAchievement').innerText = achievement.toFixed(1) + '%';
+            setText('todayTotal', formatCurrency(todayActual));
+            setText('todayBudget', formatCurrency(todayBudget));
+            setText('todayVariance', formatCurrency(variance));
+            setText('todayAchievement', achievement.toFixed(1) + '%');
+
+            var varianceEl = document.getElementById('todayVariance');
+            if (varianceEl) {
+                varianceEl.style.color = variance > 0 ? '#28a745' : (variance < 0 ? '#dc3545' : '');
+            }
         }
 
-        // ==============================================
-        // NEW: DAILY PERFORMANCE TABLES FUNCTIONS
-        // ==============================================
-        
-        function updateDailyManagerTable() {
-            var today = new Date().toISOString().split('T')[0];
-            var data = {};
+        function getManagerDailyPerformance() {
+            var todayStr = new Date().toISOString().split('T')[0];
+            var currentMonth = new Date().getMonth();
+            var workingDaysInMonth = 22;
+            var sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-            dailyRevenue.forEach(r => {
-                if (r.date === today) {
-                    if (!data[r.manager]) {
-                        data[r.manager] = { actual: 0, budget: 0 };
-                    }
+            var managerPerformance = {};
 
-                    data[r.manager].actual += r.amount || 0;
+            // Initialize with all managers from projects
+            projects.forEach(p => {
+                var manager = p.manager;
+                if (!managerPerformance[manager]) {
+                    managerPerformance[manager] = {
+                        dailyBudget: 0,
+                        dailyActual: 0,
+                        weeklyBudget: 0,
+                        weeklyActual: 0,
+                        monthlyBudget: 0,
+                        monthlyActual: 0,
+                        projects: 0
+                    };
+                }
 
-                    var project = projects.find(p =>
-                        p.projectName === r.projectName &&
-                        p.manager === r.manager
-                    );
+                managerPerformance[manager].projects++;
 
-                    if (project && project.totalIncome) {
-                        data[r.manager].budget += (project.totalIncome / 30);
-                    }
+                if (p.months && p.months[currentMonth]) {
+                    var mBudget = Number(p.months[currentMonth]) || 0;
+                    managerPerformance[manager].monthlyBudget += mBudget;
+                    managerPerformance[manager].dailyBudget += mBudget / workingDaysInMonth;
+                    managerPerformance[manager].weeklyBudget += (mBudget / workingDaysInMonth) * 7;
                 }
             });
 
-            var html = '';
-
-            for (var m in data) {
-                var ach = data[m].budget > 0 ? (data[m].actual / data[m].budget) * 100 : 0;
-
-                html += `<tr>
-                    <td>${m}</td>
-                    <td>R ${Math.round(data[m].actual).toLocaleString()}</td>
-                    <td>R ${Math.round(data[m].budget).toLocaleString()}</td>
-                    <td>${ach.toFixed(1)}%</td>
-                </tr>`;
-            }
-
-            document.getElementById('dailyManagerTable').innerHTML = html;
-        }
-
-        function updateDailyCostCentreTable() {
-            var today = new Date().toISOString().split('T')[0];
-            var data = {};
-
+            // Add actual revenue
             dailyRevenue.forEach(r => {
-                if (r.date === today) {
-                    if (!data[r.costCentre]) {
-                        data[r.costCentre] = { actual: 0, budget: 0 };
-                    }
+                var manager = r.manager;
+                if (!managerPerformance[manager]) return;
 
-                    data[r.costCentre].actual += r.amount || 0;
+                var revenueDate = new Date(r.date);
+                var amount = Number(r.amount) || 0;
 
-                    var project = projects.find(p =>
-                        p.projectName === r.projectName &&
-                        p.manager === r.manager
-                    );
+                // Daily actual
+                if (r.date === todayStr) {
+                    managerPerformance[manager].dailyActual += amount;
+                }
 
-                    if (project && project.totalIncome) {
-                        data[r.costCentre].budget += (project.totalIncome / 30);
-                    }
+                // Weekly actual (last 7 days)
+                if (revenueDate >= sevenDaysAgo) {
+                    managerPerformance[manager].weeklyActual += amount;
+                }
+
+                // Monthly actual
+                if (revenueDate.getMonth() === currentMonth && revenueDate.getFullYear() === new Date().getFullYear()) {
+                    managerPerformance[manager].monthlyActual += amount;
                 }
             });
 
-            var html = '';
+            // Calculate variances and percentages
+            for (var manager in managerPerformance) {
+                var p = managerPerformance[manager];
 
-            for (var cc in data) {
-                var ach = data[cc].budget > 0 ? (data[cc].actual / data[cc].budget) * 100 : 0;
+                p.dailyVariance = p.dailyActual - p.dailyBudget;
+                p.dailyVariancePercent = p.dailyBudget > 0 ? (p.dailyActual / p.dailyBudget) * 100 : 0;
 
-                html += `<tr>
-                    <td>${cc}</td>
-                    <td>R ${Math.round(data[cc].actual).toLocaleString()}</td>
-                    <td>R ${Math.round(data[cc].budget).toLocaleString()}</td>
-                    <td>${ach.toFixed(1)}%</td>
-                </tr>`;
+                p.weeklyVariance = p.weeklyActual - p.weeklyBudget;
+                p.weeklyVariancePercent = p.weeklyBudget > 0 ? (p.weeklyActual / p.weeklyBudget) * 100 : 0;
+
+                p.monthlyVariance = p.monthlyActual - p.monthlyBudget;
+                p.monthlyVariancePercent = p.monthlyBudget > 0 ? (p.monthlyActual / p.monthlyBudget) * 100 : 0;
             }
 
-            document.getElementById('dailyCostCentreTable').innerHTML = html;
-        }
-
-        // ==============================================
-        // PERFORMANCE RANKING FUNCTIONS
-        // ==============================================
-
-        function getManagerRankings() {
-            var summary = getManagerPerformance();
-            var rankings = [];
-            
-            for (var manager in summary) {
-                var variancePercent = summary[manager].total > 0 ? 
-                    ((summary[manager].actual / summary[manager].total) * 100).toFixed(1) : 0;
-                
-                rankings.push({
-                    manager: manager,
-                    projects: summary[manager].count,
-                    budget: summary[manager].total,
-                    actual: summary[manager].actual,
-                    variance: summary[manager].actual - summary[manager].total,
-                    variancePercent: parseFloat(variancePercent)
-                });
-            }
-            
-            // Sort by variance percentage (lowest to highest)
-            return rankings.sort((a, b) => a.variancePercent - b.variancePercent);
+            return managerPerformance;
         }
 
         function updateManagerRankingTable() {
             var tbody = document.getElementById('managerRankingTable');
             if (!tbody) return;
             
-            var rankings = getManagerRankings();
+            var managerPerf = getManagerDailyPerformance();
+            var rankings = [];
+            
+            for (var manager in managerPerf) {
+                rankings.push({
+                    manager: manager,
+                    projects: managerPerf[manager].projects,
+                    dailyBudget: managerPerf[manager].dailyBudget,
+                    dailyActual: managerPerf[manager].dailyActual,
+                    dailyVariance: managerPerf[manager].dailyVariance,
+                    dailyVariancePercent: managerPerf[manager].dailyVariancePercent
+                });
+            }
+            
+            // Sort by daily variance percentage (lowest to highest for ranking)
+            rankings.sort((a, b) => a.dailyVariancePercent - b.dailyVariancePercent);
+            
             var html = '';
             
             rankings.forEach((r, index) => {
@@ -2591,15 +2617,15 @@
                 if (index === 1) rankClass = 'ranking-3';
                 if (index === 2) rankClass = 'ranking-2';
                 
-                var varianceClass = r.variance >= 0 ? 'variance-positive' : 'variance-negative';
-                var statusClass = r.variancePercent >= 100 ? 'badge-confirmed' : 'badge-forecast';
-                var statusText = r.variancePercent >= 100 ? 'On Target' : 'Below Target';
+                var varianceClass = r.dailyVariance >= 0 ? 'variance-positive' : 'variance-negative';
+                var statusClass = r.dailyVariancePercent >= 100 ? 'badge-confirmed' : 'badge-forecast';
+                var statusText = r.dailyVariancePercent >= 100 ? 'On Target' : 'Below Target';
                 
                 // Determine trend icon
                 var trendIcon = '';
-                if (r.variancePercent >= 100) {
+                if (r.dailyVariancePercent >= 100) {
                     trendIcon = '<i class="fas fa-arrow-up text-success"></i>';
-                } else if (r.variancePercent >= 80) {
+                } else if (r.dailyVariancePercent >= 80) {
                     trendIcon = '<i class="fas fa-arrow-right text-warning"></i>';
                 } else {
                     trendIcon = '<i class="fas fa-arrow-down text-danger"></i>';
@@ -2609,10 +2635,10 @@
                     <td><strong>#${index + 1}</strong></td>
                     <td><strong>${r.manager}</strong></td>
                     <td>${r.projects}</td>
-                    <td>R ${r.budget.toLocaleString()}</td>
-                    <td>R ${r.actual.toLocaleString()}</td>
-                    <td class="${varianceClass}">R ${r.variance.toLocaleString()}</td>
-                    <td><div class="performance-alert ${r.variancePercent >= 100 ? 'alert-success' : 'alert-danger'}">${r.variancePercent}%</div></td>
+                    <td>${formatCurrency(r.dailyBudget)}</td>
+                    <td>${formatCurrency(r.dailyActual)}</td>
+                    <td class="${varianceClass}">${formatCurrency(r.dailyVariance)}</td>
+                    <td><div class="performance-alert ${r.dailyVariancePercent >= 100 ? 'alert-success' : 'alert-danger'}">${r.dailyVariancePercent.toFixed(1)}%</div></td>
                     <td><span class="${statusClass}">${statusText}</span></td>
                     <td>${trendIcon}</td>
                 </tr>`;
@@ -2626,15 +2652,34 @@
             document.getElementById('selectedManagerDisplay').innerHTML = `(Viewing: <strong>${manager}</strong>)`;
             document.getElementById('managerSummaryCards').style.display = 'grid';
             
-            // Get manager's projects
+            // Get manager's projects and performance
             var managerProjects = projects.filter(p => p.manager === manager);
-            var managerActual = dailyRevenue.filter(r => r.manager === manager).reduce((sum, r) => sum + (r.amount || 0), 0);
-            var managerBudget = managerProjects.reduce((sum, p) => sum + (p.totalIncome || 0), 0);
-            var achievement = managerBudget > 0 ? ((managerActual / managerBudget) * 100).toFixed(1) : 0;
+            var currentMonth = new Date().getMonth();
+            
+            // Calculate manager totals
+            var managerMonthlyBudget = 0;
+            var managerMonthlyActual = 0;
+            
+            managerProjects.forEach(p => {
+                if (p.months && p.months[currentMonth]) {
+                    managerMonthlyBudget += p.months[currentMonth] || 0;
+                }
+            });
+            
+            dailyRevenue.forEach(r => {
+                if (r.manager === manager) {
+                    var date = new Date(r.date);
+                    if (date.getMonth() === currentMonth && date.getFullYear() === new Date().getFullYear()) {
+                        managerMonthlyActual += r.amount || 0;
+                    }
+                }
+            });
+            
+            var achievement = managerMonthlyBudget > 0 ? ((managerMonthlyActual / managerMonthlyBudget) * 100).toFixed(1) : 0;
             
             document.getElementById('managerProjectCount').innerText = managerProjects.length;
-            document.getElementById('managerTotalBudget').innerText = 'R ' + managerBudget.toLocaleString();
-            document.getElementById('managerActualRevenue').innerText = 'R ' + managerActual.toLocaleString();
+            document.getElementById('managerTotalBudget').innerText = formatCurrency(managerMonthlyBudget);
+            document.getElementById('managerActualRevenue').innerText = formatCurrency(managerMonthlyActual);
             document.getElementById('managerAchievement').innerText = achievement + '%';
             
             // Update project performance table
@@ -2655,8 +2700,10 @@
             var today = new Date();
             var currentMonth = today.getMonth();
             var currentYear = today.getFullYear();
-            var currentWeek = getWeekNumber(today);
             var todayStr = today.toISOString().split('T')[0];
+            var sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            var workingDaysInMonth = 22;
             
             var html = '';
             
@@ -2664,33 +2711,30 @@
                 // Get project's daily revenue
                 var projectRevenue = dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === manager);
                 
+                // Get monthly budget for this project
+                var monthlyBudget = (p.months && p.months[currentMonth]) ? p.months[currentMonth] : 0;
+                var dailyBudget = monthlyBudget / workingDaysInMonth;
+                var weeklyBudget = dailyBudget * 7;
+                
                 // Daily progress
                 var todayRevenue = projectRevenue.filter(r => r.date === todayStr).reduce((sum, r) => sum + (r.amount || 0), 0);
-                var dailyBudget = p.totalIncome / 30; // Daily budget calculation
-                var dailyAchv = dailyBudget > 0 ? ((todayRevenue / dailyBudget) * 100).toFixed(1) : 0;
+                var dailyAchv = dailyBudget > 0 ? ((todayRevenue / dailyBudget) * 100) : 0;
                 
-                // Weekly progress
-                var weekRevenue = 0;
-                var weekBudget = 0;
-                projectRevenue.forEach(r => {
+                // Weekly progress (last 7 days)
+                var weekRevenue = projectRevenue.filter(r => {
                     var date = new Date(r.date);
-                    if (getWeekNumber(date) === currentWeek && date.getFullYear() === currentYear) {
-                        weekRevenue += r.amount || 0;
-                    }
-                });
-                weekBudget = dailyBudget * 7;
-                var weeklyAchv = weekBudget > 0 ? ((weekRevenue / weekBudget) * 100).toFixed(1) : 0;
+                    return date >= sevenDaysAgo;
+                }).reduce((sum, r) => sum + (r.amount || 0), 0);
+                var weeklyAchv = weeklyBudget > 0 ? ((weekRevenue / weeklyBudget) * 100) : 0;
                 
                 // Monthly progress
                 var monthRevenue = projectRevenue.filter(r => {
                     var date = new Date(r.date);
                     return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
                 }).reduce((sum, r) => sum + (r.amount || 0), 0);
+                var monthlyAchv = monthlyBudget > 0 ? ((monthRevenue / monthlyBudget) * 100) : 0;
                 
-                var monthBudget = p.months && p.months[currentMonth] ? p.months[currentMonth] : 0;
-                var monthlyAchv = monthBudget > 0 ? ((monthRevenue / monthBudget) * 100).toFixed(1) : 0;
-                
-                // Determine status
+                // Determine status based on monthly achievement
                 var status = 'On Track';
                 var statusClass = 'badge-confirmed';
                 if (monthlyAchv < 50) {
@@ -2709,20 +2753,112 @@
                 html += `<tr>
                     <td><strong>${p.projectName}</strong></td>
                     <td>${p.costCentre || ''}</td>
-                    <td class="progress-cell ${dailyClass}">R ${todayRevenue.toLocaleString()}</td>
-                    <td>R ${Math.round(dailyBudget).toLocaleString()}</td>
-                    <td class="${dailyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${dailyAchv}%</td>
-                    <td class="progress-cell ${weeklyClass}">R ${weekRevenue.toLocaleString()}</td>
-                    <td>R ${Math.round(weekBudget).toLocaleString()}</td>
-                    <td class="${weeklyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${weeklyAchv}%</td>
-                    <td class="progress-cell ${monthlyClass}">R ${monthRevenue.toLocaleString()}</td>
-                    <td>R ${monthBudget.toLocaleString()}</td>
-                    <td class="${monthlyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${monthlyAchv}%</td>
+                    <td class="progress-cell ${dailyClass}">${formatCurrency(todayRevenue)}</td>
+                    <td>${formatCurrency(dailyBudget)}</td>
+                    <td class="${dailyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${dailyAchv.toFixed(1)}%</td>
+                    <td class="progress-cell ${weeklyClass}">${formatCurrency(weekRevenue)}</td>
+                    <td>${formatCurrency(weeklyBudget)}</td>
+                    <td class="${weeklyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${weeklyAchv.toFixed(1)}%</td>
+                    <td class="progress-cell ${monthlyClass}">${formatCurrency(monthRevenue)}</td>
+                    <td>${formatCurrency(monthlyBudget)}</td>
+                    <td class="${monthlyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${monthlyAchv.toFixed(1)}%</td>
                     <td><span class="${statusClass}">${status}</span></td>
                 </tr>`;
             });
             
             tbody.innerHTML = html;
+        }
+
+        function updateDailyManagerTable() {
+            var managerPerf = getManagerDailyPerformance();
+            
+            var html = '';
+            
+            for (var manager in managerPerf) {
+                var perf = managerPerf[manager];
+                var achClass = perf.dailyVariancePercent >= 100 ? 'variance-positive' : 'variance-negative';
+                
+                html += `<tr>
+                    <td>${manager}</td>
+                    <td>${formatCurrency(perf.dailyActual)}</td>
+                    <td>${formatCurrency(perf.dailyBudget)}</td>
+                    <td class="${achClass}">${perf.dailyVariancePercent.toFixed(1)}%</td>
+                </tr>`;
+            }
+            
+            document.getElementById('dailyManagerTable').innerHTML = html || '<tr><td colspan="4" class="text-center">No data available</td></tr>';
+        }
+
+        function updateDailyCostCentreTable() {
+            var todayStr = new Date().toISOString().split('T')[0];
+            var currentMonth = new Date().getMonth();
+            var workingDaysInMonth = 22;
+            
+            var ccData = {};
+            
+            // Initialize with all cost centres from projects
+            projects.forEach(p => {
+                var cc = p.costCentre;
+                if (!ccData[cc]) {
+                    ccData[cc] = {
+                        dailyBudget: 0,
+                        dailyActual: 0
+                    };
+                }
+                
+                // Add daily budget
+                if (p.months && p.months[currentMonth]) {
+                    ccData[cc].dailyBudget += (Number(p.months[currentMonth]) || 0) / workingDaysInMonth;
+                }
+            });
+            
+            // Add actual revenue for today
+            dailyRevenue.forEach(r => {
+                if (r.date === todayStr) {
+                    var cc = r.costCentre;
+                    if (ccData[cc]) {
+                        ccData[cc].dailyActual += Number(r.amount) || 0;
+                    }
+                }
+            });
+            
+            var html = '';
+            
+            for (var cc in ccData) {
+                var dailyAch = ccData[cc].dailyBudget > 0 ? (ccData[cc].dailyActual / ccData[cc].dailyBudget) * 100 : 0;
+                var achClass = dailyAch >= 100 ? 'variance-positive' : 'variance-negative';
+                
+                html += `<tr>
+                    <td>${cc}</td>
+                    <td>${formatCurrency(ccData[cc].dailyActual)}</td>
+                    <td>${formatCurrency(ccData[cc].dailyBudget)}</td>
+                    <td class="${achClass}">${dailyAch.toFixed(1)}%</td>
+                </tr>`;
+            }
+            
+            document.getElementById('dailyCostCentreTable').innerHTML = html || '<tr><td colspan="4" class="text-center">No data available</td></tr>';
+        }
+
+        // ==============================================
+        // HELPERS (NEW - CLEAN CODE)
+        // ==============================================
+
+        function formatCurrency(value) {
+            return 'R ' + Math.round(value || 0).toLocaleString();
+        }
+
+        function parseCurrency(value) {
+            return Number(String(value).replace(/[^0-9.-]+/g, '')) || 0;
+        }
+
+        function setValue(id, value) {
+            var el = document.getElementById(id);
+            if (el) el.value = value;
+        }
+
+        function setText(id, value) {
+            var el = document.getElementById(id);
+            if (el) el.innerText = value;
         }
 
         // ==============================================
@@ -2743,25 +2879,25 @@
                         <td>${p.projectName || ''}</td>
                         <td>${p.location || ''}</td>
                         <td><span class="badge-${(p.status || '').toLowerCase()}">${p.status || ''}</span></td>
-                        <td>R ${(p.totalIncome || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[0] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[1] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[2] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[3] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[4] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[5] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[6] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[7] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[8] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[9] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[10] || 0).toLocaleString()}</td>
-                        <td>R ${(p.months?.[11] || 0).toLocaleString()}</td>
-                        <td>R ${((p.months || []).reduce((a,b) => a + (b || 0), 0)).toLocaleString()}</td>
-                        <td>R ${(((p.months || []).reduce((a,b) => a + (b || 0), 0)) - (p.totalIncome || 0)).toLocaleString()}</td>
-                        <td>R ${dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === p.manager).reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString()}</td>
-                        <td>R ${((p.totalIncome || 0) - dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === p.manager).reduce((sum, r) => sum + (r.amount || 0), 0)).toLocaleString()}</td>
+                        <td>${formatCurrency(p.totalIncome || 0)}</td>
+                        <td>${formatCurrency(p.months?.[0] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[1] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[2] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[3] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[4] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[5] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[6] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[7] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[8] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[9] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[10] || 0)}</td>
+                        <td>${formatCurrency(p.months?.[11] || 0)}</td>
+                        <td>${formatCurrency((p.months || []).reduce((a,b) => a + (b || 0), 0))}</td>
+                        <td>${formatCurrency(((p.months || []).reduce((a,b) => a + (b || 0), 0)) - (p.totalIncome || 0))}</td>
+                        <td>${formatCurrency(dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === p.manager).reduce((sum, r) => sum + (r.amount || 0), 0))}</td>
+                        <td>${formatCurrency((p.totalIncome || 0) - dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === p.manager).reduce((sum, r) => sum + (r.amount || 0), 0))}</td>
                         <td>${p.margin || 0}%</td>
-                        <td>R ${Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100)).toLocaleString()}</td>
+                        <td>${formatCurrency(Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100)))}</td>
                         <td>${p.remarks || ''}</td>
                     </tr>
                 `;
@@ -2886,12 +3022,12 @@
                 
                 html += '<tr>' +
                     '<td>' + cc + '</td>' +
-                    '<td>R ' + summary[cc].confirmed.toLocaleString() + '</td>' +
-                    '<td>R ' + summary[cc].forecast.toLocaleString() + '</td>' +
-                    '<td>R ' + summary[cc].total.toLocaleString() + '</td>' +
-                    '<td>R ' + summary[cc].actual.toLocaleString() + '</td>' +
-                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + variance.toLocaleString() + '</td>' +
-                    '<td>R ' + summary[cc].profit.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(summary[cc].confirmed) + '</td>' +
+                    '<td>' + formatCurrency(summary[cc].forecast) + '</td>' +
+                    '<td>' + formatCurrency(summary[cc].total) + '</td>' +
+                    '<td>' + formatCurrency(summary[cc].actual) + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">' + formatCurrency(variance) + '</td>' +
+                    '<td>' + formatCurrency(summary[cc].profit) + '</td>' +
                 '</tr>';
             }
             
@@ -2899,12 +3035,12 @@
             var totalVariance = (dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0)) - grandTotal;
             html += '<tr class="grand-total">' +
                 '<td><strong>TOTAL</strong></td>' +
-                '<td><strong>R ' + Object.values(summary).reduce((sum, cc) => sum + cc.confirmed, 0).toLocaleString() + '</strong></td>' +
-                '<td><strong>R ' + Object.values(summary).reduce((sum, cc) => sum + cc.forecast, 0).toLocaleString() + '</strong></td>' +
-                '<td><strong>R ' + grandTotal.toLocaleString() + '</strong></td>' +
-                '<td><strong>R ' + dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString() + '</strong></td>' +
-                '<td class="' + (totalVariance >= 0 ? 'variance-positive' : 'variance-negative') + '"><strong>R ' + totalVariance.toLocaleString() + '</strong></td>' +
-                '<td><strong>R ' + grandProfit.toLocaleString() + '</strong></td>' +
+                '<td><strong>' + formatCurrency(Object.values(summary).reduce((sum, cc) => sum + cc.confirmed, 0)) + '</strong></td>' +
+                '<td><strong>' + formatCurrency(Object.values(summary).reduce((sum, cc) => sum + cc.forecast, 0)) + '</strong></td>' +
+                '<td><strong>' + formatCurrency(grandTotal) + '</strong></td>' +
+                '<td><strong>' + formatCurrency(dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0)) + '</strong></td>' +
+                '<td class="' + (totalVariance >= 0 ? 'variance-positive' : 'variance-negative') + '"><strong>' + formatCurrency(totalVariance) + '</strong></td>' +
+                '<td><strong>' + formatCurrency(grandProfit) + '</strong></td>' +
             '</tr>';
             
             tbody.innerHTML = html || '<tr><td colspan="7" class="text-center">No data</td></tr>';
@@ -2920,7 +3056,6 @@
             var totalIncome = 0;
             
             for (var cc in gpData) {
-                var avgMargin = gpData[cc].projectCount > 0 ? (gpData[cc].marginSum / gpData[cc].projectCount).toFixed(1) : 0;
                 totalGP += gpData[cc].profit;
                 totalIncome += gpData[cc].totalIncome;
             }
@@ -2931,7 +3066,7 @@
                 
                 html += '<tr>' +
                     '<td>' + cc + '</td>' +
-                    '<td>R ' + gpData[cc].profit.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(gpData[cc].profit) + '</td>' +
                     '<td>' + margin + '%</td>' +
                     '<td>' + percentageOfTotal + '%</td>' +
                 '</tr>';
@@ -2940,7 +3075,7 @@
             // Add grand total row
             html += '<tr class="grand-total">' +
                 '<td><strong>TOTAL</strong></td>' +
-                '<td><strong>R ' + totalGP.toLocaleString() + '</strong></td>' +
+                '<td><strong>' + formatCurrency(totalGP) + '</strong></td>' +
                 '<td><strong>' + (totalIncome > 0 ? ((totalGP / totalIncome) * 100).toFixed(1) : 0) + '%</strong></td>' +
                 '<td><strong>100%</strong></td>' +
             '</tr>';
@@ -2961,11 +3096,11 @@
                     '<td>' + p.projectName + '</td>' +
                     '<td>' + p.manager + '</td>' +
                     '<td><span class="badge-' + p.status.toLowerCase() + '">' + p.status + '</span></td>' +
-                    '<td>R ' + p.totalIncome.toLocaleString() + '</td>' +
-                    '<td>R ' + p.actual.toLocaleString() + '</td>' +
-                    '<td>R ' + p.btye.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(p.totalIncome) + '</td>' +
+                    '<td>' + formatCurrency(p.actual) + '</td>' +
+                    '<td>' + formatCurrency(p.btye) + '</td>' +
                     '<td class="' + (p.achievement >= 100 ? 'variance-positive' : 'variance-negative') + '">' + p.achievement + '%</td>' +
-                    '<td>R ' + p.grossProfit.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(p.grossProfit) + '</td>' +
                 '</tr>';
             });
             
@@ -3017,10 +3152,10 @@
                 html += '<tr>' +
                     '<td>' + m + '</td>' +
                     '<td>' + summary[m].count + '</td>' +
-                    '<td>R ' + summary[m].total.toLocaleString() + '</td>' +
-                    '<td>R ' + summary[m].actual.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(summary[m].total) + '</td>' +
+                    '<td>' + formatCurrency(summary[m].actual) + '</td>' +
                     '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">' + achievement + '%</td>' +
-                    '<td>R ' + gp.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(gp) + '</td>' +
                 '</tr>';
             }
             
@@ -3043,9 +3178,9 @@
                 html += '<tr>' +
                     '<td><strong>' + m + '</strong></td>' +
                     '<td>' + summary[m].count + '</td>' +
-                    '<td>R ' + summary[m].total.toLocaleString() + '</td>' +
-                    '<td>R ' + summary[m].actual.toLocaleString() + '</td>' +
-                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + variance.toLocaleString() + '</td>' +
+                    '<td>' + formatCurrency(summary[m].total) + '</td>' +
+                    '<td>' + formatCurrency(summary[m].actual) + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">' + formatCurrency(variance) + '</td>' +
                     '<td><div class="performance-alert ' + (variancePercent >= 100 ? 'alert-success' : 'alert-danger') + '">' + variancePercent + '%</div></td>' +
                     '<td><span class="' + statusClass + '">' + statusText + '</span></td>' +
                 '</tr>';
@@ -3140,8 +3275,8 @@
                 // Add summary by cost centre
                 data += '\n\nSUMMARY BY COST CENTRE\n';
                 data += 'Cost Centre,Total Gross Profit,Average Margin,% of Total\n';
+                var totalGP = Object.values(gpData).reduce((sum, cc) => sum + cc.profit, 0);
                 for (var cc in gpData) {
-                    var totalGP = Object.values(gpData).reduce((sum, cc) => sum + cc.profit, 0);
                     var percentOfTotal = totalGP > 0 ? ((gpData[cc].profit / totalGP) * 100).toFixed(1) : 0;
                     data += `${cc},${gpData[cc].profit},${(gpData[cc].marginSum / gpData[cc].projectCount).toFixed(1)}%,${percentOfTotal}%\n`;
                 }
@@ -3214,19 +3349,17 @@
                 if (!dailyData[r.date]) {
                     dailyData[r.date] = {
                         actual: 0,
-                        budget: 0,
-                        managers: new Set()
+                        budget: 0
                     };
                 }
                 dailyData[r.date].actual += r.amount || 0;
-                dailyData[r.date].managers.add(r.manager);
                 
                 // Calculate daily budget from projects
                 var date = new Date(r.date);
                 var monthIndex = date.getMonth();
                 projects.forEach(p => {
                     if (p.months && p.months[monthIndex]) {
-                        dailyData[r.date].budget += (p.months[monthIndex] / 30);
+                        dailyData[r.date].budget += (p.months[monthIndex] / 22); // Use 22 working days
                     }
                 });
             });
@@ -3242,9 +3375,9 @@
                 
                 tableHtml += `<tr>
                     <td>${date}</td>
-                    <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                    <td>R ${data.actual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
+                    <td>${formatCurrency(data.budget)}</td>
+                    <td>${formatCurrency(data.actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                     <td class="${achievementClass}">${achievement}%</td>
                 </tr>`;
             });
@@ -3255,6 +3388,7 @@
 
         function getWeeklyPerformanceTable() {
             var weeklyData = {};
+            var workingDaysPerWeek = 5;
             
             dailyRevenue.forEach(r => {
                 var date = new Date(r.date);
@@ -3280,7 +3414,7 @@
                     var monthIndex = date.getMonth();
                     projects.forEach(p => {
                         if (p.months && p.months[monthIndex]) {
-                            weeklyData[weekKey].budget += (p.months[monthIndex] / 30) * 7;
+                            weeklyData[weekKey].budget += (p.months[monthIndex] / 22) * workingDaysPerWeek;
                         }
                     });
                 });
@@ -3297,9 +3431,9 @@
                 
                 tableHtml += `<tr>
                     <td>${week}</td>
-                    <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                    <td>R ${data.actual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
+                    <td>${formatCurrency(data.budget)}</td>
+                    <td>${formatCurrency(data.actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                     <td class="${achievementClass}">${achievement}%</td>
                 </tr>`;
             });
@@ -3349,9 +3483,9 @@
                 
                 tableHtml += `<tr>
                     <td>${month}</td>
-                    <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                    <td>R ${data.actual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
+                    <td>${formatCurrency(data.budget)}</td>
+                    <td>${formatCurrency(data.actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                     <td class="${achievementClass}">${achievement}%</td>
                 </tr>`;
             });
@@ -3386,9 +3520,9 @@
                 html += `<tr>
                     <td><strong>${m}</strong></td>
                     <td>${summary[m].count}</td>
-                    <td>R ${summary[m].total.toLocaleString()}</td>
-                    <td>R ${summary[m].actual.toLocaleString()}</td>
-                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                    <td>${formatCurrency(summary[m].total)}</td>
+                    <td>${formatCurrency(summary[m].actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                     <td><div class="performance-alert ${statusClass}">${variancePercent}%</div></td>
                     <td><span class="badge-${variancePercent >= 100 ? 'confirmed' : 'forecast'}">${statusText}</span></td>
                 </tr>`;
@@ -3415,48 +3549,51 @@
         }
 
         function getDailyCostCentreTable() {
+            var todayStr = new Date().toISOString().split('T')[0];
             var ccData = {};
             
             dailyRevenue.forEach(r => {
-                var cc = r.costCentre || 'Unknown';
-                if (!ccData[cc]) ccData[cc] = {};
-                if (!ccData[cc][r.date]) {
-                    ccData[cc][r.date] = {
+                if (r.date === todayStr) {
+                    var cc = r.costCentre || 'Unknown';
+                    if (!ccData[cc]) {
+                        ccData[cc] = {
+                            actual: 0,
+                            budget: 0
+                        };
+                    }
+                    ccData[cc].actual += r.amount || 0;
+                }
+            });
+            
+            // Calculate daily budget for each cost centre
+            var currentMonth = new Date().getMonth();
+            projects.forEach(p => {
+                var cc = p.costCentre;
+                if (!ccData[cc]) {
+                    ccData[cc] = {
                         actual: 0,
                         budget: 0
                     };
                 }
-                ccData[cc][r.date].actual += r.amount || 0;
-                
-                // Calculate daily budget
-                var date = new Date(r.date);
-                var monthIndex = date.getMonth();
-                projects.forEach(p => {
-                    if (p.costCentre === cc && p.months && p.months[monthIndex]) {
-                        ccData[cc][r.date].budget += (p.months[monthIndex] / 30);
-                    }
-                });
+                if (p.months && p.months[currentMonth]) {
+                    ccData[cc].budget += (p.months[currentMonth] / 22);
+                }
             });
             
-            var tableHtml = '<table class="table"><thead><tr><th>Cost Centre</th><th>Date</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Achievement</th></tr></thead><tbody>';
+            var tableHtml = '<table class="table"><thead><tr><th>Cost Centre</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Achievement</th></tr></thead><tbody>';
             
             for (var cc in ccData) {
-                var dates = Object.keys(ccData[cc]).sort().reverse();
-                dates.forEach(date => {
-                    var data = ccData[cc][date];
-                    var variance = data.actual - data.budget;
-                    var achievement = data.budget > 0 ? ((data.actual / data.budget) * 100).toFixed(1) : 0;
-                    var achievementClass = achievement >= 100 ? 'variance-positive' : 'variance-negative';
-                    
-                    tableHtml += `<tr>
-                        <td><strong>${cc}</strong></td>
-                        <td>${date}</td>
-                        <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                        <td>R ${data.actual.toLocaleString()}</td>
-                        <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
-                        <td class="${achievementClass}">${achievement}%</td>
-                    </tr>`;
-                });
+                var variance = ccData[cc].actual - ccData[cc].budget;
+                var achievement = ccData[cc].budget > 0 ? ((ccData[cc].actual / ccData[cc].budget) * 100).toFixed(1) : 0;
+                var achievementClass = achievement >= 100 ? 'variance-positive' : 'variance-negative';
+                
+                tableHtml += `<tr>
+                    <td><strong>${cc}</strong></td>
+                    <td>${formatCurrency(ccData[cc].budget)}</td>
+                    <td>${formatCurrency(ccData[cc].actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
+                    <td class="${achievementClass}">${achievement}%</td>
+                </tr>`;
             }
             
             tableHtml += '</tbody></table>';
@@ -3465,60 +3602,53 @@
 
         function getWeeklyCostCentreTable() {
             var ccData = {};
+            var sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            var workingDaysPerWeek = 5;
             
             dailyRevenue.forEach(r => {
-                var cc = r.costCentre || 'Unknown';
                 var date = new Date(r.date);
-                var week = getWeekNumber(date);
-                var year = date.getFullYear();
-                var weekKey = year + '-W' + week;
-                
-                if (!ccData[cc]) ccData[cc] = {};
-                if (!ccData[cc][weekKey]) {
-                    ccData[cc][weekKey] = {
-                        actual: 0,
-                        budget: 0,
-                        dates: new Set()
-                    };
+                if (date >= sevenDaysAgo) {
+                    var cc = r.costCentre || 'Unknown';
+                    if (!ccData[cc]) {
+                        ccData[cc] = {
+                            actual: 0,
+                            budget: 0
+                        };
+                    }
+                    ccData[cc].actual += r.amount || 0;
                 }
-                ccData[cc][weekKey].actual += r.amount || 0;
-                ccData[cc][weekKey].dates.add(r.date);
             });
             
-            // Calculate weekly budgets
-            for (var cc in ccData) {
-                for (var weekKey in ccData[cc]) {
-                    ccData[cc][weekKey].dates.forEach(dateStr => {
-                        var date = new Date(dateStr);
-                        var monthIndex = date.getMonth();
-                        projects.forEach(p => {
-                            if (p.costCentre === cc && p.months && p.months[monthIndex]) {
-                                ccData[cc][weekKey].budget += (p.months[monthIndex] / 30) * 7;
-                            }
-                        });
-                    });
+            // Calculate weekly budget
+            var currentMonth = new Date().getMonth();
+            projects.forEach(p => {
+                var cc = p.costCentre;
+                if (!ccData[cc]) {
+                    ccData[cc] = {
+                        actual: 0,
+                        budget: 0
+                    };
                 }
-            }
+                if (p.months && p.months[currentMonth]) {
+                    ccData[cc].budget += (p.months[currentMonth] / 22) * workingDaysPerWeek;
+                }
+            });
             
-            var tableHtml = '<table class="table"><thead><tr><th>Cost Centre</th><th>Week</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Achievement</th></tr></thead><tbody>';
+            var tableHtml = '<table class="table"><thead><tr><th>Cost Centre</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Achievement</th></tr></thead><tbody>';
             
             for (var cc in ccData) {
-                var weeks = Object.keys(ccData[cc]).sort().reverse();
-                weeks.forEach(week => {
-                    var data = ccData[cc][week];
-                    var variance = data.actual - data.budget;
-                    var achievement = data.budget > 0 ? ((data.actual / data.budget) * 100).toFixed(1) : 0;
-                    var achievementClass = achievement >= 100 ? 'variance-positive' : 'variance-negative';
-                    
-                    tableHtml += `<tr>
-                        <td><strong>${cc}</strong></td>
-                        <td>${week}</td>
-                        <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                        <td>R ${data.actual.toLocaleString()}</td>
-                        <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
-                        <td class="${achievementClass}">${achievement}%</td>
-                    </tr>`;
-                });
+                var variance = ccData[cc].actual - ccData[cc].budget;
+                var achievement = ccData[cc].budget > 0 ? ((ccData[cc].actual / ccData[cc].budget) * 100).toFixed(1) : 0;
+                var achievementClass = achievement >= 100 ? 'variance-positive' : 'variance-negative';
+                
+                tableHtml += `<tr>
+                    <td><strong>${cc}</strong></td>
+                    <td>${formatCurrency(ccData[cc].budget)}</td>
+                    <td>${formatCurrency(ccData[cc].actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
+                    <td class="${achievementClass}">${achievement}%</td>
+                </tr>`;
             }
             
             tableHtml += '</tbody></table>';
@@ -3527,58 +3657,51 @@
 
         function getMonthlyCostCentreTable() {
             var ccData = {};
+            var currentMonth = new Date().getMonth();
+            var currentYear = new Date().getFullYear();
             
             dailyRevenue.forEach(r => {
-                var cc = r.costCentre || 'Unknown';
                 var date = new Date(r.date);
-                var monthKey = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-                var monthIndex = date.getMonth();
-                
-                if (!ccData[cc]) ccData[cc] = {};
-                if (!ccData[cc][monthKey]) {
-                    ccData[cc][monthKey] = {
-                        actual: 0,
-                        budget: 0,
-                        monthIndex: monthIndex
-                    };
+                if (date.getMonth() === currentMonth && date.getFullYear() === currentYear) {
+                    var cc = r.costCentre || 'Unknown';
+                    if (!ccData[cc]) {
+                        ccData[cc] = {
+                            actual: 0,
+                            budget: 0
+                        };
+                    }
+                    ccData[cc].actual += r.amount || 0;
                 }
-                ccData[cc][monthKey].actual += r.amount || 0;
             });
             
-            // Calculate monthly budgets
-            for (var cc in ccData) {
-                for (var monthKey in ccData[cc]) {
-                    var monthIndex = ccData[cc][monthKey].monthIndex;
-                    projects.forEach(p => {
-                        if (p.costCentre === cc && p.months && p.months[monthIndex]) {
-                            ccData[cc][monthKey].budget += p.months[monthIndex];
-                        }
-                    });
+            // Calculate monthly budget
+            projects.forEach(p => {
+                var cc = p.costCentre;
+                if (!ccData[cc]) {
+                    ccData[cc] = {
+                        actual: 0,
+                        budget: 0
+                    };
                 }
-            }
+                if (p.months && p.months[currentMonth]) {
+                    ccData[cc].budget += p.months[currentMonth];
+                }
+            });
             
-            var tableHtml = '<table class="table"><thead><tr><th>Cost Centre</th><th>Month</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Achievement</th></tr></thead><tbody>';
+            var tableHtml = '<table class="table"><thead><tr><th>Cost Centre</th><th>Budget</th><th>Actual</th><th>Variance</th><th>Achievement</th></tr></thead><tbody>';
             
             for (var cc in ccData) {
-                var months = Object.keys(ccData[cc]).sort((a, b) => {
-                    return new Date(a) - new Date(b);
-                }).reverse();
+                var variance = ccData[cc].actual - ccData[cc].budget;
+                var achievement = ccData[cc].budget > 0 ? ((ccData[cc].actual / ccData[cc].budget) * 100).toFixed(1) : 0;
+                var achievementClass = achievement >= 100 ? 'variance-positive' : 'variance-negative';
                 
-                months.forEach(month => {
-                    var data = ccData[cc][month];
-                    var variance = data.actual - data.budget;
-                    var achievement = data.budget > 0 ? ((data.actual / data.budget) * 100).toFixed(1) : 0;
-                    var achievementClass = achievement >= 100 ? 'variance-positive' : 'variance-negative';
-                    
-                    tableHtml += `<tr>
-                        <td><strong>${cc}</strong></td>
-                        <td>${month}</td>
-                        <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                        <td>R ${data.actual.toLocaleString()}</td>
-                        <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
-                        <td class="${achievementClass}">${achievement}%</td>
-                    </tr>`;
-                });
+                tableHtml += `<tr>
+                    <td><strong>${cc}</strong></td>
+                    <td>${formatCurrency(ccData[cc].budget)}</td>
+                    <td>${formatCurrency(ccData[cc].actual)}</td>
+                    <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
+                    <td class="${achievementClass}">${achievement}%</td>
+                </tr>`;
             }
             
             tableHtml += '</tbody></table>';
@@ -3611,8 +3734,8 @@
                 
                 html += `<tr>
                     <td><strong>${cc}</strong></td>
-                    <td>R ${gpData[cc].totalIncome.toLocaleString()}</td>
-                    <td class="variance-positive">R ${gpData[cc].profit.toLocaleString()}</td>
+                    <td>${formatCurrency(gpData[cc].totalIncome)}</td>
+                    <td class="variance-positive">${formatCurrency(gpData[cc].profit)}</td>
                     <td>${margin}%</td>
                     <td>${percentOfTotal}%</td>
                 </tr>`;
@@ -3620,8 +3743,8 @@
             
             html += `<tr class="grand-total">
                 <td><strong>TOTAL</strong></td>
-                <td><strong>R ${totalIncome.toLocaleString()}</strong></td>
-                <td><strong>R ${totalGP.toLocaleString()}</strong></td>
+                <td><strong>${formatCurrency(totalIncome)}</strong></td>
+                <td><strong>${formatCurrency(totalGP)}</strong></td>
                 <td><strong>${totalIncome > 0 ? ((totalGP / totalIncome) * 100).toFixed(1) : 0}%</strong></td>
                 <td><strong>100%</strong></td>
             </tr>`;
@@ -3669,10 +3792,10 @@
             var achievement = totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : 0;
             
             // Update summary cards
-            document.getElementById('analysisBudget').innerText = 'R ' + totalBudget.toLocaleString();
-            document.getElementById('analysisActual').innerText = 'R ' + totalActual.toLocaleString();
-            document.getElementById('analysisVariance').innerText = 'R ' + variance.toLocaleString();
-            document.getElementById('analysisAchievement').innerText = achievement + '%';
+            setText('analysisBudget', formatCurrency(totalBudget));
+            setText('analysisActual', formatCurrency(totalActual));
+            setText('analysisVariance', formatCurrency(variance));
+            setText('analysisAchievement', achievement + '%');
             
             // Update chart based on view type
             updateAnalysisChart(viewType, filteredProjects, filteredRevenue);
@@ -3868,7 +3991,7 @@
                         var monthIndex = date.getMonth();
                         projects.forEach(p => {
                             if (p.months && p.months[monthIndex]) {
-                                dailyData[r.date].budget += (p.months[monthIndex] / 30); // Approximate daily budget
+                                dailyData[r.date].budget += (p.months[monthIndex] / 22); // Approximate daily budget using 22 working days
                             }
                         });
                     });
@@ -3884,9 +4007,9 @@
                             <td>-</td>
                             <td>-</td>
                             <td>${data.projects.size} projects</td>
-                            <td>R ${Math.round(data.budget).toLocaleString()}</td>
-                            <td>R ${data.actual.toLocaleString()}</td>
-                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
+                            <td>${formatCurrency(data.budget)}</td>
+                            <td>${formatCurrency(data.actual)}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                             <td>${achievement}%</td>
                             <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
                         </tr>`;
@@ -3905,9 +4028,9 @@
                             <td>-</td>
                             <td>${m}</td>
                             <td>${managerData[m].count} projects</td>
-                            <td>R ${managerData[m].total.toLocaleString()}</td>
-                            <td>R ${managerData[m].actual.toLocaleString()}</td>
-                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                            <td>${formatCurrency(managerData[m].total)}</td>
+                            <td>${formatCurrency(managerData[m].actual)}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                             <td>${achievement}%</td>
                             <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
                         </tr>`;
@@ -3927,9 +4050,9 @@
                             <td>${p.costCentre || ''}</td>
                             <td>${p.manager || ''}</td>
                             <td>${p.projectName || ''}</td>
-                            <td>R ${(p.totalIncome || 0).toLocaleString()}</td>
-                            <td>R ${actual.toLocaleString()}</td>
-                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                            <td>${formatCurrency(p.totalIncome || 0)}</td>
+                            <td>${formatCurrency(actual)}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                             <td>${achievement}%</td>
                             <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
                         </tr>`;
@@ -3949,8 +4072,8 @@
                             <td>${cc}</td>
                             <td>-</td>
                             <td>${gpData[cc].projectCount} projects</td>
-                            <td>R ${gpData[cc].totalIncome.toLocaleString()}</td>
-                            <td>R ${gpData[cc].profit.toLocaleString()}</td>
+                            <td>${formatCurrency(gpData[cc].totalIncome)}</td>
+                            <td>${formatCurrency(gpData[cc].profit)}</td>
                             <td class="variance-positive">${avgMargin}%</td>
                             <td>${percentOfTotal}%</td>
                             <td><span class="badge-confirmed">Active</span></td>
@@ -3989,9 +4112,9 @@
                             <td>-</td>
                             <td>-</td>
                             <td>All Projects</td>
-                            <td>R ${monthlyBudget[m].toLocaleString()}</td>
-                            <td>R ${monthlyActual[m].toLocaleString()}</td>
-                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                            <td>${formatCurrency(monthlyBudget[m])}</td>
+                            <td>${formatCurrency(monthlyActual[m])}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">${formatCurrency(variance)}</td>
                             <td>${achievement}%</td>
                             <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
                         </tr>`;
@@ -4009,26 +4132,56 @@
             return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
         }
 
-        // Initialize reports when switching to reports tab
-        const originalShowTab = showTab;
-        showTab = function(tabId, btn) {
+        // ==============================================
+        // SAFE REFRESH OVERRIDES
+        // ==============================================
+
+        const originalRefreshAllUI = window.refreshAllUI || function () {};
+        window.refreshAllUI = function () {
+            originalRefreshAllUI();
+
+            updateTodayStats();
+            updateDailyManagerTable();
+            updateDailyCostCentreTable();
+            updateManagerRankingTable();
+
+            if (selectedManager && typeof selectManager === 'function') {
+                selectManager(selectedManager);
+            }
+        };
+
+        const originalShowTab = window.showTab || function () {};
+        window.showTab = function (tabId, btn) {
             originalShowTab(tabId, btn);
+
+            if (tabId === 'dailyRevenue') {
+                setTimeout(() => {
+                    updateManagerRankingTable();
+                    updateTodayStats();
+                    updateDailyManagerTable();
+                    updateDailyCostCentreTable();
+
+                    if (selectedManager && typeof selectManager === 'function') {
+                        selectManager(selectedManager);
+                    }
+
+                    var dateEl = document.getElementById('revDate');
+                    if (dateEl && !dateEl.value) {
+                        dateEl.value = new Date().toISOString().split('T')[0];
+                    }
+                }, 100);
+            }
+        };
+
+        // Initialize reports when switching to reports tab
+        const originalShowTab2 = showTab;
+        showTab = function(tabId, btn) {
+            originalShowTab2(tabId, btn);
             if (tabId === 'reports') {
                 setTimeout(updateManagerPerformanceTable, 100);
             }
             if (tabId === 'analysis') {
                 setTimeout(updateAnalysis, 100);
-            }
-            if (tabId === 'dailyRevenue') {
-                setTimeout(function() {
-                    updateManagerRankingTable();
-                    updateTodayStats();
-                    updateDailyManagerTable();
-                    updateDailyCostCentreTable();
-                    if (selectedManager) {
-                        selectManager(selectedManager);
-                    }
-                }, 100);
             }
         };
 
@@ -4068,21 +4221,21 @@
             });
             
             // Update KPI cards
-            document.getElementById('kpiTotalOrderBook').innerText = 'R ' + totalIncome.toLocaleString();
-            document.getElementById('kpiConfirmed').innerText = 'R ' + confirmedIncome.toLocaleString();
-            document.getElementById('kpiForecast').innerText = 'R ' + forecastIncome.toLocaleString();
-            document.getElementById('kpiYTD').innerText = 'R ' + totalActual.toLocaleString();
-            document.getElementById('kpiBTYE').innerText = 'R ' + (totalIncome - totalActual).toLocaleString();
-            document.getElementById('kpiMTD').innerText = 'R ' + mtdActual.toLocaleString();
-            document.getElementById('kpiGP').innerText = 'R ' + Math.round(totalGP).toLocaleString();
+            setText('kpiTotalOrderBook', formatCurrency(totalIncome));
+            setText('kpiConfirmed', formatCurrency(confirmedIncome));
+            setText('kpiForecast', formatCurrency(forecastIncome));
+            setText('kpiYTD', formatCurrency(totalActual));
+            setText('kpiBTYE', formatCurrency(totalIncome - totalActual));
+            setText('kpiMTD', formatCurrency(mtdActual));
+            setText('kpiGP', formatCurrency(Math.round(totalGP)));
             
             // Update header displays
-            document.getElementById('totalConfirmedDisplay').innerText = 'R ' + confirmedIncome.toLocaleString();
-            document.getElementById('totalForecastDisplay').innerText = 'R ' + forecastIncome.toLocaleString();
-            document.getElementById('ytdActualDisplay').innerText = 'R ' + totalActual.toLocaleString();
-            document.getElementById('btyeDisplay').innerText = 'R ' + (totalIncome - totalActual).toLocaleString();
-            document.getElementById('mtdDisplay').innerText = 'R ' + mtdActual.toLocaleString();
-            document.getElementById('totalProjects').innerText = projects.length.toString();
+            setText('totalConfirmedDisplay', formatCurrency(confirmedIncome));
+            setText('totalForecastDisplay', formatCurrency(forecastIncome));
+            setText('ytdActualDisplay', formatCurrency(totalActual));
+            setText('btyeDisplay', formatCurrency(totalIncome - totalActual));
+            setText('mtdDisplay', formatCurrency(mtdActual));
+            setText('totalProjects', projects.length.toString());
             
             var lastUpdated = document.getElementById('lastUpdated');
             if (lastUpdated) {
@@ -4294,22 +4447,11 @@
         }
 
         function loadProjectsForRevenue() {
-            document.getElementById('revMonthlyTarget').value = '';
-            document.getElementById('revDailyBudget').value = 'R 0';
-            document.getElementById('revVariance').value = 'R 0';
-            document.getElementById('revAmount').value = '';
+            setValue('revMonthlyTarget', '');
+            setValue('revDailyBudget', 'R 0');
+            setValue('revVariance', 'R 0');
+            setValue('revAmount', '');
             updateDailyTarget(); // This will now try to find the project and populate the target
-        }
-
-        function calculateDailyVariance() {
-            var amount = parseFloat(document.getElementById('revAmount')?.value) || 0;
-            var budgetText = document.getElementById('revDailyBudget')?.value || 'R 0';
-            var budget = parseFloat(budgetText.replace(/[^0-9.-]+/g, '')) || 0;
-
-            var variance = amount - budget;
-
-            var el = document.getElementById('revVariance');
-            if (el) el.value = 'R ' + variance.toLocaleString();
         }
 
         // ==============================================
@@ -4354,6 +4496,13 @@
                         selectManager(selectedManager);
                     }
                 }, 100);
+            }
+            
+            if (tabId === 'reports') {
+                setTimeout(updateManagerPerformanceTable, 100);
+            }
+            if (tabId === 'analysis') {
+                setTimeout(updateAnalysis, 100);
             }
         }
 
