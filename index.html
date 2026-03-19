@@ -801,7 +801,7 @@
                 </div>
             </div>
             
-            <!-- Revenue by Cost Centre Table -->
+            <!-- Revenue by Cost Centre Table with Profit Formula -->
             <div class="row mt-4">
                 <div class="col-md-6">
                     <div class="card">
@@ -819,6 +819,7 @@
                                             <th>Total</th>
                                             <th>YTD Actual</th>
                                             <th>Variance</th>
+                                            <th>Profit</th>
                                         </tr>
                                     </thead>
                                     <tbody id="costCentreTable"></tbody>
@@ -840,7 +841,7 @@
                                             <th>Cost Centre</th>
                                             <th>Gross Profit</th>
                                             <th>Margin %</th>
-                                            <th>% of Total</th>
+                                            <th>% of Total GP</th>
                                         </tr>
                                     </thead>
                                     <tbody id="gpCostCentreTable"></tbody>
@@ -851,10 +852,10 @@
                 </div>
             </div>
             
-            <!-- Top Projects -->
+            <!-- Top 10 Performing Projects -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <i class="fas fa-star"></i> Top 10 Projects by Revenue
+                    <i class="fas fa-star"></i> Top 10 Performing Projects by Revenue
                 </div>
                 <div class="card-body">
                     <div class="table-container">
@@ -869,6 +870,7 @@
                                     <th>YTD Actual</th>
                                     <th>BTYE</th>
                                     <th>Achievement</th>
+                                    <th>Gross Profit</th>
                                 </tr>
                             </thead>
                             <tbody id="topProjectsTable"></tbody>
@@ -1975,6 +1977,7 @@
             });
         }
 
+        // UPDATED: Get Cost Centre Summary with Profit calculation
         function getCostCentreSummary() {
             var summary = {};
 
@@ -1982,18 +1985,199 @@
                 var cc = p.costCentre || 'Unknown';
 
                 if (!summary[cc]) {
-                    summary[cc] = { total: 0, count: 0, actual: 0 };
+                    summary[cc] = { 
+                        confirmed: 0, 
+                        forecast: 0, 
+                        total: 0, 
+                        count: 0, 
+                        actual: 0,
+                        profit: 0,
+                        marginTotal: 0
+                    };
                 }
 
+                // Add to confirmed or forecast
+                if (p.status === 'Confirmed') {
+                    summary[cc].confirmed += Number(p.totalIncome || 0);
+                } else {
+                    summary[cc].forecast += Number(p.totalIncome || 0);
+                }
+                
                 summary[cc].total += Number(p.totalIncome || 0);
                 summary[cc].count++;
                 
-                // Add actual revenue for this cost centre
-                var actual = dailyRevenue.filter(r => r.costCentre === cc).reduce((sum, r) => sum + (r.amount || 0), 0);
-                summary[cc].actual = actual;
+                // Calculate profit for this project
+                var projectProfit = Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
+                summary[cc].profit += projectProfit;
+                summary[cc].marginTotal += (p.margin || 0);
             });
+            
+            // Add actual revenue for this cost centre
+            var ccActual = {};
+            dailyRevenue.forEach(r => {
+                if (!ccActual[r.costCentre]) ccActual[r.costCentre] = 0;
+                ccActual[r.costCentre] += r.amount || 0;
+            });
+            
+            for (var cc in summary) {
+                summary[cc].actual = ccActual[cc] || 0;
+            }
 
             return summary;
+        }
+
+        // UPDATED: Get Gross Profit by Cost Centre
+        function getGrossProfitByCostCentre() {
+            var gpData = {};
+
+            projects.forEach(p => {
+                var cc = p.costCentre || 'Unknown';
+
+                if (!gpData[cc]) {
+                    gpData[cc] = { 
+                        profit: 0, 
+                        totalIncome: 0,
+                        marginSum: 0,
+                        projectCount: 0
+                    };
+                }
+
+                var projectProfit = Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
+                gpData[cc].profit += projectProfit;
+                gpData[cc].totalIncome += (p.totalIncome || 0);
+                gpData[cc].marginSum += (p.margin || 0);
+                gpData[cc].projectCount++;
+            });
+
+            return gpData;
+        }
+
+        // UPDATED: Get Top 10 Performing Projects
+        function getTopProjects() {
+            var projectList = projects.map(p => {
+                var actual = dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === p.manager)
+                    .reduce((sum, r) => sum + (r.amount || 0), 0);
+                var achievement = p.totalIncome > 0 ? ((actual / p.totalIncome) * 100).toFixed(1) : 0;
+                var grossProfit = Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
+                
+                return {
+                    costCentre: p.costCentre || '',
+                    projectName: p.projectName || '',
+                    manager: p.manager || '',
+                    status: p.status || '',
+                    totalIncome: p.totalIncome || 0,
+                    actual: actual,
+                    btye: (p.totalIncome || 0) - actual,
+                    achievement: achievement,
+                    grossProfit: grossProfit,
+                    margin: p.margin || 0
+                };
+            });
+            
+            // Sort by total income descending and take top 10
+            return projectList.sort((a, b) => b.totalIncome - a.totalIncome).slice(0, 10);
+        }
+
+        function updateCostCentreSummaryTable() {
+            var tbody = document.getElementById('costCentreSummaryTable');
+            if (!tbody) return;
+            
+            var summary = getCostCentreSummary();
+            var html = '';
+            var grandTotal = 0;
+            var grandProfit = 0;
+            
+            for (var cc in summary) {
+                var variance = summary[cc].actual - summary[cc].total;
+                grandTotal += summary[cc].total;
+                grandProfit += summary[cc].profit;
+                
+                html += '<tr>' +
+                    '<td>' + cc + '</td>' +
+                    '<td>R ' + summary[cc].confirmed.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[cc].forecast.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[cc].total.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[cc].actual.toLocaleString() + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + variance.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[cc].profit.toLocaleString() + '</td>' +
+                '</tr>';
+            }
+            
+            // Add grand total row
+            var totalVariance = (dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0)) - grandTotal;
+            html += '<tr class="grand-total">' +
+                '<td><strong>TOTAL</strong></td>' +
+                '<td><strong>R ' + Object.values(summary).reduce((sum, cc) => sum + cc.confirmed, 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + Object.values(summary).reduce((sum, cc) => sum + cc.forecast, 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + grandTotal.toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString() + '</strong></td>' +
+                '<td class="' + (totalVariance >= 0 ? 'variance-positive' : 'variance-negative') + '"><strong>R ' + totalVariance.toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + grandProfit.toLocaleString() + '</strong></td>' +
+            '</tr>';
+            
+            tbody.innerHTML = html || '<tr><td colspan="7" class="text-center">No data</td></tr>';
+        }
+
+        function updateGpCostCentreTable() {
+            var tbody = document.getElementById('gpCostCentreTable');
+            if (!tbody) return;
+            
+            var gpData = getGrossProfitByCostCentre();
+            var html = '';
+            var totalGP = 0;
+            var totalIncome = 0;
+            
+            for (var cc in gpData) {
+                var avgMargin = gpData[cc].projectCount > 0 ? (gpData[cc].marginSum / gpData[cc].projectCount).toFixed(1) : 0;
+                totalGP += gpData[cc].profit;
+                totalIncome += gpData[cc].totalIncome;
+            }
+            
+            for (var cc in gpData) {
+                var percentageOfTotal = totalGP > 0 ? ((gpData[cc].profit / totalGP) * 100).toFixed(1) : 0;
+                var margin = gpData[cc].totalIncome > 0 ? ((gpData[cc].profit / gpData[cc].totalIncome) * 100).toFixed(1) : 0;
+                
+                html += '<tr>' +
+                    '<td>' + cc + '</td>' +
+                    '<td>R ' + gpData[cc].profit.toLocaleString() + '</td>' +
+                    '<td>' + margin + '%</td>' +
+                    '<td>' + percentageOfTotal + '%</td>' +
+                '</tr>';
+            }
+            
+            // Add grand total row
+            html += '<tr class="grand-total">' +
+                '<td><strong>TOTAL</strong></td>' +
+                '<td><strong>R ' + totalGP.toLocaleString() + '</strong></td>' +
+                '<td><strong>' + (totalIncome > 0 ? ((totalGP / totalIncome) * 100).toFixed(1) : 0) + '%</strong></td>' +
+                '<td><strong>100%</strong></td>' +
+            '</tr>';
+            
+            tbody.innerHTML = html || '<tr><td colspan="4" class="text-center">No data</td></tr>';
+        }
+
+        function updateTopProjectsTable() {
+            var tbody = document.getElementById('topProjectsTable');
+            if (!tbody) return;
+            
+            var topProjects = getTopProjects();
+            var html = '';
+            
+            topProjects.forEach(p => {
+                html += '<tr>' +
+                    '<td>' + p.costCentre + '</td>' +
+                    '<td>' + p.projectName + '</td>' +
+                    '<td>' + p.manager + '</td>' +
+                    '<td><span class="badge-' + p.status.toLowerCase() + '">' + p.status + '</span></td>' +
+                    '<td>R ' + p.totalIncome.toLocaleString() + '</td>' +
+                    '<td>R ' + p.actual.toLocaleString() + '</td>' +
+                    '<td>R ' + p.btye.toLocaleString() + '</td>' +
+                    '<td class="' + (p.achievement >= 100 ? 'variance-positive' : 'variance-negative') + '">' + p.achievement + '%</td>' +
+                    '<td>R ' + p.grossProfit.toLocaleString() + '</td>' +
+                '</tr>';
+            });
+            
+            tbody.innerHTML = html || '<tr><td colspan="9" class="text-center">No data</td></tr>';
         }
 
         function getManagerPerformance() {
@@ -2023,22 +2207,38 @@
             
             var summary = getCostCentreSummary();
             var html = '';
+            var grandTotal = 0;
+            var grandProfit = 0;
             
             for (var cc in summary) {
                 var variance = summary[cc].actual - summary[cc].total;
-                var achievement = summary[cc].total > 0 ? ((summary[cc].actual / summary[cc].total) * 100).toFixed(1) : 0;
+                grandTotal += summary[cc].total;
+                grandProfit += summary[cc].profit;
                 
                 html += '<tr>' +
                     '<td>' + cc + '</td>' +
-                    '<td>' + summary[cc].count + '</td>' +
+                    '<td>R ' + summary[cc].confirmed.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[cc].forecast.toLocaleString() + '</td>' +
                     '<td>R ' + summary[cc].total.toLocaleString() + '</td>' +
                     '<td>R ' + summary[cc].actual.toLocaleString() + '</td>' +
                     '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + variance.toLocaleString() + '</td>' +
-                    '<td>' + achievement + '%</td>' +
+                    '<td>R ' + summary[cc].profit.toLocaleString() + '</td>' +
                 '</tr>';
             }
             
-            tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No data</td></tr>';
+            // Add grand total row
+            var totalVariance = (dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0)) - grandTotal;
+            html += '<tr class="grand-total">' +
+                '<td><strong>TOTAL</strong></td>' +
+                '<td><strong>R ' + Object.values(summary).reduce((sum, cc) => sum + cc.confirmed, 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + Object.values(summary).reduce((sum, cc) => sum + cc.forecast, 0).toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + grandTotal.toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString() + '</strong></td>' +
+                '<td class="' + (totalVariance >= 0 ? 'variance-positive' : 'variance-negative') + '"><strong>R ' + totalVariance.toLocaleString() + '</strong></td>' +
+                '<td><strong>R ' + grandProfit.toLocaleString() + '</strong></td>' +
+            '</tr>';
+            
+            tbody.innerHTML = html || '<tr><td colspan="7" class="text-center">No data</td></tr>';
         }
 
         function updateManagerSummaryTable() {
@@ -2117,11 +2317,11 @@
 
             if (type === 'costcentre') {
                 var summary = getCostCentreSummary();
-                data = 'Cost Centre,Projects,Total Income,Actual Revenue,Variance,Achievement\n';
+                data = 'Cost Centre,Projects,Total Income,Actual Revenue,Variance,Achievement,Gross Profit\n';
                 for (var c in summary) {
                     var variance = summary[c].actual - summary[c].total;
                     var achievement = summary[c].total > 0 ? ((summary[c].actual / summary[c].total) * 100).toFixed(1) : 0;
-                    data += `${c},${summary[c].count},${summary[c].total},${summary[c].actual},${variance},${achievement}%\n`;
+                    data += `${c},${summary[c].count},${summary[c].total},${summary[c].actual},${variance},${achievement}%,${summary[c].profit}\n`;
                 }
                 filename = 'costcentre_summary.csv';
             }
@@ -2142,11 +2342,22 @@
             }
 
             if (type === 'gp') {
+                var gpData = getGrossProfitByCostCentre();
                 data = 'Cost Centre,Project,Gross Profit,Margin %\n';
                 projects.forEach(p => {
                     var gp = Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
                     data += `${p.costCentre || ''},${p.projectName || ''},${gp},${p.margin || 0}%\n`;
                 });
+                
+                // Add summary by cost centre
+                data += '\n\nSUMMARY BY COST CENTRE\n';
+                data += 'Cost Centre,Total Gross Profit,Average Margin,% of Total\n';
+                for (var cc in gpData) {
+                    var totalGP = Object.values(gpData).reduce((sum, cc) => sum + cc.profit, 0);
+                    var percentOfTotal = totalGP > 0 ? ((gpData[cc].profit / totalGP) * 100).toFixed(1) : 0;
+                    data += `${cc},${gpData[cc].profit},${(gpData[cc].marginSum / gpData[cc].projectCount).toFixed(1)}%,${percentOfTotal}%\n`;
+                }
+                
                 filename = 'gross_profit_analysis.csv';
             }
 
@@ -2499,19 +2710,13 @@
                     
                 case 'gp':
                     // Gross profit by cost centre
-                    var gpData = {};
-                    projects.forEach(p => {
-                        if (!gpData[p.costCentre]) {
-                            gpData[p.costCentre] = 0;
-                        }
-                        gpData[p.costCentre] += Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
-                    });
+                    var gpData = getGrossProfitByCostCentre();
                     
                     categories = Object.keys(gpData);
                     series = [
                         {
                             name: 'Gross Profit',
-                            data: categories.map(cc => gpData[cc] || 0)
+                            data: categories.map(cc => gpData[cc]?.profit || 0)
                         }
                     ];
                     break;
@@ -2617,27 +2822,22 @@
                     break;
                     
                 case 'gp':
-                    var gpData = {};
-                    projects.forEach(p => {
-                        if (!gpData[p.costCentre]) {
-                            gpData[p.costCentre] = 0;
-                        }
-                        gpData[p.costCentre] += Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
-                    });
+                    var gpData = getGrossProfitByCostCentre();
+                    var totalGP = Object.values(gpData).reduce((sum, cc) => sum + cc.profit, 0);
                     
                     for (var cc in gpData) {
-                        var totalBudget = projects.filter(p => p.costCentre === cc).reduce((sum, p) => sum + (p.totalIncome || 0), 0);
-                        var gpMargin = totalBudget > 0 ? ((gpData[cc] / totalBudget) * 100).toFixed(1) : 0;
+                        var percentOfTotal = totalGP > 0 ? ((gpData[cc].profit / totalGP) * 100).toFixed(1) : 0;
+                        var avgMargin = gpData[cc].projectCount > 0 ? (gpData[cc].marginSum / gpData[cc].projectCount).toFixed(1) : 0;
                         
                         html += `<tr>
                             <td>YTD</td>
                             <td>${cc}</td>
                             <td>-</td>
-                            <td>-</td>
-                            <td>R ${totalBudget.toLocaleString()}</td>
-                            <td>R ${gpData[cc].toLocaleString()}</td>
-                            <td class="variance-positive">${gpMargin}%</td>
-                            <td>-</td>
+                            <td>${gpData[cc].projectCount} projects</td>
+                            <td>R ${gpData[cc].totalIncome.toLocaleString()}</td>
+                            <td>R ${gpData[cc].profit.toLocaleString()}</td>
+                            <td class="variance-positive">${avgMargin}%</td>
+                            <td>${percentOfTotal}%</td>
                             <td><span class="badge-confirmed">Active</span></td>
                         </tr>`;
                     }
@@ -2741,8 +2941,10 @@
             // Populate all tables
             populateOrderBook();
             updateCostCentreSummaryTable();
+            updateGpCostCentreTable();
             updateManagerSummaryTable();
             updateRecentRevenueTable();
+            updateTopProjectsTable();
         }
 
         function updateRecentRevenueTable() {
@@ -2802,18 +3004,14 @@
                     { name: 'Actual', data: actualData }
                 ]);
                 
-                // Update Cost Centre Pie Chart
-                var ccData = {};
-                projects.forEach(p => {
-                    if (!ccData[p.costCentre]) ccData[p.costCentre] = 0;
-                    ccData[p.costCentre] += p.totalIncome || 0;
-                });
-                
+                // Update Cost Centre Pie Chart using Gross Profit data
+                var gpData = getGrossProfitByCostCentre();
                 var pieSeries = [];
                 var pieLabels = [];
-                for (var cc in ccData) {
-                    if (ccData[cc] > 0) {
-                        pieSeries.push(ccData[cc]);
+                
+                for (var cc in gpData) {
+                    if (gpData[cc].profit > 0) {
+                        pieSeries.push(gpData[cc].profit);
                         pieLabels.push(cc);
                     }
                 }
@@ -2835,15 +3033,26 @@
                 { id: 1, costCentre: 'Onpoint Group', projectName: 'DBSA Generators', location: 'Pretoria', manager: 'Moses', status: 'Confirmed', totalIncome: 28400000, margin: 45, remarks: 'Generator installation', months: [7666667, 7666667, 7666667, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
                 { id: 2, costCentre: 'Onpoint Group', projectName: 'Joe Gqabi', location: 'Johannesburg', manager: 'Dave', status: 'Confirmed', totalIncome: 68479374, margin: 20, remarks: 'To close by Feb less retention', months: [3800000, 3800000, 3800000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000, 5000000] },
                 { id: 3, costCentre: 'Aqua Telecoms', projectName: 'Stellenbosh', location: 'Cape Town', manager: 'Stanley', status: 'Confirmed', totalIncome: 10034021, margin: 50, remarks: 'Electrical works', months: [0, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 903062, 0] },
-                { id: 4, costCentre: 'Nkanyezi Projects', projectName: 'Moqhaka Metering', location: 'Moqhaka', manager: 'Phillip', status: 'Confirmed', totalIncome: 1800000, margin: 45, remarks: 'Metering project', months: [300000, 300000, 300000, 300000, 300000, 300000, 0, 0, 0, 0, 0, 0] }
+                { id: 4, costCentre: 'Nkanyezi Projects', projectName: 'Moqhaka Metering', location: 'Moqhaka', manager: 'Phillip', status: 'Confirmed', totalIncome: 1800000, margin: 45, remarks: 'Metering project', months: [300000, 300000, 300000, 300000, 300000, 300000, 0, 0, 0, 0, 0, 0] },
+                { id: 5, costCentre: 'DI Solutions', projectName: 'Smart Metering', location: 'Durban', manager: 'Brian', status: 'Confirmed', totalIncome: 12500000, margin: 35, remarks: 'Smart metering installation', months: [2000000, 2000000, 2000000, 2000000, 2000000, 2500000, 0, 0, 0, 0, 0, 0] },
+                { id: 6, costCentre: 'DI Solutions', projectName: 'Fibre Network', location: 'Cape Town', manager: 'Andrew', status: 'Forecast', totalIncome: 8500000, margin: 40, remarks: 'FTTH deployment', months: [0, 0, 0, 1500000, 1500000, 1500000, 1500000, 1500000, 1000000, 0, 0, 0] },
+                { id: 7, costCentre: 'Nkanyezi Projects', projectName: 'Road Infrastructure', location: 'Polokwane', manager: 'Phillip', status: 'Confirmed', totalIncome: 22000000, margin: 25, remarks: 'Road upgrade project', months: [3000000, 3000000, 3000000, 3000000, 3000000, 3000000, 2000000, 2000000, 0, 0, 0, 0] },
+                { id: 8, costCentre: 'Aqua Telecoms', projectName: 'Tower Installation', location: 'Multiple', manager: 'Stanley', status: 'Confirmed', totalIncome: 15600000, margin: 48, remarks: 'Cell tower installation', months: [2000000, 2000000, 2000000, 2000000, 2000000, 2000000, 1600000, 1600000, 0, 0, 0, 0] }
             ];
             
             var today = new Date().toISOString().split('T')[0];
+            var yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            var twoDaysAgo = new Date(Date.now() - 172800000).toISOString().split('T')[0];
+            
             dailyRevenue = [
                 { date: today, costCentre: 'Onpoint Group', projectName: 'DBSA Generators', manager: 'Moses', amount: 350000 },
                 { date: today, costCentre: 'Onpoint Group', projectName: 'Joe Gqabi', manager: 'Dave', amount: 180000 },
-                { date: '2026-03-17', costCentre: 'Aqua Telecoms', projectName: 'Stellenbosh', manager: 'Stanley', amount: 250000 },
-                { date: '2026-03-16', costCentre: 'Nkanyezi Projects', projectName: 'Moqhaka Metering', manager: 'Phillip', amount: 15000 }
+                { date: yesterday, costCentre: 'Aqua Telecoms', projectName: 'Stellenbosh', manager: 'Stanley', amount: 250000 },
+                { date: yesterday, costCentre: 'Nkanyezi Projects', projectName: 'Moqhaka Metering', manager: 'Phillip', amount: 15000 },
+                { date: yesterday, costCentre: 'DI Solutions', projectName: 'Smart Metering', manager: 'Brian', amount: 95000 },
+                { date: twoDaysAgo, costCentre: 'DI Solutions', projectName: 'Fibre Network', manager: 'Andrew', amount: 120000 },
+                { date: twoDaysAgo, costCentre: 'Nkanyezi Projects', projectName: 'Road Infrastructure', manager: 'Phillip', amount: 280000 },
+                { date: twoDaysAgo, costCentre: 'Aqua Telecoms', projectName: 'Tower Installation', manager: 'Stanley', amount: 310000 }
             ];
             
             refreshAllUI();
@@ -2974,6 +3183,7 @@
             if (tabId === 'orderbook') {
                 populateOrderBook();
                 updateCostCentreSummaryTable();
+                updateGpCostCentreTable();
                 updateManagerSummaryTable();
             }
         }
