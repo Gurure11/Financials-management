@@ -1316,6 +1316,9 @@
                                             <option value="weekly">Weekly</option>
                                             <option value="monthly">Monthly</option>
                                             <option value="ytd">Year to Date</option>
+                                            <option value="manager">By Manager</option>
+                                            <option value="project">By Project</option>
+                                            <option value="gp">Gross Profit</option>
                                         </select>
                                     </div>
                                     <div class="col-md-3">
@@ -1584,18 +1587,49 @@
                 // Analysis Chart
                 var analysisOptions = {
                     chart: { 
-                        type: 'line', 
-                        height: 300,
+                        type: 'bar', 
+                        height: 400,
                         toolbar: { show: true },
                         animations: { enabled: true }
                     },
-                    series: [
-                        { name: 'Budget', data: [] },
-                        { name: 'Actual', data: [] }
-                    ],
-                    xaxis: { categories: [] },
-                    colors: ['#1e3c72', '#28a745'],
-                    stroke: { curve: 'smooth', width: 3 }
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '55%',
+                            endingShape: 'rounded'
+                        },
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    stroke: {
+                        show: true,
+                        width: 2,
+                        colors: ['transparent']
+                    },
+                    xaxis: {
+                        categories: []
+                    },
+                    yaxis: {
+                        title: {
+                            text: 'Amount (R)'
+                        },
+                        labels: {
+                            formatter: function(val) {
+                                return 'R ' + (val/1000).toFixed(0) + 'k';
+                            }
+                        }
+                    },
+                    fill: {
+                        opacity: 1
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function(val) {
+                                return 'R ' + val.toLocaleString();
+                            }
+                        }
+                    }
                 };
                 
                 var analysisChart = new ApexCharts(document.querySelector("#analysisChart"), analysisOptions);
@@ -1625,6 +1659,9 @@
                     updateCharts();
                     updateConnectionStatus('connected', '<i class="fas fa-check-circle me-2"></i> Connected to Google Sheets');
                     showStatus('Data loaded successfully', 'success');
+                    
+                    // Populate manager dropdown for analysis
+                    populateManagerDropdown();
                 } else {
                     console.log('No data found, using demo data');
                     loadDemoData();
@@ -1945,11 +1982,15 @@
                 var cc = p.costCentre || 'Unknown';
 
                 if (!summary[cc]) {
-                    summary[cc] = { total: 0, count: 0 };
+                    summary[cc] = { total: 0, count: 0, actual: 0 };
                 }
 
                 summary[cc].total += Number(p.totalIncome || 0);
                 summary[cc].count++;
+                
+                // Add actual revenue for this cost centre
+                var actual = dailyRevenue.filter(r => r.costCentre === cc).reduce((sum, r) => sum + (r.amount || 0), 0);
+                summary[cc].actual = actual;
             });
 
             return summary;
@@ -1962,11 +2003,15 @@
                 var m = p.manager || 'Unknown';
 
                 if (!summary[m]) {
-                    summary[m] = { total: 0, count: 0 };
+                    summary[m] = { total: 0, count: 0, actual: 0 };
                 }
 
                 summary[m].total += Number(p.totalIncome || 0);
                 summary[m].count++;
+                
+                // Add actual revenue for this manager
+                var actual = dailyRevenue.filter(r => r.manager === m).reduce((sum, r) => sum + (r.amount || 0), 0);
+                summary[m].actual = actual;
             });
 
             return summary;
@@ -1980,14 +2025,20 @@
             var html = '';
             
             for (var cc in summary) {
+                var variance = summary[cc].actual - summary[cc].total;
+                var achievement = summary[cc].total > 0 ? ((summary[cc].actual / summary[cc].total) * 100).toFixed(1) : 0;
+                
                 html += '<tr>' +
                     '<td>' + cc + '</td>' +
                     '<td>' + summary[cc].count + '</td>' +
                     '<td>R ' + summary[cc].total.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[cc].actual.toLocaleString() + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">R ' + variance.toLocaleString() + '</td>' +
+                    '<td>' + achievement + '%</td>' +
                 '</tr>';
             }
             
-            tbody.innerHTML = html || '<tr><td colspan="3" class="text-center">No data</td></tr>';
+            tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No data</td></tr>';
         }
 
         function updateManagerSummaryTable() {
@@ -1998,14 +2049,33 @@
             var html = '';
             
             for (var m in summary) {
+                var variance = summary[m].actual - summary[m].total;
+                var achievement = summary[m].total > 0 ? ((summary[m].actual / summary[m].total) * 100).toFixed(1) : 0;
+                var gp = Math.round(summary[m].actual * 0.3); // Approximate GP at 30%
+                
                 html += '<tr>' +
                     '<td>' + m + '</td>' +
                     '<td>' + summary[m].count + '</td>' +
                     '<td>R ' + summary[m].total.toLocaleString() + '</td>' +
+                    '<td>R ' + summary[m].actual.toLocaleString() + '</td>' +
+                    '<td class="' + (variance >= 0 ? 'variance-positive' : 'variance-negative') + '">' + achievement + '%</td>' +
+                    '<td>R ' + gp.toLocaleString() + '</td>' +
                 '</tr>';
             }
             
-            tbody.innerHTML = html || '<tr><td colspan="3" class="text-center">No data</td></tr>';
+            tbody.innerHTML = html || '<tr><td colspan="6" class="text-center">No data</td></tr>';
+        }
+
+        function populateManagerDropdown() {
+            var managerSelect = document.getElementById('analysisManager');
+            if (!managerSelect) return;
+            
+            var managers = [...new Set(projects.map(p => p.manager).filter(m => m))];
+            
+            managerSelect.innerHTML = '<option value="all">All Managers</option>';
+            managers.forEach(m => {
+                managerSelect.innerHTML += `<option value="${m}">${m}</option>`;
+            });
         }
 
         // ==============================================
@@ -2036,35 +2106,46 @@
 
             if (type === 'manager') {
                 var summary = getManagerPerformance();
-                data = 'Manager,Projects,Total Income\n';
+                data = 'Manager,Projects,Total Income,Actual Revenue,Variance,Achievement\n';
                 for (var m in summary) {
-                    data += `${m},${summary[m].count},${summary[m].total}\n`;
+                    var variance = summary[m].actual - summary[m].total;
+                    var achievement = summary[m].total > 0 ? ((summary[m].actual / summary[m].total) * 100).toFixed(1) : 0;
+                    data += `${m},${summary[m].count},${summary[m].total},${summary[m].actual},${variance},${achievement}%\n`;
                 }
                 filename = 'manager_performance.csv';
             }
 
             if (type === 'costcentre') {
                 var summary = getCostCentreSummary();
-                data = 'Cost Centre,Projects,Total Income\n';
+                data = 'Cost Centre,Projects,Total Income,Actual Revenue,Variance,Achievement\n';
                 for (var c in summary) {
-                    data += `${c},${summary[c].count},${summary[c].total}\n`;
+                    var variance = summary[c].actual - summary[c].total;
+                    var achievement = summary[c].total > 0 ? ((summary[c].actual / summary[c].total) * 100).toFixed(1) : 0;
+                    data += `${c},${summary[c].count},${summary[c].total},${summary[c].actual},${variance},${achievement}%\n`;
                 }
                 filename = 'costcentre_summary.csv';
             }
 
             if (type === 'performance') {
+                var totalIncome = projects.reduce((sum, p) => sum + (p.totalIncome || 0), 0);
+                var totalActual = dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0);
+                var variance = totalActual - totalIncome;
+                var achievement = totalIncome > 0 ? ((totalActual / totalIncome) * 100).toFixed(1) : 0;
+                
                 data = 'Metric,Value\n';
                 data += `Total Projects,${projects.length}\n`;
-                data += `Total Income,R ${projects.reduce((sum, p) => sum + (p.totalIncome || 0), 0).toLocaleString()}\n`;
-                data += `YTD Actual,R ${dailyRevenue.reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString()}\n`;
+                data += `Total Budget,R ${totalIncome.toLocaleString()}\n`;
+                data += `Total Actual,R ${totalActual.toLocaleString()}\n`;
+                data += `Variance,R ${variance.toLocaleString()}\n`;
+                data += `Achievement,${achievement}%\n`;
                 filename = 'performance_summary.csv';
             }
 
             if (type === 'gp') {
-                data = 'Cost Centre,Project,Gross Profit\n';
+                data = 'Cost Centre,Project,Gross Profit,Margin %\n';
                 projects.forEach(p => {
                     var gp = Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
-                    data += `${p.costCentre || ''},${p.projectName || ''},${gp}\n`;
+                    data += `${p.costCentre || ''},${p.projectName || ''},${gp},${p.margin || 0}%\n`;
                 });
                 filename = 'gross_profit_analysis.csv';
             }
@@ -2227,12 +2308,401 @@
             loadReports();
         }
 
-        // Override the existing showTab function to include reports initialization
+        // ==============================================
+        // PERFORMANCE ANALYSIS FUNCTIONS - FIXED
+        // ==============================================
+        
+        function updateAnalysis() {
+            var viewType = document.getElementById('analysisView').value;
+            var costCentre = document.getElementById('analysisCostCentre').value;
+            var manager = document.getElementById('analysisManager').value;
+            var date = document.getElementById('analysisDate').value;
+            
+            // Filter data based on selections
+            var filteredProjects = projects;
+            var filteredRevenue = dailyRevenue;
+            
+            if (costCentre !== 'all') {
+                filteredProjects = filteredProjects.filter(p => p.costCentre === costCentre);
+                filteredRevenue = filteredRevenue.filter(r => r.costCentre === costCentre);
+            }
+            
+            if (manager !== 'all') {
+                filteredProjects = filteredProjects.filter(p => p.manager === manager);
+                filteredRevenue = filteredRevenue.filter(r => r.manager === manager);
+            }
+            
+            if (date) {
+                filteredRevenue = filteredRevenue.filter(r => r.date === date);
+            }
+            
+            // Calculate totals
+            var totalBudget = filteredProjects.reduce((sum, p) => sum + (p.totalIncome || 0), 0);
+            var totalActual = filteredRevenue.reduce((sum, r) => sum + (r.amount || 0), 0);
+            var variance = totalActual - totalBudget;
+            var achievement = totalBudget > 0 ? ((totalActual / totalBudget) * 100).toFixed(1) : 0;
+            
+            // Update summary cards
+            document.getElementById('analysisBudget').innerText = 'R ' + totalBudget.toLocaleString();
+            document.getElementById('analysisActual').innerText = 'R ' + totalActual.toLocaleString();
+            document.getElementById('analysisVariance').innerText = 'R ' + variance.toLocaleString();
+            document.getElementById('analysisAchievement').innerText = achievement + '%';
+            
+            // Update chart based on view type
+            updateAnalysisChart(viewType, filteredProjects, filteredRevenue);
+            
+            // Update analysis table
+            updateAnalysisTable(viewType, filteredProjects, filteredRevenue);
+        }
+        
+        function updateAnalysisChart(viewType, projects, revenue) {
+            if (!window.analysisChart) return;
+            
+            var series = [];
+            var categories = [];
+            
+            switch(viewType) {
+                case 'daily':
+                    // Group by date
+                    var dailyData = {};
+                    revenue.forEach(r => {
+                        if (!dailyData[r.date]) dailyData[r.date] = 0;
+                        dailyData[r.date] += r.amount || 0;
+                    });
+                    
+                    categories = Object.keys(dailyData).sort();
+                    series = [
+                        {
+                            name: 'Actual',
+                            data: categories.map(d => dailyData[d] || 0)
+                        }
+                    ];
+                    break;
+                    
+                case 'weekly':
+                    // Group by week
+                    var weeklyData = {};
+                    revenue.forEach(r => {
+                        var date = new Date(r.date);
+                        var week = getWeekNumber(date);
+                        var weekKey = `Week ${week}`;
+                        if (!weeklyData[weekKey]) weeklyData[weekKey] = 0;
+                        weeklyData[weekKey] += r.amount || 0;
+                    });
+                    
+                    categories = Object.keys(weeklyData).sort();
+                    series = [
+                        {
+                            name: 'Actual',
+                            data: categories.map(w => weeklyData[w] || 0)
+                        }
+                    ];
+                    break;
+                    
+                case 'monthly':
+                    // Group by month
+                    var monthlyData = {};
+                    revenue.forEach(r => {
+                        var date = new Date(r.date);
+                        var monthYear = date.toLocaleString('default', { month: 'short', year: '2-digit' });
+                        if (!monthlyData[monthYear]) monthlyData[monthYear] = 0;
+                        monthlyData[monthYear] += r.amount || 0;
+                    });
+                    
+                    categories = Object.keys(monthlyData);
+                    series = [
+                        {
+                            name: 'Actual',
+                            data: categories.map(m => monthlyData[m] || 0)
+                        }
+                    ];
+                    break;
+                    
+                case 'ytd':
+                    // Year to date by month
+                    var ytdData = new Array(12).fill(0);
+                    var currentYear = new Date().getFullYear();
+                    
+                    revenue.forEach(r => {
+                        var date = new Date(r.date);
+                        if (date.getFullYear() === currentYear) {
+                            ytdData[date.getMonth()] += r.amount || 0;
+                        }
+                    });
+                    
+                    categories = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    series = [
+                        {
+                            name: 'Actual',
+                            data: ytdData
+                        }
+                    ];
+                    break;
+                    
+                case 'manager':
+                    // Compare managers
+                    var managerData = {};
+                    projects.forEach(p => {
+                        if (!managerData[p.manager]) {
+                            managerData[p.manager] = { budget: 0, actual: 0 };
+                        }
+                        managerData[p.manager].budget += p.totalIncome || 0;
+                    });
+                    
+                    revenue.forEach(r => {
+                        if (!managerData[r.manager]) {
+                            managerData[r.manager] = { budget: 0, actual: 0 };
+                        }
+                        managerData[r.manager].actual += r.amount || 0;
+                    });
+                    
+                    categories = Object.keys(managerData);
+                    series = [
+                        {
+                            name: 'Budget',
+                            data: categories.map(m => managerData[m]?.budget || 0)
+                        },
+                        {
+                            name: 'Actual',
+                            data: categories.map(m => managerData[m]?.actual || 0)
+                        }
+                    ];
+                    break;
+                    
+                case 'project':
+                    // Compare projects (top 10 by budget)
+                    var projectData = {};
+                    projects.forEach(p => {
+                        projectData[p.projectName] = {
+                            budget: p.totalIncome || 0,
+                            actual: revenue.filter(r => r.projectName === p.projectName).reduce((sum, r) => sum + (r.amount || 0), 0)
+                        };
+                    });
+                    
+                    // Sort by budget and take top 10
+                    var sortedProjects = Object.entries(projectData)
+                        .sort((a, b) => b[1].budget - a[1].budget)
+                        .slice(0, 10);
+                    
+                    categories = sortedProjects.map(p => p[0].substring(0, 15) + '...');
+                    series = [
+                        {
+                            name: 'Budget',
+                            data: sortedProjects.map(p => p[1].budget)
+                        },
+                        {
+                            name: 'Actual',
+                            data: sortedProjects.map(p => p[1].actual)
+                        }
+                    ];
+                    break;
+                    
+                case 'gp':
+                    // Gross profit by cost centre
+                    var gpData = {};
+                    projects.forEach(p => {
+                        if (!gpData[p.costCentre]) {
+                            gpData[p.costCentre] = 0;
+                        }
+                        gpData[p.costCentre] += Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
+                    });
+                    
+                    categories = Object.keys(gpData);
+                    series = [
+                        {
+                            name: 'Gross Profit',
+                            data: categories.map(cc => gpData[cc] || 0)
+                        }
+                    ];
+                    break;
+            }
+            
+            window.analysisChart.updateOptions({
+                xaxis: { categories: categories }
+            });
+            window.analysisChart.updateSeries(series);
+        }
+        
+        function updateAnalysisTable(viewType, projects, revenue) {
+            var tbody = document.getElementById('analysisBody');
+            if (!tbody) return;
+            
+            var html = '';
+            
+            switch(viewType) {
+                case 'daily':
+                    var dailyData = {};
+                    revenue.forEach(r => {
+                        if (!dailyData[r.date]) {
+                            dailyData[r.date] = {
+                                budget: 0,
+                                actual: 0,
+                                projects: new Set()
+                            };
+                        }
+                        dailyData[r.date].actual += r.amount || 0;
+                        dailyData[r.date].projects.add(r.projectName);
+                        
+                        // Add budget for this date from project monthly spreads
+                        var date = new Date(r.date);
+                        var monthIndex = date.getMonth();
+                        projects.forEach(p => {
+                            if (p.months && p.months[monthIndex]) {
+                                dailyData[r.date].budget += (p.months[monthIndex] / 30); // Approximate daily budget
+                            }
+                        });
+                    });
+                    
+                    var sortedDates = Object.keys(dailyData).sort().reverse();
+                    sortedDates.forEach(date => {
+                        var data = dailyData[date];
+                        var variance = data.actual - data.budget;
+                        var achievement = data.budget > 0 ? ((data.actual / data.budget) * 100).toFixed(1) : 0;
+                        
+                        html += `<tr>
+                            <td>${date}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>${data.projects.size} projects</td>
+                            <td>R ${Math.round(data.budget).toLocaleString()}</td>
+                            <td>R ${data.actual.toLocaleString()}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${Math.round(variance).toLocaleString()}</td>
+                            <td>${achievement}%</td>
+                            <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
+                        </tr>`;
+                    });
+                    break;
+                    
+                case 'manager':
+                    var managerData = getManagerPerformance();
+                    
+                    for (var m in managerData) {
+                        var variance = managerData[m].actual - managerData[m].total;
+                        var achievement = managerData[m].total > 0 ? ((managerData[m].actual / managerData[m].total) * 100).toFixed(1) : 0;
+                        
+                        html += `<tr>
+                            <td>YTD</td>
+                            <td>-</td>
+                            <td>${m}</td>
+                            <td>${managerData[m].count} projects</td>
+                            <td>R ${managerData[m].total.toLocaleString()}</td>
+                            <td>R ${managerData[m].actual.toLocaleString()}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                            <td>${achievement}%</td>
+                            <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
+                        </tr>`;
+                    }
+                    break;
+                    
+                case 'project':
+                    var sortedProjects = [...projects].sort((a, b) => b.totalIncome - a.totalIncome).slice(0, 20);
+                    
+                    sortedProjects.forEach(p => {
+                        var actual = revenue.filter(r => r.projectName === p.projectName).reduce((sum, r) => sum + (r.amount || 0), 0);
+                        var variance = actual - (p.totalIncome || 0);
+                        var achievement = p.totalIncome > 0 ? ((actual / p.totalIncome) * 100).toFixed(1) : 0;
+                        
+                        html += `<tr>
+                            <td>YTD</td>
+                            <td>${p.costCentre || ''}</td>
+                            <td>${p.manager || ''}</td>
+                            <td>${p.projectName || ''}</td>
+                            <td>R ${(p.totalIncome || 0).toLocaleString()}</td>
+                            <td>R ${actual.toLocaleString()}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                            <td>${achievement}%</td>
+                            <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
+                        </tr>`;
+                    });
+                    break;
+                    
+                case 'gp':
+                    var gpData = {};
+                    projects.forEach(p => {
+                        if (!gpData[p.costCentre]) {
+                            gpData[p.costCentre] = 0;
+                        }
+                        gpData[p.costCentre] += Math.round((p.totalIncome || 0) * ((p.margin || 0) / 100));
+                    });
+                    
+                    for (var cc in gpData) {
+                        var totalBudget = projects.filter(p => p.costCentre === cc).reduce((sum, p) => sum + (p.totalIncome || 0), 0);
+                        var gpMargin = totalBudget > 0 ? ((gpData[cc] / totalBudget) * 100).toFixed(1) : 0;
+                        
+                        html += `<tr>
+                            <td>YTD</td>
+                            <td>${cc}</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>R ${totalBudget.toLocaleString()}</td>
+                            <td>R ${gpData[cc].toLocaleString()}</td>
+                            <td class="variance-positive">${gpMargin}%</td>
+                            <td>-</td>
+                            <td><span class="badge-confirmed">Active</span></td>
+                        </tr>`;
+                    }
+                    break;
+                    
+                default:
+                    // Monthly view
+                    var monthlyBudget = new Array(12).fill(0);
+                    var monthlyActual = new Array(12).fill(0);
+                    
+                    projects.forEach(p => {
+                        if (p.months) {
+                            for (var m = 0; m < 12; m++) {
+                                monthlyBudget[m] += p.months[m] || 0;
+                            }
+                        }
+                    });
+                    
+                    revenue.forEach(r => {
+                        var date = new Date(r.date);
+                        if (!isNaN(date.getTime())) {
+                            var monthIndex = date.getMonth();
+                            monthlyActual[monthIndex] += r.amount || 0;
+                        }
+                    });
+                    
+                    var months = ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+                    for (var m = 0; m < 12; m++) {
+                        var variance = monthlyActual[m] - monthlyBudget[m];
+                        var achievement = monthlyBudget[m] > 0 ? ((monthlyActual[m] / monthlyBudget[m]) * 100).toFixed(1) : 0;
+                        
+                        html += `<tr>
+                            <td>${months[m]} 2026</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>All Projects</td>
+                            <td>R ${monthlyBudget[m].toLocaleString()}</td>
+                            <td>R ${monthlyActual[m].toLocaleString()}</td>
+                            <td class="${variance >= 0 ? 'variance-positive' : 'variance-negative'}">R ${variance.toLocaleString()}</td>
+                            <td>${achievement}%</td>
+                            <td><span class="badge-${achievement >= 100 ? 'confirmed' : 'forecast'}">${achievement >= 100 ? 'On Track' : 'Behind'}</span></td>
+                        </tr>`;
+                    }
+            }
+            
+            tbody.innerHTML = html || '<tr><td colspan="9" class="text-center">No data available</td></tr>';
+        }
+        
+        function getWeekNumber(date) {
+            var d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+            var yearStart = new Date(d.getFullYear(), 0, 1);
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        // Initialize reports when switching to reports tab
         const originalShowTab = showTab;
         showTab = function(tabId, btn) {
             originalShowTab(tabId, btn);
             if (tabId === 'reports') {
                 setTimeout(initReportsTab, 100);
+            }
+            if (tabId === 'analysis') {
+                setTimeout(updateAnalysis, 100);
             }
         };
 
@@ -2378,6 +2848,7 @@
             
             refreshAllUI();
             updateCharts();
+            populateManagerDropdown();
         }
 
         // FIXED: updateMonthlyTotal function - Variance calculation corrected
@@ -2519,9 +2990,7 @@
             window.print();
         }
 
-        function updateAnalysis() {
-            showStatus('Analysis feature coming soon', 'info');
-        }
+        // Remove the old updateAnalysis function and keep the new one above
     </script>
 
     <!-- ApexCharts library -->
