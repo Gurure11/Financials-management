@@ -693,6 +693,52 @@
             border-radius: 15px;
             font-size: 12px;
         }
+
+        /* Performance Ranking Styles */
+        .ranking-1 {
+            background: linear-gradient(135deg, #ffd70020, #ffd70040);
+        }
+        .ranking-2 {
+            background: linear-gradient(135deg, #c0c0c020, #c0c0c040);
+        }
+        .ranking-3 {
+            background: linear-gradient(135deg, #cd7f3220, #cd7f3240);
+        }
+        .worst-performer {
+            background: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid #dc3545;
+        }
+        .best-performer {
+            background: rgba(40, 167, 69, 0.1);
+            border-left: 4px solid #28a745;
+        }
+        .progress-cell {
+            font-weight: 600;
+        }
+        .progress-excellent {
+            color: #28a745;
+        }
+        .progress-good {
+            color: #17a2b8;
+        }
+        .progress-warning {
+            color: #ffc107;
+        }
+        .progress-poor {
+            color: #dc3545;
+        }
+        .clickable-row {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .clickable-row:hover {
+            background: rgba(30, 60, 114, 0.1) !important;
+            transform: scale(1.01);
+        }
+        .selected-manager {
+            background: rgba(30, 60, 114, 0.2) !important;
+            border: 2px solid var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -1154,8 +1200,9 @@
         <!-- Daily Revenue Tab -->
         <div id="dailyRevenue" class="tab-content" style="display:none;">
             <div class="row">
-                <div class="col-lg-8 mx-auto">
-                    <div class="card">
+                <div class="col-lg-12">
+                    <!-- Daily Revenue Entry Form -->
+                    <div class="card mb-4">
                         <div class="card-header">
                             <i class="fas fa-calendar-day"></i> Daily Revenue Entry
                         </div>
@@ -1261,27 +1308,93 @@
                                     <div class="stat-value" id="todayAchievement">0%</div>
                                 </div>
                             </div>
-                            
-                            <!-- Recent Entries -->
-                            <div class="mt-4">
-                                <h5 class="mb-3">Recent Daily Revenue Entries</h5>
-                                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Cost Centre</th>
-                                                <th>Manager</th>
-                                                <th>Project</th>
-                                                <th>Amount</th>
-                                                <th>Budget</th>
-                                                <th>Variance</th>
-                                                <th>Achievement</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="recentRevenueTable"></tbody>
-                                    </table>
+                        </div>
+                    </div>
+
+                    <!-- Project Managers Performance Ranking -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <i class="fas fa-trophy"></i> Project Managers Performance Ranking
+                            <small class="text-white-50 ms-2">(From Lowest to Highest Performer)</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Rank</th>
+                                            <th>Project Manager</th>
+                                            <th>Projects</th>
+                                            <th>Total Budget</th>
+                                            <th>Actual Revenue</th>
+                                            <th>Variance (R)</th>
+                                            <th>Variance (%)</th>
+                                            <th>Status</th>
+                                            <th>Trend</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="managerRankingTable">
+                                        <tr>
+                                            <td colspan="9" class="text-center text-muted">Loading manager rankings...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Individual Project Performance -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-line"></i> Project Performance Details
+                            <small class="text-white-50 ms-2" id="selectedManagerDisplay">(Click on a manager above to view)</small>
+                        </div>
+                        <div class="card-body">
+                            <!-- Performance Summary Cards -->
+                            <div class="daily-stats mb-4" id="managerSummaryCards" style="display: none;">
+                                <div class="stat-card">
+                                    <div class="stat-label">Total Projects</div>
+                                    <div class="stat-value" id="managerProjectCount">0</div>
                                 </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Total Budget</div>
+                                    <div class="stat-value" id="managerTotalBudget">R 0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Actual Revenue</div>
+                                    <div class="stat-value" id="managerActualRevenue">R 0</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-label">Achievement</div>
+                                    <div class="stat-value" id="managerAchievement">0%</div>
+                                </div>
+                            </div>
+
+                            <!-- Projects Table -->
+                            <div class="table-container">
+                                <table class="table" id="projectPerformanceTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Project Name</th>
+                                            <th>Cost Centre</th>
+                                            <th>Daily Progress</th>
+                                            <th>Daily Budget</th>
+                                            <th>Daily Achv</th>
+                                            <th>Weekly Progress</th>
+                                            <th>Weekly Budget</th>
+                                            <th>Weekly Achv</th>
+                                            <th>Monthly Progress</th>
+                                            <th>Monthly Budget</th>
+                                            <th>Monthly Achv</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="projectPerformanceBody">
+                                        <tr>
+                                            <td colspan="12" class="text-center text-muted">Select a manager to view project performance</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -1583,6 +1696,7 @@
         
         var projects = [];
         var dailyRevenue = [];
+        var selectedManager = null;
         
         // CONFIG - Your Google Apps Script URL
         var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcUbj8xEI9j57FhAWFBF2OHOO5qlNtiw6MI8_q2RZYGvYo2599-TQ-2G_FghK1uWmJ1Q/exec';
@@ -2255,6 +2369,180 @@
         }
 
         // ==============================================
+        // PERFORMANCE RANKING FUNCTIONS
+        // ==============================================
+
+        function getManagerRankings() {
+            var summary = getManagerPerformance();
+            var rankings = [];
+            
+            for (var manager in summary) {
+                var variancePercent = summary[manager].total > 0 ? 
+                    ((summary[manager].actual / summary[manager].total) * 100).toFixed(1) : 0;
+                
+                rankings.push({
+                    manager: manager,
+                    projects: summary[manager].count,
+                    budget: summary[manager].total,
+                    actual: summary[manager].actual,
+                    variance: summary[manager].actual - summary[manager].total,
+                    variancePercent: parseFloat(variancePercent)
+                });
+            }
+            
+            // Sort by variance percentage (lowest to highest)
+            return rankings.sort((a, b) => a.variancePercent - b.variancePercent);
+        }
+
+        function updateManagerRankingTable() {
+            var tbody = document.getElementById('managerRankingTable');
+            if (!tbody) return;
+            
+            var rankings = getManagerRankings();
+            var html = '';
+            
+            rankings.forEach((r, index) => {
+                var rankClass = '';
+                if (index === 0) rankClass = 'worst-performer';
+                if (index === rankings.length - 1) rankClass = 'best-performer';
+                if (index === 1) rankClass = 'ranking-3';
+                if (index === 2) rankClass = 'ranking-2';
+                
+                var varianceClass = r.variance >= 0 ? 'variance-positive' : 'variance-negative';
+                var statusClass = r.variancePercent >= 100 ? 'badge-confirmed' : 'badge-forecast';
+                var statusText = r.variancePercent >= 100 ? 'On Target' : 'Below Target';
+                
+                // Determine trend icon
+                var trendIcon = '';
+                if (r.variancePercent >= 100) {
+                    trendIcon = '<i class="fas fa-arrow-up text-success"></i>';
+                } else if (r.variancePercent >= 80) {
+                    trendIcon = '<i class="fas fa-arrow-right text-warning"></i>';
+                } else {
+                    trendIcon = '<i class="fas fa-arrow-down text-danger"></i>';
+                }
+                
+                html += `<tr class="clickable-row ${rankClass}" onclick="selectManager('${r.manager}')" style="cursor: pointer;">
+                    <td><strong>#${index + 1}</strong></td>
+                    <td><strong>${r.manager}</strong></td>
+                    <td>${r.projects}</td>
+                    <td>R ${r.budget.toLocaleString()}</td>
+                    <td>R ${r.actual.toLocaleString()}</td>
+                    <td class="${varianceClass}">R ${r.variance.toLocaleString()}</td>
+                    <td><div class="performance-alert ${r.variancePercent >= 100 ? 'alert-success' : 'alert-danger'}">${r.variancePercent}%</div></td>
+                    <td><span class="${statusClass}">${statusText}</span></td>
+                    <td>${trendIcon}</td>
+                </tr>`;
+            });
+            
+            tbody.innerHTML = html || '<tr><td colspan="9" class="text-center">No data available</td></tr>';
+        }
+
+        function selectManager(manager) {
+            selectedManager = manager;
+            document.getElementById('selectedManagerDisplay').innerHTML = `(Viewing: <strong>${manager}</strong>)`;
+            document.getElementById('managerSummaryCards').style.display = 'grid';
+            
+            // Get manager's projects
+            var managerProjects = projects.filter(p => p.manager === manager);
+            var managerActual = dailyRevenue.filter(r => r.manager === manager).reduce((sum, r) => sum + (r.amount || 0), 0);
+            var managerBudget = managerProjects.reduce((sum, p) => sum + (p.totalIncome || 0), 0);
+            var achievement = managerBudget > 0 ? ((managerActual / managerBudget) * 100).toFixed(1) : 0;
+            
+            document.getElementById('managerProjectCount').innerText = managerProjects.length;
+            document.getElementById('managerTotalBudget').innerText = 'R ' + managerBudget.toLocaleString();
+            document.getElementById('managerActualRevenue').innerText = 'R ' + managerActual.toLocaleString();
+            document.getElementById('managerAchievement').innerText = achievement + '%';
+            
+            // Update project performance table
+            updateProjectPerformanceTable(manager);
+        }
+
+        function updateProjectPerformanceTable(manager) {
+            var tbody = document.getElementById('projectPerformanceBody');
+            if (!tbody) return;
+            
+            var managerProjects = projects.filter(p => p.manager === manager);
+            
+            if (managerProjects.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-center">No projects found for this manager</td></tr>';
+                return;
+            }
+            
+            var today = new Date();
+            var currentMonth = today.getMonth();
+            var currentYear = today.getFullYear();
+            var currentWeek = getWeekNumber(today);
+            var todayStr = today.toISOString().split('T')[0];
+            
+            var html = '';
+            
+            managerProjects.forEach(p => {
+                // Get project's daily revenue
+                var projectRevenue = dailyRevenue.filter(r => r.projectName === p.projectName && r.manager === manager);
+                
+                // Daily progress
+                var todayRevenue = projectRevenue.filter(r => r.date === todayStr).reduce((sum, r) => sum + (r.amount || 0), 0);
+                var dailyBudget = p.totalIncome / 30; // Approximate daily budget
+                var dailyAchv = dailyBudget > 0 ? ((todayRevenue / dailyBudget) * 100).toFixed(1) : 0;
+                
+                // Weekly progress
+                var weekRevenue = 0;
+                var weekBudget = 0;
+                projectRevenue.forEach(r => {
+                    var date = new Date(r.date);
+                    if (getWeekNumber(date) === currentWeek && date.getFullYear() === currentYear) {
+                        weekRevenue += r.amount || 0;
+                    }
+                });
+                weekBudget = dailyBudget * 7;
+                var weeklyAchv = weekBudget > 0 ? ((weekRevenue / weekBudget) * 100).toFixed(1) : 0;
+                
+                // Monthly progress
+                var monthRevenue = projectRevenue.filter(r => {
+                    var date = new Date(r.date);
+                    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                }).reduce((sum, r) => sum + (r.amount || 0), 0);
+                
+                var monthBudget = p.months && p.months[currentMonth] ? p.months[currentMonth] : 0;
+                var monthlyAchv = monthBudget > 0 ? ((monthRevenue / monthBudget) * 100).toFixed(1) : 0;
+                
+                // Determine status
+                var status = 'On Track';
+                var statusClass = 'badge-confirmed';
+                if (monthlyAchv < 50) {
+                    status = 'Critical';
+                    statusClass = 'badge-forecast';
+                } else if (monthlyAchv < 80) {
+                    status = 'Behind';
+                    statusClass = 'badge-forecast';
+                }
+                
+                // Determine progress classes
+                var dailyClass = dailyAchv >= 100 ? 'progress-excellent' : (dailyAchv >= 80 ? 'progress-good' : (dailyAchv >= 50 ? 'progress-warning' : 'progress-poor'));
+                var weeklyClass = weeklyAchv >= 100 ? 'progress-excellent' : (weeklyAchv >= 80 ? 'progress-good' : (weeklyAchv >= 50 ? 'progress-warning' : 'progress-poor'));
+                var monthlyClass = monthlyAchv >= 100 ? 'progress-excellent' : (monthlyAchv >= 80 ? 'progress-good' : (monthlyAchv >= 50 ? 'progress-warning' : 'progress-poor'));
+                
+                html += `<tr>
+                    <td><strong>${p.projectName}</strong></td>
+                    <td>${p.costCentre || ''}</td>
+                    <td class="progress-cell ${dailyClass}">R ${todayRevenue.toLocaleString()}</td>
+                    <td>R ${Math.round(dailyBudget).toLocaleString()}</td>
+                    <td class="${dailyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${dailyAchv}%</td>
+                    <td class="progress-cell ${weeklyClass}">R ${weekRevenue.toLocaleString()}</td>
+                    <td>R ${Math.round(weekBudget).toLocaleString()}</td>
+                    <td class="${weeklyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${weeklyAchv}%</td>
+                    <td class="progress-cell ${monthlyClass}">R ${monthRevenue.toLocaleString()}</td>
+                    <td>R ${monthBudget.toLocaleString()}</td>
+                    <td class="${monthlyAchv >= 100 ? 'variance-positive' : 'variance-negative'}">${monthlyAchv}%</td>
+                    <td><span class="${statusClass}">${status}</span></td>
+                </tr>`;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // ==============================================
         // ORDER BOOK FUNCTIONS - FIXED
         // ==============================================
         
@@ -2513,10 +2801,19 @@
 
                 summary[m].total += Number(p.totalIncome || 0);
                 summary[m].count++;
-                
-                // Add actual revenue for this manager
-                var actual = dailyRevenue.filter(r => r.manager === m).reduce((sum, r) => sum + (r.amount || 0), 0);
-                summary[m].actual = actual;
+            });
+
+            // Add actual revenue for each manager
+            dailyRevenue.forEach(r => {
+                if (r.manager && summary[r.manager]) {
+                    summary[r.manager].actual += r.amount || 0;
+                } else if (r.manager) {
+                    // Initialize if not exists (shouldn't happen with proper data)
+                    if (!summary[r.manager]) {
+                        summary[r.manager] = { total: 0, count: 0, actual: 0 };
+                    }
+                    summary[r.manager].actual += r.amount || 0;
+                }
             });
 
             return summary;
@@ -3539,6 +3836,14 @@
             if (tabId === 'analysis') {
                 setTimeout(updateAnalysis, 100);
             }
+            if (tabId === 'dailyRevenue') {
+                setTimeout(function() {
+                    updateManagerRankingTable();
+                    if (selectedManager) {
+                        selectManager(selectedManager);
+                    }
+                }, 100);
+            }
         };
 
         // ==============================================
@@ -3623,6 +3928,12 @@
             updateRecentRevenueTable();
             updateTopProjectsTable();
             updateManagerPerformanceTable();
+            updateManagerRankingTable();
+            
+            // Update selected manager view if any
+            if (selectedManager) {
+                selectManager(selectedManager);
+            }
         }
 
         function updateRecentRevenueTable() {
@@ -3864,6 +4175,16 @@
                 updateCostCentreSummaryTable();
                 updateGpCostCentreTable();
                 updateManagerSummaryTable();
+            }
+            
+            // Update daily revenue performance tables
+            if (tabId === 'dailyRevenue') {
+                setTimeout(function() {
+                    updateManagerRankingTable();
+                    if (selectedManager) {
+                        selectManager(selectedManager);
+                    }
+                }, 100);
             }
         }
 
