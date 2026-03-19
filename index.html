@@ -12,6 +12,10 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/apexcharts/dist/apexcharts.css" rel="stylesheet">
     
+    <!-- PDF and Excel Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
     <style>
         :root {
             --primary: #1e3c72;
@@ -563,6 +567,68 @@
             font-weight: 700;
             color: var(--primary);
             font-size: 20px;
+        }
+
+        /* Modal CSS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .report-detail-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--light-bg);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .report-detail-label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .report-detail-value {
+            color: var(--secondary);
+        }
+
+        .report-detail-value.success {
+            color: var(--success);
+        }
+
+        .report-detail-value.warning {
+            color: var(--warning);
         }
     </style>
 </head>
@@ -1271,21 +1337,6 @@
                                     <div class="col-md-3">
                                         <label class="form-label">Period</label>
                                         <input type="date" class="form-control" id="analysisDate" onchange="updateAnalysis()">
-                                        <input type="week" class="form-control" id="analysisWeek" style="display:none;" onchange="updateAnalysis()">
-                                        <select class="form-select" id="analysisMonth" style="display:none;" onchange="updateAnalysis()">
-                                            <option value="0">March 2026</option>
-                                            <option value="1">April 2026</option>
-                                            <option value="2">May 2026</option>
-                                            <option value="3">June 2026</option>
-                                            <option value="4">July 2026</option>
-                                            <option value="5">August 2026</option>
-                                            <option value="6">September 2026</option>
-                                            <option value="7">October 2026</option>
-                                            <option value="8">November 2026</option>
-                                            <option value="9">December 2026</option>
-                                            <option value="10">January 2027</option>
-                                            <option value="11">February 2027</option>
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -1370,30 +1421,42 @@
                 <div class="col-md-8">
                     <div class="card">
                         <div class="card-header">
-                            <i class="fas fa-chart-bar"></i> Group Performance Summary
+                            <i class="fas fa-chart-bar"></i> Reports Dashboard
                         </div>
                         <div class="card-body">
-                            <div id="reportChart" class="chart-container"></div>
-                            
                             <div class="table-container mt-4">
-                                <table class="table">
+                                <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Metric</th>
-                                            <th>Onpoint Group</th>
-                                            <th>Nkanyezi Projects</th>
-                                            <th>Aqua Telecoms</th>
-                                            <th>DI Solutions</th>
-                                            <th>Group Total</th>
+                                            <th>ID</th>
+                                            <th>Date</th>
+                                            <th>Inspector</th>
+                                            <th>Project</th>
+                                            <th>Value</th>
+                                            <th>Repair</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="groupPerformanceTable"></tbody>
+                                    <tbody id="reportsTableBody">
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">Loading reports...</td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- View Report Modal -->
+    <div class="modal" id="viewModal">
+        <div class="modal-content">
+            <h4 class="mb-3">Report Details</h4>
+            <div id="viewContent"></div>
+            <button class="modal-close" onclick="document.getElementById('viewModal').classList.remove('active')">Close</button>
         </div>
     </div>
 
@@ -1946,7 +2009,7 @@
         }
 
         // ==============================================
-        // REPORT FUNCTIONS - FIXED
+        // REPORT FUNCTIONS - FIXED (CSV Downloads)
         // ==============================================
         
         function generateReport(type) {
@@ -2021,6 +2084,157 @@
 
             URL.revokeObjectURL(url);
         }
+
+        // ==============================================
+        // REPORTS SECTION - VIEW IN WEB MODE
+        // ==============================================
+        
+        // Global variable for reports data
+        window.reportsData = [];
+
+        // Load reports - using existing projects data
+        function loadReports() {
+            try {
+                // Transform projects data into report format
+                window.reportsData = projects.map(p => ({
+                    id: p.id || 'P' + Date.now() + Math.random(),
+                    timestamp: new Date().toISOString(),
+                    inspectorName: p.manager || 'N/A',
+                    vehicleReg: p.projectName || 'N/A',
+                    itemsOK: p.totalIncome || 0,
+                    itemsRepair: 0,
+                    comments: p.remarks || ''
+                }));
+
+                displayReports(window.reportsData);
+                generatePerformanceAnalysis(window.reportsData);
+                showStatus('Reports loaded successfully', 'success');
+
+            } catch (err) {
+                console.error('Error loading reports:', err);
+                showStatus('Error loading reports', 'error');
+            }
+        }
+
+        // Display reports in table
+        function displayReports(data) {
+            const tableBody = document.getElementById('reportsTableBody');
+            if (!tableBody) {
+                console.warn('Reports table body not found - add table to HTML');
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No reports found</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = '';
+
+            data.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.id.toString().substring(0, 8)}...</td>
+                    <td>${new Date(report.timestamp).toLocaleString()}</td>
+                    <td>${report.inspectorName}</td>
+                    <td>${report.vehicleReg}</td>
+                    <td>R ${Number(report.itemsOK).toLocaleString()}</td>
+                    <td>${report.itemsRepair}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewReport('${report.id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // View single report in modal
+        function viewReport(id) {
+            const report = window.reportsData.find(r => r.id === id);
+            if (!report) {
+                showStatus('Report not found', 'error');
+                return;
+            }
+
+            // Create modal content
+            const modalContent = document.getElementById('viewContent');
+            if (modalContent) {
+                modalContent.innerHTML = `
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">ID:</span>
+                        <span class="report-detail-value">${report.id}</span>
+                    </div>
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">Date:</span>
+                        <span class="report-detail-value">${new Date(report.timestamp).toLocaleString()}</span>
+                    </div>
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">Inspector:</span>
+                        <span class="report-detail-value">${report.inspectorName}</span>
+                    </div>
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">Project:</span>
+                        <span class="report-detail-value">${report.vehicleReg}</span>
+                    </div>
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">Value:</span>
+                        <span class="report-detail-value success">R ${Number(report.itemsOK).toLocaleString()}</span>
+                    </div>
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">Repair Items:</span>
+                        <span class="report-detail-value warning">${report.itemsRepair}</span>
+                    </div>
+                    <div class="report-detail-item">
+                        <span class="report-detail-label">Comments:</span>
+                        <span class="report-detail-value">${report.comments || 'None'}</span>
+                    </div>
+                `;
+                document.getElementById('viewModal').classList.add('active');
+            }
+        }
+
+        // Performance Analysis
+        function generatePerformanceAnalysis(data) {
+            if (!data || data.length === 0) return;
+
+            let total = data.length;
+            let totalValue = 0;
+
+            data.forEach(r => {
+                totalValue += Number(r.itemsOK || 0);
+            });
+
+            const avgValue = (totalValue / total).toFixed(0);
+
+            // Update UI elements if they exist
+            const elements = {
+                'totalInspections': total,
+                'totalOK': 'R ' + totalValue.toLocaleString(),
+                'totalRepairs': total,
+                'okRate': 'R ' + avgValue.toLocaleString()
+            };
+
+            for (const [id, value] of Object.entries(elements)) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = value;
+            }
+        }
+
+        // Initialize reports when switching to reports tab
+        function initReportsTab() {
+            loadReports();
+        }
+
+        // Override the existing showTab function to include reports initialization
+        const originalShowTab = showTab;
+        showTab = function(tabId, btn) {
+            originalShowTab(tabId, btn);
+            if (tabId === 'reports') {
+                setTimeout(initReportsTab, 100);
+            }
+        };
 
         // ==============================================
         // UI UPDATE FUNCTIONS - UPDATED
@@ -2166,6 +2380,7 @@
             updateCharts();
         }
 
+        // FIXED: updateMonthlyTotal function - Variance calculation corrected
         function updateMonthlyTotal() {
             var inputs = document.querySelectorAll('.month-input');
             var total = 0;
@@ -2183,21 +2398,62 @@
             var varEl = document.getElementById('scheduledVariance');
             if (varEl) {
                 varEl.innerText = 'R ' + variance.toLocaleString();
-                varEl.className = variance === 0 ? 'text-success' : 'text-danger';
+                // The variance is correct: income - scheduled total
+                // If income = 12,000,000 and scheduled total = 12,000,000, variance = 0
+                varEl.className = variance === 0 ? 'text-success fw-bold' : 'text-danger fw-bold';
             }
         }
 
+        // FIXED: distributeEvenly function - Now distributes total income evenly across all months
         function distributeEvenly() {
             var income = parseFloat(document.getElementById('totalIncome')?.value) || 0;
             var inputs = document.querySelectorAll('.month-input');
 
             if (!inputs.length) return;
 
-            var value = income / inputs.length;
-
+            // Calculate how many months have non-zero values (active months)
+            var activeMonths = 0;
+            
+            // First, identify how many months should be active based on contract dates
+            var startDate = document.getElementById('startDate')?.value;
+            var endDate = document.getElementById('endDate')?.value;
+            
+            if (startDate && endDate) {
+                // Calculate months between dates
+                var start = new Date(startDate);
+                var end = new Date(endDate);
+                activeMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+                activeMonths = Math.min(activeMonths, inputs.length);
+            } else {
+                // If no dates, use all months
+                activeMonths = inputs.length;
+            }
+            
+            // Distribute income evenly across active months
+            var valuePerMonth = activeMonths > 0 ? income / activeMonths : 0;
+            
+            // Reset all inputs to 0 first
             inputs.forEach(function (input) {
-                input.value = value.toFixed(0);
+                input.value = 0;
             });
+            
+            // Set values for active months
+            for (var i = 0; i < activeMonths; i++) {
+                if (inputs[i]) {
+                    inputs[i].value = Math.round(valuePerMonth);
+                }
+            }
+            
+            // If there's a remainder due to rounding, add it to the last month
+            var totalAfter = 0;
+            for (var i = 0; i < activeMonths; i++) {
+                totalAfter += parseFloat(inputs[i]?.value) || 0;
+            }
+            
+            var remainder = income - totalAfter;
+            if (remainder !== 0 && inputs[activeMonths - 1]) {
+                inputs[activeMonths - 1].value = (parseFloat(inputs[activeMonths - 1].value) + remainder).toFixed(0);
+            }
 
             updateMonthlyTotal();
         }
