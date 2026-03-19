@@ -930,7 +930,9 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Project Name *</label>
-                                    <input type="text" class="form-control" id="projectName" required placeholder="Enter project name">
+                                    <select class="form-select" id="projectName" required>
+                                        <option value="">Select Project Name</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Location</label>
@@ -959,11 +961,11 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Contract Start Date</label>
-                                    <input type="date" class="form-control" id="startDate">
+                                    <input type="date" class="form-control" id="startDate" onchange="populateMonthlyFromDates()">
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Contract End Date</label>
-                                    <input type="date" class="form-control" id="endDate">
+                                    <input type="date" class="form-control" id="endDate" onchange="populateMonthlyFromDates()">
                                 </div>
                             </div>
                             
@@ -1082,7 +1084,7 @@
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label class="form-label">Project Manager *</label>
-                                        <select class="form-select" id="revManager" required>
+                                        <select class="form-select" id="revManager" required onchange="loadProjectsForRevenue()">
                                             <option value="">Select Manager</option>
                                             <option value="Moses">Moses</option>
                                             <option value="Johan">Johan</option>
@@ -1108,7 +1110,9 @@
                                     </div>
                                     <div class="col-md-3 mb-3">
                                         <label class="form-label">Project Name *</label>
-                                        <input type="text" class="form-control" id="revProjectName" required placeholder="Enter project name">
+                                        <select class="form-select" id="revProjectName" required onchange="updateDailyTarget()">
+                                            <option value="">Select Project Name</option>
+                                        </select>
                                     </div>
                                 </div>
                                 
@@ -1476,11 +1480,75 @@
         // CONFIG - Your Google Apps Script URL
         var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcUbj8xEI9j57FhAWFBF2OHOO5qlNtiw6MI8_q2RZYGvYo2599-TQ-2G_FghK1uWmJ1Q/exec';
 
+        // Unique project names list (deduplicated)
+        const PROJECT_NAMES = [
+            "DBSA Generators",
+            "DBSA Rooiwal",
+            "Joe Gqabi",
+            "Temba",
+            "Midvaal",
+            "Coega",
+            "Coega Forecast",
+            "KZN General Buildings",
+            "Tshwane",
+            "Public Works Limpopo",
+            "Limpopo Eskom Substation Ephraim Mogale",
+            "Naizna",
+            "Cape Town",
+            "COT Streetlights",
+            "COT Electrification",
+            "COT Metering",
+            "COE Streetlights",
+            "Msunduzi E50",
+            "Msunduzi Streetlights",
+            "Msunduzi E33",
+            "Msunduzi E47",
+            "Moqhaka Streetlights",
+            "Moqhaka Metering",
+            "Centlec CD11",
+            "Centlec Transformers CD32",
+            "Centlec CD45",
+            "Midvaal Mechanical",
+            "Eskom SPU",
+            "Eskom FSOU Substation",
+            "Eskom ECOU",
+            "Eskom LOU General Buildings",
+            "Eskom KZN Minor Reticulation",
+            "Randwest Electrical",
+            "Randwest Roads & Stormwater",
+            "Randwest Water rand sanitation",
+            "Randwest Bulk",
+            "RAL",
+            "Stellenbosh",
+            "Liquid ECPG"
+        ];
+
         document.addEventListener('DOMContentLoaded', function () {
             loadAllData();
             setDefaultDates();
             initializeCharts();
+            populateProjectDropdowns();
         });
+
+        function populateProjectDropdowns() {
+            // Populate Project Name dropdown in Project Entry
+            const projectSelect = document.getElementById('projectName');
+            if (projectSelect) {
+                projectSelect.innerHTML = '<option value="">Select Project Name</option>';
+                PROJECT_NAMES.forEach(name => {
+                    projectSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+            }
+
+            // Populate Project Name dropdown in Daily Revenue
+            const revProjectSelect = document.getElementById('revProjectName');
+            if (revProjectSelect) {
+                revProjectSelect.innerHTML = '<option value="">Select Project Name</option>';
+                PROJECT_NAMES.forEach(name => {
+                    revProjectSelect.innerHTML += `<option value="${name}">${name}</option>`;
+                });
+            }
+        }
 
         // ==============================================
         // UI HELPER FUNCTIONS
@@ -1801,7 +1869,7 @@
             };
 
             if (!projectData.costCentre) { showStatus('Please select a cost centre', 'error'); return; }
-            if (!projectData.projectName) { showStatus('Please enter project name', 'error'); return; }
+            if (!projectData.projectName) { showStatus('Please select project name', 'error'); return; }
             if (!projectData.manager) { showStatus('Please select a project manager', 'error'); return; }
             if (!projectData.totalIncome || projectData.totalIncome <= 0) { showStatus('Please enter a valid total income', 'error'); return; }
 
@@ -1930,6 +1998,108 @@
                 showStatus('Saved locally - ' + error.message, 'info');
             } finally {
                 hideLoading();
+            }
+        }
+
+        // ==============================================
+        // MONTHLY TARGET FUNCTIONS
+        // ==============================================
+
+        function populateMonthlyFromDates() {
+            var startDate = document.getElementById('startDate').value;
+            var endDate = document.getElementById('endDate').value;
+            var totalIncome = parseFloat(document.getElementById('totalIncome').value) || 0;
+
+            if (!startDate || !endDate || totalIncome <= 0) return;
+
+            var start = new Date(startDate);
+            var end = new Date(endDate);
+            
+            // Calculate months between dates (inclusive)
+            var monthsDiff = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
+            
+            // Define month order: Mar-26 (index 0) to Feb-27 (index 11)
+            const monthOrder = ['mar26', 'apr26', 'may26', 'jun26', 'jul26', 'aug26', 'sep26', 'oct26', 'nov26', 'dec26', 'jan27', 'feb27'];
+            
+            // Find start index based on start date
+            var startMonth = start.getMonth(); // 0-11 (Jan=0)
+            var startYear = start.getFullYear();
+            
+            // Map to our month indices (Mar=0, Apr=1, ..., Feb=11)
+            var monthIndexMap = [2,3,4,5,6,7,8,9,10,11,0,1]; // Jan->index 10, Feb->11, Mar->0, etc.
+            var startIndex = monthIndexMap[startMonth];
+            
+            // Adjust if year is 2027 (our months span Mar26-Feb27)
+            if (startYear > 2026) {
+                // If start year is 2027, adjust index for Jan/Feb
+                if (startMonth === 0) startIndex = 10; // Jan27
+                if (startMonth === 1) startIndex = 11; // Feb27
+            }
+            
+            // Calculate value per month
+            var valuePerMonth = monthsDiff > 0 ? totalIncome / monthsDiff : 0;
+            
+            // Reset all month inputs
+            document.querySelectorAll('.month-input').forEach(input => input.value = 0);
+            
+            // Set values for active months
+            for (var i = 0; i < monthsDiff; i++) {
+                var currentIndex = (startIndex + i) % 12;
+                var monthId = monthOrder[currentIndex];
+                var monthInput = document.getElementById(monthId);
+                if (monthInput) {
+                    monthInput.value = Math.round(valuePerMonth);
+                }
+            }
+            
+            // Handle remainder due to rounding
+            var totalAfter = 0;
+            for (var i = 0; i < monthsDiff; i++) {
+                var currentIndex = (startIndex + i) % 12;
+                var monthId = monthOrder[currentIndex];
+                totalAfter += parseFloat(document.getElementById(monthId)?.value) || 0;
+            }
+            
+            var remainder = totalIncome - totalAfter;
+            if (remainder !== 0) {
+                var lastIndex = (startIndex + monthsDiff - 1) % 12;
+                var lastMonthId = monthOrder[lastIndex];
+                var lastInput = document.getElementById(lastMonthId);
+                if (lastInput) {
+                    lastInput.value = (parseFloat(lastInput.value) + remainder).toFixed(0);
+                }
+            }
+            
+            updateMonthlyTotal();
+        }
+
+        function updateDailyTarget() {
+            var projectName = document.getElementById('revProjectName').value;
+            var manager = document.getElementById('revManager').value;
+            
+            if (!projectName || !manager) {
+                document.getElementById('revMonthlyTarget').value = '';
+                document.getElementById('revDailyBudget').value = 'R 0';
+                document.getElementById('revVariance').value = 'R 0';
+                return;
+            }
+            
+            // Find project matching name and manager
+            var project = projects.find(p => p.projectName === projectName && p.manager === manager);
+            
+            if (project) {
+                var monthlyTarget = project.totalIncome || 0;
+                var dailyBudget = monthlyTarget / 30; // Approximate daily budget
+                
+                document.getElementById('revMonthlyTarget').value = 'R ' + monthlyTarget.toLocaleString();
+                document.getElementById('revDailyBudget').value = 'R ' + Math.round(dailyBudget).toLocaleString();
+                
+                // Recalculate variance with new budget
+                calculateDailyVariance();
+            } else {
+                document.getElementById('revMonthlyTarget').value = '';
+                document.getElementById('revDailyBudget').value = 'R 0';
+                document.getElementById('revVariance').value = 'R 0';
             }
         }
 
@@ -3084,7 +3254,7 @@
             }
         }
 
-        // FIXED: distributeEvenly function - Now distributes total income evenly across all months
+        // FIXED: distributeEvenly function - Now distributes total income evenly across all months based on contract dates
         function distributeEvenly() {
             var income = parseFloat(document.getElementById('totalIncome')?.value) || 0;
             var inputs = document.querySelectorAll('.month-input');
@@ -3143,6 +3313,7 @@
             document.getElementById('revDailyBudget').value = 'R 0';
             document.getElementById('revVariance').value = 'R 0';
             document.getElementById('revAmount').value = '';
+            updateDailyTarget(); // This will now try to find the project and populate the target
         }
 
         function calculateDailyVariance() {
